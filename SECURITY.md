@@ -15,11 +15,11 @@ We take the security of OpenMCP seriously. If you believe you have found a secur
 
 To report a vulnerability:
 
-- Please send an email to **openmcp@kirigaya.cn**
+- Please send an email to **zhelonghuang@qq.com**
 - Include a detailed description of the issue, steps to reproduce, and (if possible) a minimal proof-of-concept (PoC).
 - Please **do not** disclose security issues publicly until we have had a chance to investigate and issue a patch.
 
-We aim to respond to all security reports **within 5 business days** and will work with you to verify and resolve the issue promptly.
+We aim to respond to all security reports **within 7 business days** and will work with you to verify and resolve the issue promptly.
 
 ## Disclosure Policy
 
@@ -35,9 +35,9 @@ Currently, we do **not** operate a formal bug bounty program. However, high-impa
 
 ## Contact
 
-- Email: **openmcp@kirigaya.cn**
+- Email: **zhelonghuang@qq.com**
 - Discord: [Join our Discord](https://discord.gg/SKTZRf6NzU)
-- WeChat: contact `1193466151@qq.com`
+- WeChat: contact `lstmkirigaya`
 - QQ Group: 782833642
 
 We appreciate your effort to make OpenMCP better and safer 💙

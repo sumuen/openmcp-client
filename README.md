@@ -121,8 +121,9 @@ Click [here](https://kirigaya.cn/openmcp/preview/join.html) to learn how to make
 
 ## Join Our Community
 
+* Email: **zhelonghuang@qq.com**
 * QQ: 782833642
-* Wechat: contact zhelonghuang@qq.com
+* Wechat: contact `lstmkirigaya`
 * Discord: https://discord.gg/SKTZRf6NzU
 
 

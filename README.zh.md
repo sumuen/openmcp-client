@@ -120,8 +120,9 @@ Link: https://github.com/Orange-OpenSource/hurl
 
 ## 加入我们的社区
 
+* 邮箱: **zhelonghuang@qq.com**
 * QQ 群：782833642
-* 微信：联系 [1193466151@qq.com](mailto:1193466151@qq.com)
+* 微信：联系 `lstmkirigaya`
 * Discord：[https://discord.gg/SKTZRf6NzU](https://discord.gg/SKTZRf6NzU)
 
 ## TODO
