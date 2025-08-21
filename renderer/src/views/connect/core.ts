@@ -154,6 +154,7 @@ export class McpClient {
         this.connectionArgs.cwd = args.cwd || '';
         this.connectionArgs.url = args.url || '';
         this.connectionArgs.oauth = args.oauth || '';
+        this.connectionArgs.env = args.env || {};
     }
 
     get clientId() {
@@ -301,7 +302,6 @@ export class McpClient {
 
     get connectOption() {
         const { command, args } = this.commandAndArgs;
-        const env = this.env;
         const url = this.connectionArgs.url;
         const cwd = this.connectionArgs.cwd;
         const oauth = this.connectionArgs.oauth;
@@ -309,6 +309,12 @@ export class McpClient {
 
         const clientName = this.clientNamePrefix + '.' + this.connectionArgs.connectionType;
         const clientVersion = this.clientVersion;
+
+        // 合并 this.env 和 this.connectionArgs.env
+        const env = {
+            ...this.env,
+            ...this.connectionArgs.env
+        };
 
         const option: McpOptions = {
             connectionType,

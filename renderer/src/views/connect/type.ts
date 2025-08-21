@@ -63,6 +63,7 @@ export interface IConnectionArgs {
     cwd?: string;
     url?: string;
     oauth?: string;
+    env?: Record<string, string>;
 }
 
 
