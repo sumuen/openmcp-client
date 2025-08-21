@@ -83,6 +83,8 @@ function addEnvVar() {
 		client.value.connectionEnvironment.newKey = '';
 		client.value.connectionEnvironment.newValue = '';
 	}
+
+    mcpClientAdapter.saveLaunchSignature();
 }
 
 /**

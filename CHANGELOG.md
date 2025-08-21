@@ -1,5 +1,9 @@
 # Change Log
 
+## [main] 0.1.12
+- 修复 client bug： 测试环境的环境变量无法在导出功能中被显示且无法正常保存。
+- 修复 sdk bug： 通过 mcpconfig 配置的环境变量无法正确传递给 mcp 服务器。
+
 ## [main] 0.1.11
 - 添加新功能：并行对话。在交互测试中，用户可以点击左上角的 switch to single chat 来切换到并行对话窗口，这个窗口，你可以让大模型同时回答同一个问题，用于并行测试。 https://picx.zhimg.com/80/v2-92807279c2dcbbf7808b483f0141f592_1440w.png
 - 修改 issue #50: 修复 vscode 插件端下，无法将对象复制进入 object 输入框的问题。 https://picx.zhimg.com/80/v2-1098d1931dd6bc13372d1611d8494e32_1440w.png

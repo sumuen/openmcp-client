@@ -312,7 +312,9 @@ export class McpClient {
 
         // 合并 this.env 和 this.connectionArgs.env
         const env = {
+            // 软件层面设置的 env
             ...this.env,
+            // sdk 层面设置的 env
             ...this.connectionArgs.env
         };
 
@@ -404,25 +406,27 @@ export class McpClient {
      * @param enabled 
      */
     public async handleEnvSwitch(enabled: boolean) {
-        const presetVars = this.presetsEnvironment;
+        const presetVars = this.presetsEnvironment;        
         if (enabled) {
             const values = await this.lookupEnvVar(presetVars);
 
+            const env = this.connectOption.env || {};
+
             if (values) {
                 // 将 key values 合并进 connectionEnv.data 中
-                // 若已有相同的 key, 则替换 value
                 for (let i = 0; i < presetVars.length; i++) {
-                    const key = presetVars[i];
-                    const value = values[i];
-                    const sameNameItems = this.connectionEnvironment.data.filter(item => item.key === key);
-                    if (sameNameItems.length > 0) {
-                        const conflictItem = sameNameItems[0];
-                        conflictItem.value = value;
+                    const varName = presetVars[i];
+                    const varValue = values[i];
+                    
+                    if (Object.hasOwn(env, varName)) {
+                        // 若已有相同的 key, 采用原本的
                     } else {
-                        this.connectionEnvironment.data.push({
-                            key: key, value: value
-                        });
+                        env[varName] = varValue;
                     }
+                }
+
+                for (const varName of Object.keys(env)) {
+                    this.connectionEnvironment.data.push({ key: varName, value: env[varName] });
                 }
             }
         } else {
@@ -553,6 +557,9 @@ class McpClientAdapter {
 
         // 同步成功的连接参数到后端，更新 vscode treeview 中的列表
         const deserializeOption = JSON.parse(JSON.stringify(options));
+
+        console.log(deserializeOption);
+        
         bridge.postMessage({
             command: platform + '/update-connection-signature',
             data: deserializeOption
