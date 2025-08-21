@@ -99,6 +99,15 @@ const generateExportData = computed(() => {
                 description: "",
             }
         }
+
+        if (client.connectionEnvironment.data.length > 0) {
+            const env = {} as Record<string, string>;
+            for (const item of client.connectionEnvironment.data) {
+                env[item.key] = item.value;
+            }
+
+            mcpServers[client.name].env = env;
+        }
     }
 
     const mcpconfig = {

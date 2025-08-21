@@ -553,12 +553,23 @@ class McpClientAdapter {
 
     public async saveLaunchSignature() {
         const bridge = useMessageBridge();
-        const options: McpOptions[] = this.clients.map(client => client.connectOption);
+
+        const options: McpOptions[] = [];
+
+        for (const client of this.clients) {
+            const option = client.connectOption;
+            const env = {} as Record<string, string>;
+            
+            for (const item of client.connectionEnvironment.data) {                
+                env[item.key] = item.value;
+            }
+
+            option.env = env;
+            options.push(option);
+        }
 
         // 同步成功的连接参数到后端，更新 vscode treeview 中的列表
-        const deserializeOption = JSON.parse(JSON.stringify(options));
-
-        console.log(deserializeOption);
+        const deserializeOption = JSON.parse(JSON.stringify(options));                
         
         bridge.postMessage({
             command: platform + '/update-connection-signature',
