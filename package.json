@@ -263,7 +263,8 @@
         "test": "node ./dist/test/e2e/runTest.js",
         "prepare:ocr": "rollup -c rollup.tesseract.js --bundleConfigAsCjs",
         "build:news": "npx tsx scripts/update-news-data.mts",
-        "build:task-loop": "npx vite build --config renderer/vite.config.task-loop.mjs && node renderer/scripts/task-loop.build.mjs"
+        "build:task-loop": "npx vite build --config renderer/vite.config.task-loop.mjs && node renderer/scripts/task-loop.build.mjs",
+        "build:sdk": "npm run build && npm run build:task-loop"
     },
     "dependencies": {
         "@modelcontextprotocol/sdk": "^1.12.1",
