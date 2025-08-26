@@ -238,5 +238,6 @@
     "choose-model-to-compare": "比較するモデルを選択（ベンダー/モデル名で検索可能）",
     "clear": "クリア",
     "copied": "コピーしました",
-    "fail-to-copy": "コピーに失敗しました"
+    "fail-to-copy": "コピーに失敗しました",
+    "dialog-delete-confirm": "会話の削除を確認しますか？"
 }

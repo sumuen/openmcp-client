@@ -238,5 +238,6 @@
     "choose-model-to-compare": "Select a model for comparison (supports searching by vendor/model name)",
     "clear": "Clear",
     "copied": "Copied",
-    "fail-to-copy": "Copy failed"
+    "fail-to-copy": "Copy failed",
+    "dialog-delete-confirm": "Confirm deletion of conversation?"
 }

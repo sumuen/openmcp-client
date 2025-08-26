@@ -238,5 +238,6 @@
     "choose-model-to-compare": "Wählen Sie ein Modell zum Vergleich aus (Unterstützung der Suche nach Anbieter/Modellname)",
     "clear": "Leeren",
     "copied": "Kopiert",
-    "fail-to-copy": "Kopieren fehlgeschlagen"
+    "fail-to-copy": "Kopieren fehlgeschlagen",
+    "dialog-delete-confirm": "Löschen des Gesprächs bestätigen?"
 }

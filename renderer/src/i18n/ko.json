@@ -238,5 +238,6 @@
     "choose-model-to-compare": "비교할 모델 선택 (공급업체/모델 이름으로 검색 지원)",
     "clear": "지우기",
     "copied": "복사됨",
-    "fail-to-copy": "복사 실패"
+    "fail-to-copy": "복사 실패",
+    "dialog-delete-confirm": "대화 삭제를 확인하시겠습니까?"
 }

@@ -238,5 +238,6 @@
     "choose-model-to-compare": "Sélectionnez un modèle à comparer (prend en charge la recherche par fournisseur/nom de modèle)",
     "clear": "Effacer",
     "copied": "Copié",
-    "fail-to-copy": "Échec de la copie"
+    "fail-to-copy": "Échec de la copie",
+    "dialog-delete-confirm": "Confirmer la suppression de la conversation ?"
 }

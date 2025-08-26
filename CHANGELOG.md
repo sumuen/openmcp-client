@@ -5,6 +5,7 @@
 - 修复 sdk bug： 通过 mcpconfig 配置的环境变量无法正确传递给 mcp 服务器。
 - 修复 bug：prompt 出现错误时不显示。
 - 修复 uv run 非跟路径的 python 文件的错误。
+- 增加清空对话的功能（在切换到并行对话按钮的右侧）
 
 ## [main] 0.1.11
 - 添加新功能：并行对话。在交互测试中，用户可以点击左上角的 switch to single chat 来切换到并行对话窗口，这个窗口，你可以让大模型同时回答同一个问题，用于并行测试。 https://picx.zhimg.com/80/v2-92807279c2dcbbf7808b483f0141f592_1440w.png

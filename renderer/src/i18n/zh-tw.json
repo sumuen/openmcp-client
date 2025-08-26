@@ -238,5 +238,6 @@
     "choose-model-to-compare": "選擇模型進行對比（支援搜索供應商/模型名稱）",
     "clear": "清空",
     "copied": "已複製",
-    "fail-to-copy": "複製失敗"
+    "fail-to-copy": "複製失敗",
+    "dialog-delete-confirm": "確認刪除對話嗎？"
 }

@@ -238,5 +238,6 @@
     "choose-model-to-compare": "اختر نموذجًا للمقارنة (يدعم البحث عن المورد/اسم النموذج)",
     "clear": "مسح",
     "copied": "تم النسخ",
-    "fail-to-copy": "فشل النسخ"
+    "fail-to-copy": "فشل النسخ",
+    "dialog-delete-confirm": "هل تريد تأكيد حذف المحادثة؟"
 }

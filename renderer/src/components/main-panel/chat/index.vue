@@ -26,6 +26,20 @@
                     已选择 {{ parallelChats.length }} 个模型
                 </span>
             </div>
+            <!-- 单聊天模式下显示清空对话按钮 -->
+            <div>
+                <el-popconfirm 
+                    v-if="!isParallelMode" 
+                    :title="t('dialog-delete-confirm')"
+                    @confirm="clearSingleChat"
+                >
+                    <template #reference>
+                        <el-button size="small">
+                            <span class="iconfont icon-delete"></span>
+                        </el-button>
+                    </template>
+                </el-popconfirm>
+            </div>
         </div>
 
         <!-- 单聊天模式 -->
@@ -759,6 +773,11 @@ watchEffect(async () => {
     }
 });
 
+// 添加清空单聊天模式下对话的函数
+function clearSingleChat() {
+    tabStorage.messages = [];
+    renderMessages.value = [];
+}
 
 const isLoading = ref(false);
 
