@@ -15,6 +15,10 @@
             "cache": false,
             "persistent": true
         },
+        "@openmcp/renderer#dev": {
+            "cache": false,
+            "persistent": true
+        },
         "@openmcp/renderer#build": {
             "cache": false
         },
@@ -22,17 +26,12 @@
             "persistent": true,
             "cache": false
         },
-        "@openmcp/service#build": {
-            "cache": false
-        },
-        "@openmcp/electron#dev": {
-            "dependsOn": ["@openmcp/renderer#build"],
+        "@openmcp/service#dev": {
             "persistent": true,
             "cache": false
         },
-        "@openmcp/electron#build": {
-            "dependsOn": ["@openmcp/renderer#build"],
-            "outputs": ["dist/**"]
+        "@openmcp/service#build": {
+            "cache": false
         }
     }
 }

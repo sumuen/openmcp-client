@@ -200,7 +200,7 @@ async function initUv(option: McpOptions, cwd: string, webview?: PostMessageble)
 	
 	if (option.command === 'mcp') {
 		option.command = mcpCli;
-		option.cwd = projectDir;
+		// option.cwd = projectDir;
 	}
 
 	if (fs.existsSync(mcpCli)) {

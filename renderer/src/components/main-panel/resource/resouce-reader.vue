@@ -126,14 +126,19 @@ const formRules = computed<FormRules>(() => {
 
 // 初始化表单数据
 const initFormData = () => {
-    if (!currentResource.value?.params) return;
+    if (!currentResource.value?.params) {
+        return;
+    }
+
     const newSchemaDataForm: Record<string, number | boolean | string> = {};
     currentResource.value.params.forEach(param => {
         newSchemaDataForm[param] = '';
         if (tabStorage.formData[param] !== undefined) {
             newSchemaDataForm[param] = tabStorage.formData[param];
         }
-    })
+    });
+
+    tabStorage.formData = newSchemaDataForm;
 }
 
 // 重置表单

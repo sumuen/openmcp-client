@@ -18,8 +18,13 @@
                 class="output-content"
                 contenteditable="false"
             >
-                <template v-if="!showRawJson">
-                    <span v-for="(message, index) of tabStorage.lastPromptGetResponse?.messages || []" :key="index">
+                <template v-if="!showRawJson"
+                >
+                    <span v-if="typeof tabStorage.lastPromptGetResponse === 'string'"
+                    >
+                        <span>{{ tabStorage.lastPromptGetResponse }}</span>
+                    </span>
+                    <span v-else v-for="(message, index) of tabStorage.lastPromptGetResponse?.messages || []" :key="index">
                         {{ message.content.text }}
                     </span>
                 </template>

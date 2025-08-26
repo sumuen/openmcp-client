@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineComponent, defineProps, defineEmits, watch, ref, computed, reactive } from 'vue';
+import { defineComponent, defineProps, defineEmits, watch, ref, computed, reactive, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { FormInstance, FormRules } from 'element-plus';
 import { tabs } from '../panel';
@@ -97,14 +97,16 @@ const formRules = computed<FormRules>(() => {
 
 const initFormData = () => {
     if (!currentPrompt.value?.arguments) return;
-    const newSchemaDataForm: Record<string, number | boolean | string> = {};
+    const newSchemaDataForm: Record<string, number | boolean | string> = {};    
 
     currentPrompt.value.arguments.forEach(param => {
         newSchemaDataForm[param.name] = '';
-        if (tabStorage.formData[param.name]!== undefined) {
+        if (tabStorage.formData[param.name] !== undefined) {
             newSchemaDataForm[param.name] = tabStorage.formData[param.name];
         }
     });
+
+    tabStorage.formData = newSchemaDataForm;
 }
 
 const resetForm = () => {
@@ -129,6 +131,11 @@ if (props.tabId >= 0) {
         resetForm();
     }, { immediate: true });
 }
+
+onMounted(() => {
+    initFormData();
+});
+
 </script>
 
 <style>

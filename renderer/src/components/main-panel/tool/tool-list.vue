@@ -167,6 +167,7 @@ onMounted(async () => {
     border-radius: .3em;
     height: fit-content;
     font-size: 13px;
+    font-weight: 200;
     color: black;
 }
 

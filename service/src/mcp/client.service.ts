@@ -45,7 +45,7 @@ export class McpClient {
             this.oauthPovider = await this.oAuthClient.getOAuthProvider();
         }
 
-        const env = { ...process.env, ...this.options.env } as Record<string, string>;
+        const env = { ...process.env, ...this.options.env } as Record<string, string>;        
 
         // 根据连接类型创建传输层
         switch (this.options.connectionType) {
