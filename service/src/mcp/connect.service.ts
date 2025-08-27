@@ -189,7 +189,7 @@ async function initUv(option: McpOptions, cwd: string, webview?: PostMessageble)
 			break;
 		}
 		projectDir = path.dirname(projectDir);
-	}	
+	}
 
 	const venv = path.join(projectDir, '.venv');
 
@@ -202,12 +202,13 @@ async function initUv(option: McpOptions, cwd: string, webview?: PostMessageble)
 		option.command = mcpCli;
 		// option.cwd = projectDir;
 	}
-
+    
 	if (fs.existsSync(mcpCli)) {
 		return '';
 	}
 
 	const syncOutput = await collectAllOutputExec('uv sync', projectDir);
+    
 	webview?.postMessage({
 		command: 'connect/log',
 		data: {

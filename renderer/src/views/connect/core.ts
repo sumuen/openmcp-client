@@ -280,7 +280,7 @@ export class McpClient {
         if (code !== 200) {
             return new Map();
         }
-        this.resourceTemplates = new Map<string, ResourceTemplate>();        
+        this.resourceTemplates = new Map<string, ResourceTemplate>();
         msg.resourceTemplates.forEach(template => {
             this.resourceTemplates!.set(template.name, template);
         });
@@ -399,6 +399,44 @@ export class McpClient {
         return true;
     }
 
+    public async disconnect() {
+        const bridge = useMessageBridge();
+        const { code, msg } = await bridge.commandRequest<IConnectionResult>('disconnect', {
+            clientId: this.connectionResult.clientId,
+        });
+
+        this.connectionResult.success = (code === 200);
+
+        if (code !== 200) {
+            const message = msg.toString();
+            this.connectionResult.logString.push({
+                type: 'error',
+                title: t('disconnect-fail'),
+                message
+            });
+
+            ElMessage.error(message);
+            return false;
+        } else {
+            this.connectionResult.logString.push({
+                type: 'info',
+                title: t('disconnect-success'),
+                message: JSON.stringify(msg, null, 2)
+            });
+        }
+
+        // 清理本地连接状态
+        this.connectionResult.status = 'disconnected';
+        this.connectionResult.success = false;
+        this.connectionResult.clientId = '';
+        this.connectionResult.name = '';
+        this.connectionResult.version = '';
+        this.connectionResult.reuseConntion = false;
+
+        return true;
+    }
+
+
     /**
      * @description 处理环境变量开关
      * - 开启时，刷新预设环境变量的数值
@@ -406,7 +444,7 @@ export class McpClient {
      * @param enabled 
      */
     public async handleEnvSwitch(enabled: boolean) {
-        const presetVars = this.presetsEnvironment;        
+        const presetVars = this.presetsEnvironment;
         if (enabled) {
             const values = await this.lookupEnvVar(presetVars);
 
@@ -417,7 +455,7 @@ export class McpClient {
                 for (let i = 0; i < presetVars.length; i++) {
                     const varName = presetVars[i];
                     const varValue = values[i];
-                    
+
                     if (Object.hasOwn(env, varName)) {
                         // 若已有相同的 key, 采用原本的
                     } else {
@@ -559,8 +597,8 @@ class McpClientAdapter {
         for (const client of this.clients) {
             const option = client.connectOption;
             const env = {} as Record<string, string>;
-            
-            for (const item of client.connectionEnvironment.data) {                
+
+            for (const item of client.connectionEnvironment.data) {
                 env[item.key] = item.value;
             }
 
@@ -569,8 +607,8 @@ class McpClientAdapter {
         }
 
         // 同步成功的连接参数到后端，更新 vscode treeview 中的列表
-        const deserializeOption = JSON.parse(JSON.stringify(options));                
-        
+        const deserializeOption = JSON.parse(JSON.stringify(options));
+
         bridge.postMessage({
             command: platform + '/update-connection-signature',
             data: deserializeOption
@@ -594,11 +632,11 @@ class McpClientAdapter {
         // 创建对于 connect/refresh 的监听        
         if (!this.connectrefreshListener) {
             const bridge = useMessageBridge();
-            this.connectrefreshListener = bridge.addCommandListener('connect/refresh', async (message) => {                
+            this.connectrefreshListener = bridge.addCommandListener('connect/refresh', async (message) => {
                 const { code, msg } = message;
 
                 console.log('refresh');
-                
+
 
                 if (code === 200) {
                     // 查找目标客户端
@@ -607,11 +645,11 @@ class McpClientAdapter {
                     if (clientIndex > -1) {
                         // 刷新该客户端的所有资源
                         console.log('clientIndex', clientIndex);
-                        
+
                         await this.clients[clientIndex].refreshAllResources();
 
                         // 更新 refreshSignal，所有 watch refreshSignal 的部分会发生更新
-                        this.refreshSignal.value ++;
+                        this.refreshSignal.value++;
                     } else {
                         console.error(
                             chalk.gray(`[${new Date().toLocaleString()}]`),
@@ -622,7 +660,7 @@ class McpClientAdapter {
             }, { once: false });
         }
     }
-    
+
     public async launch() {
         // 创建对于 log/output 的监听
         if (!this.connectLogListenerCancel) {
@@ -644,7 +682,7 @@ class McpClientAdapter {
 
             }, { once: false });
         }
-        
+
         const launchSignature = await this.getLaunchSignature();
 
         let allOk = true;

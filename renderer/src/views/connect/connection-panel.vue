@@ -11,10 +11,25 @@
 				<ConnectionEnvironment :index="props.index" />
 
 				<div class="connect-action">
-					<el-button type="primary" size="large" :loading="isLoading" :disabled="!client.connectionResult"
-						@click="connect()">
+					<el-button
+                        type="primary"
+                        size="large"
+                        :loading="isLoading"
+						@click="connect()"
+                    >
 						<span class="iconfont icon-connect" v-if="!isLoading"></span>
 						{{ t('connect.appearance.connect') }}
+					</el-button>
+
+                    <el-button
+                        type="danger"
+                        size="large"
+                        :loading="isDisconnecting"
+                        :disabled="!client.connectionResult.success"
+						@click="disconnect()"
+                    >
+						<span class="iconfont icon-disconnect" v-if="!isDisconnecting"></span>
+						{{ t('connect.appearance.disconnect') }}
 					</el-button>
 				</div>
 			</div>
@@ -45,6 +60,7 @@ const props = defineProps({
 		type: Number,
 		required: true
 	}
+
 });
 
 const client = computed(() => mcpClientAdapter.clients[props.index]);
@@ -52,11 +68,11 @@ const client = computed(() => mcpClientAdapter.clients[props.index]);
 const { t } = useI18n();
 
 const isLoading = ref(false);
+const isDisconnecting = ref(false);
 
 async function connect() {
 	isLoading.value = true;
 
-	const platform = getPlatform();
 	const ok = await client.value.connect();
 
 	if (ok) {
@@ -64,6 +80,19 @@ async function connect() {
 	}
 
 	isLoading.value = false;
+}
+
+// 添加断开连接功能
+async function disconnect() {
+	isDisconnecting.value = true;
+	
+	try {
+		await client.value.disconnect();
+	} catch (error) {
+		console.error('Disconnect error:', error);
+	} finally {
+		isDisconnecting.value = false;
+	}
 }
 
 const isDraging = ref(false);

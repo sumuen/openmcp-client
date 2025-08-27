@@ -239,5 +239,10 @@
     "clear": "Clear",
     "copied": "Copied",
     "fail-to-copy": "Copy failed",
-    "dialog-delete-confirm": "Confirm deletion of conversation?"
+    "dialog-delete-confirm": "Confirm deletion of conversation?",
+    "no-connect-right-now": "No connection options available, click the plus sign above to create one",
+    "at-least-one-server": "At least one server connection must be retained",
+    "connect.appearance.disconnect": "Disconnect",
+    "disconnect-fail": "Disconnect failed",
+    "disconnect-success": "Disconnected successfully"
 }

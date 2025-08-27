@@ -239,5 +239,10 @@
     "clear": "مسح",
     "copied": "تم النسخ",
     "fail-to-copy": "فشل النسخ",
-    "dialog-delete-confirm": "هل تريد تأكيد حذف المحادثة؟"
+    "dialog-delete-confirm": "هل تريد تأكيد حذف المحادثة؟",
+    "no-connect-right-now": "لا توجد خيارات اتصال، انقر فوق علامة الجمع أعلاه لإنشاء واحد",
+    "at-least-one-server": "يجب الاحتفاظ بوصول خادم واحد على الأقل",
+    "connect.appearance.disconnect": "قطع الاتصال",
+    "disconnect-fail": "فشل قطع الاتصال",
+    "disconnect-success": "تم قطع الاتصال بنجاح"
 }

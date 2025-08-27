@@ -23,7 +23,7 @@
                         @click="gotoHowtoUse"
                     >
                         <span class="iconfont icon-info"></span>
-                        <span>{{ t('how-to-use') }}</span>
+                        <span style="font-weight: 200;">{{ t('how-to-use') }}</span>
                     </span>
                 </div>
             </div>

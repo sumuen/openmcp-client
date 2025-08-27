@@ -239,5 +239,10 @@
     "clear": "クリア",
     "copied": "コピーしました",
     "fail-to-copy": "コピーに失敗しました",
-    "dialog-delete-confirm": "会話の削除を確認しますか？"
+    "dialog-delete-confirm": "会話の削除を確認しますか？",
+    "no-connect-right-now": "接続オプションがありません。上のプラス記号をクリックして作成してください",
+    "at-least-one-server": "少なくとも1つのサーバー接続を保持する必要があります",
+    "connect.appearance.disconnect": "切断する",
+    "disconnect-fail": "切断に失敗しました",
+    "disconnect-success": "切断に成功しました"
 }

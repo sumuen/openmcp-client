@@ -1,11 +1,12 @@
 # Change Log
 
 ## [main] 0.1.12
-- 修复 client bug： 测试环境的环境变量无法在导出功能中被显示且无法正常保存。
+- 修复 client bug： 测试环境的环境变量无法在导出功能中被显示且无法正常保存。 https://picx.zhimg.com/80/v2-d2abc5ffcb97adbecf6ec94068c3169d_1440w.png
 - 修复 sdk bug： 通过 mcpconfig 配置的环境变量无法正确传递给 mcp 服务器。
 - 修复 bug：prompt 出现错误时不显示。
 - 修复 uv run 非跟路径的 python 文件的错误。
-- 增加清空对话的功能（在切换到并行对话按钮的右侧）
+- 增加清空对话的功能（在切换到并行对话按钮的右侧） https://picx.zhimg.com/80/v2-5d0524df2eabfedd8a5b2cc7229f1f44_1440w.png
+- 完成 issue #64：[Feature] 新增断开MCP连接功能 https://pica.zhimg.com/80/v2-5822bb01cfd819072dd02cf730815117_1440w.png
 
 ## [main] 0.1.11
 - 添加新功能：并行对话。在交互测试中，用户可以点击左上角的 switch to single chat 来切换到并行对话窗口，这个窗口，你可以让大模型同时回答同一个问题，用于并行测试。 https://picx.zhimg.com/80/v2-92807279c2dcbbf7808b483f0141f592_1440w.png

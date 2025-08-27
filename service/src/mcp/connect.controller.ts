@@ -1,7 +1,7 @@
 import { Controller } from '../common/index.js';
 import { PostMessageble } from '../hook/adapter.js';
 import { RequestData } from '../common/index.dto.js';
-import { connectService, getClient } from './connect.service.js';
+import { connectService, getClient, clientMap, clientMonitorMap } from './connect.service.js';
 
 export class ConnectController {
 
@@ -54,6 +54,47 @@ export class ConnectController {
         return {
             code: 200,
             msg: {}
+        }
+    }
+
+    @Controller('disconnect')
+    async disconnect(data: RequestData, webview: PostMessageble) {
+        const { clientId } = data;
+
+        if (!clientId) {
+            return {
+                code: 500,
+                msg: 'clientId is required'
+            };
+        }
+
+        const client = getClient(clientId);
+        
+        if (!client) {
+            return {
+                code: 501,
+                msg: 'mcp client 尚未连接'
+            };
+        }
+
+        try {
+            // Disconnect the client
+            client.disconnect();
+            
+            // Remove from maps
+            clientMap.delete(clientId);
+            clientMonitorMap.get(clientId)?.close();
+            clientMonitorMap.delete(clientId);
+            
+            return {
+                code: 200,
+                msg: 'Successfully disconnected'
+            };
+        } catch (error) {
+            return {
+                code: 500,
+                msg: `Failed to disconnect: ${error}`
+            };
         }
     }
 }

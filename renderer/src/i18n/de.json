@@ -239,5 +239,10 @@
     "clear": "Leeren",
     "copied": "Kopiert",
     "fail-to-copy": "Kopieren fehlgeschlagen",
-    "dialog-delete-confirm": "Löschen des Gesprächs bestätigen?"
+    "dialog-delete-confirm": "Löschen des Gesprächs bestätigen?",
+    "no-connect-right-now": "Keine Verbindungsoptionen verfügbar, klicken Sie oben auf das Pluszeichen, um eine zu erstellen",
+    "at-least-one-server": "Mindestens eine Serververbindung muss beibehalten werden",
+    "connect.appearance.disconnect": "Verbindung trennen",
+    "disconnect-fail": "Trennen fehlgeschlagen",
+    "disconnect-success": "Verbindung erfolgreich getrennt"
 }

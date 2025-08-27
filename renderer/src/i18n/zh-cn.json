@@ -239,5 +239,10 @@
     "clear": "清空",
     "copied": "已复制",
     "fail-to-copy": "复制失败",
-    "dialog-delete-confirm": "确认删除对话吗？"
+    "dialog-delete-confirm": "确认删除对话吗？",
+    "no-connect-right-now": "暂无连接选项，点击上方的加号创建",
+    "at-least-one-server": "至少需要保留一个服务器连接",
+    "connect.appearance.disconnect": "断开连接",
+    "disconnect-fail": "断开连接失败",
+    "disconnect-success": "断开连接成功"
 }

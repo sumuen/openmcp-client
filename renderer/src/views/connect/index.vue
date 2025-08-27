@@ -43,19 +43,22 @@
 		</div>
 		<div class="empty-state" v-else>
 			<span class="iconfont icon-openmcp"></span>
-			<span class="empty-text">暂无连接选项，点击上方的加号创建</span>
+			<span class="empty-text">{{ t('no-connect-right-now') }}</span>
 		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
 import { defineComponent, computed, reactive } from 'vue';
+import { useI18n } from 'vue-i18n';
 import ConnectionPanel from './connection-panel.vue';
 import { McpClient, mcpClientAdapter } from './core';
 import { ElMessage } from 'element-plus';
 import { mcpServerAddRef } from '.';
 
 defineComponent({ name: 'connection' });
+
+const { t } = useI18n();
 
 function selectServer(index: number) {
 	mcpClientAdapter.currentClientIndex = index;
@@ -82,7 +85,7 @@ const serverOptions = computed(() => {
 
 function deleteServer(index: number) {
     if (mcpClientAdapter.clients.length <= 1) {
-        ElMessage.warning('至少需要保留一个服务器连接');
+        ElMessage.warning(t('at-least-one-server'));
         return;
     }
     mcpClientAdapter.clients.splice(index, 1);

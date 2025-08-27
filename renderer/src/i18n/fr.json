@@ -239,5 +239,10 @@
     "clear": "Effacer",
     "copied": "Copié",
     "fail-to-copy": "Échec de la copie",
-    "dialog-delete-confirm": "Confirmer la suppression de la conversation ?"
+    "dialog-delete-confirm": "Confirmer la suppression de la conversation ?",
+    "no-connect-right-now": "Aucune option de connexion disponible, cliquez sur le signe plus ci-dessus pour en créer une",
+    "at-least-one-server": "Au moins une connexion serveur doit être conservée",
+    "connect.appearance.disconnect": "Déconnecter",
+    "disconnect-fail": "Échec de la déconnexion",
+    "disconnect-success": "Déconnexion réussie"
 }

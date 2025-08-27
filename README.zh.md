@@ -112,11 +112,11 @@ Posted: 8 hours ago
 Link: https://github.com/Orange-OpenSource/hurl
 ```
 
-[🔗 openmcp-sdk 文档](https://kirigaya.cn/openmcp/sdk-tutorial/)
+[🔗 openmcp-sdk 文档](https://openmcp.kirigaya.cn/sdk-tutorial/)
 
 ## 想要成为贡献者？
 
-点击 [这里](https://kirigaya.cn/openmcp/preview/join.html) 了解如何为 OpenMCP 做出贡献。
+点击 [这里](https://openmcp.kirigaya.cn/preview/join.html) 了解如何为 OpenMCP 做出贡献。
 
 ## 加入我们的社区
 
