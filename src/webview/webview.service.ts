@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as fspath from 'path';
 import { ConnectionType, detachMcpOptionAsItem, exportFile, McpOptions, panels, updateInstalledConnectionConfig, updateWorkspaceConnectionConfig } from '../global.js';
-import { routeMessage } from '../../openmcp-sdk/service/index.js';
+import { routeMessage, disconnectService } from '../../openmcp-sdk/service/index.js';
 
 export function getWebviewContent(context: vscode.ExtensionContext, panel: vscode.WebviewPanel): string | undefined {
     const viewRoot = fspath.join(context.extensionPath, 'openmcp-sdk', 'renderer');
@@ -72,8 +72,10 @@ export function revealOpenMcpWebviewPanel(
     panel.webview.html = html || '';
     panel.iconPath = vscode.Uri.file(fspath.join(context.extensionPath, 'openmcp-sdk', 'renderer', 'images', 'openmcp.png'));
 
+    let clientId = '';
+
     // 处理来自webview的消息
-    panel.webview.onDidReceiveMessage(message => {
+    panel.webview.onDidReceiveMessage(async message => {
         const { command, data } = message;
         console.log('receive message', message);
 
@@ -116,7 +118,20 @@ export function revealOpenMcpWebviewPanel(
                 break;
 
             default:
-                routeMessage(command, data, panel.webview);
+                const res = await routeMessage(command, data, panel.webview);
+
+                if (command === 'connect') {
+
+                    if (res?.code !== 200) {
+                        vscode.window.showErrorMessage('Failed to connect to the MCP Server.');
+                        return;
+                    }
+
+                    if (res?.msg?.clientId) {
+                        clientId = res.msg.clientId;
+                    }
+                }
+
                 break;
         }
 
@@ -126,7 +141,16 @@ export function revealOpenMcpWebviewPanel(
         // 删除
         panels.delete(panelKey);
 
-        // TODO: 通过引用计数器关闭后端的 clientMap
+        vscode.window.showInformationMessage('Disconnected from the MCP Server.');
+        
+        // 关闭后端的连接
+        if (clientId) {
+            const res = await disconnectService({ clientId });
+
+            if (res.code !== 200) {
+                vscode.window.showErrorMessage('Fail to disconnect, please disconnect manually');
+            }
+        }
 
         // 退出
         panel.dispose();
