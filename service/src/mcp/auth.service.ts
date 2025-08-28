@@ -3,6 +3,7 @@ import { URL } from 'node:url';
 import { OAuthClientInformation, OAuthClientInformationFull, OAuthClientMetadata, OAuthTokens } from '@modelcontextprotocol/sdk/shared/auth.js';
 import { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js';
 import open from 'open';
+import { sanitizeUrl } from 'strict-url-sanitise';
 
 // const CALLBACK_PORT = 16203; // Use different port than auth server (3001)
 // const CALLBACK_URL = `http://localhost:${CALLBACK_PORT}/callback`;
@@ -179,7 +180,7 @@ export class OAuthClient {
 
   public async openBrowser(url: string): Promise<void> {
     console.log(`🌐 Opening browser for authorization: ${url}`);
-    await open(url); // 自动适配不同操作系统
+    await open(sanitizeUrl(url)); // 自动适配不同操作系统
   }
 }
 
