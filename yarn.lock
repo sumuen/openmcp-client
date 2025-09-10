@@ -760,7 +760,6 @@
     openai "^4.93.0"
     prism-esm "^1.29.0-fix.6"
     prismjs "^1.30.0"
-    process "^0.11.10"
     randexp "^0.5.3"
     uuid "^11.1.0"
     vue "^3.5.13"
@@ -6702,6 +6701,11 @@ stdin-discarder@^0.2.2:
   version "0.2.2"
   resolved "https://registry.npmjs.org/stdin-discarder/-/stdin-discarder-0.2.2.tgz"
   integrity sha512-UhDfHmA92YAlNnCfhmq0VeNL5bDbiZGg7sZ2IvPsXubGkiNa9EC+tUTsjBRsYUAz87btI6/1wf4XoVvQ3uRnmQ==
+
+strict-url-sanitise@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.npmjs.org/strict-url-sanitise/-/strict-url-sanitise-0.0.1.tgz"
+  integrity sha512-nuFtF539K8jZg3FjaWH/L8eocCR6gegz5RDOsaWxfdbF5Jqr2VXWxZayjTwUzsWJDC91k2EbnJXp6FuWW+Z4hg==
 
 string_decoder@^1.1.1, string_decoder@~1.1.1:
   version "1.1.1"
