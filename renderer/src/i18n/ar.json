@@ -245,5 +245,10 @@
     "connect.appearance.disconnect": "قطع الاتصال",
     "disconnect-fail": "فشل قطع الاتصال",
     "disconnect-success": "تم قطع الاتصال بنجاح",
-    "search-model": "بحث النموذج"
+    "search-model": "بحث النموذج",
+    "switch-to-tool-trace": "التبديل إلى سلسلة استدعاء الأداة",
+    "single-chat": "محادثة نموذج واحد",
+    "parallel-chat": "محادثة متعددة النماذج بالتوازي",
+    "tool-trace": "سلسلة استدعاء الأداة",
+    "no-tool-calls": "لا توجد سلسلة استدعاء للأدوات"
 }

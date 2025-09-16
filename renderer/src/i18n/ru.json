@@ -245,5 +245,10 @@
     "connect.appearance.disconnect": "Отключить",
     "disconnect-fail": "Не удалось отключиться",
     "disconnect-success": "Отключение прошло успешно",
-    "search-model": "Поиск модели"
+    "search-model": "Поиск модели",
+    "switch-to-tool-trace": "Переключиться на цепочку вызовов инструментов",
+    "single-chat": "Диалог с одной моделью",
+    "parallel-chat": "Параллельный мультимодельный диалог",
+    "tool-trace": "Цепочка вызовов инструментов",
+    "no-tool-calls": "Нет цепочки вызовов инструментов"
 }

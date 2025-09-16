@@ -245,5 +245,10 @@
     "connect.appearance.disconnect": "연결 끊기",
     "disconnect-fail": "연결 끊기 실패",
     "disconnect-success": "연결이 성공적으로 끊겼습니다",
-    "search-model": "모델 검색"
+    "search-model": "모델 검색",
+    "switch-to-tool-trace": "도구 호출 체인으로 전환",
+    "single-chat": "단일 모델 대화",
+    "parallel-chat": "병렬 멀티모델 대화",
+    "tool-trace": "도구 호출 체인",
+    "no-tool-calls": "도구 호출 체인 없음"
 }

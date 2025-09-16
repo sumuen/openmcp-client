@@ -245,5 +245,10 @@
     "connect.appearance.disconnect": "Verbindung trennen",
     "disconnect-fail": "Trennen fehlgeschlagen",
     "disconnect-success": "Verbindung erfolgreich getrennt",
-    "search-model": "Modell suchen"
+    "search-model": "Modell suchen",
+    "switch-to-tool-trace": "Zur Werkzeugaufrufkette wechseln",
+    "single-chat": "Einzelmodell-Dialog",
+    "parallel-chat": "Paralleler Multi-Model-Dialog",
+    "tool-trace": "Werkzeugaufrufkette",
+    "no-tool-calls": "Keine Werkzeugaufrufkette"
 }

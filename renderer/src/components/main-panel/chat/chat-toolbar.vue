@@ -1,12 +1,27 @@
 <template>
-    <div class="parallel-toolbar">
-        <el-button @click="toggleParallelMode" size="small">
-            {{ isParallelMode ? t('switch-to-single-chat') : t('switch-to-parallel-chat') }}
-        </el-button>
-        <div v-if="isParallelMode" class="model-selector">
+    <div class="chat-toolbar">
+        <el-select 
+            v-model="chatMode"
+            class="mode-selector"
+        >
+            <el-option 
+                :label="t('single-chat')" 
+                value="single-chat"
+            />
+            <el-option 
+                :label="t('parallel-chat')" 
+                value="parallel-chat"
+            />
+            <el-option 
+                :label="t('tool-trace')" 
+                value="tool-trace"
+            />
+        </el-select>
+
+        <div v-if="chatMode === 'parallel-chat'" class="model-selector">
             <el-select 
                 :value="selectedModels"
-                multiple
+                multiple 
                 filterable
                 :placeholder="t('choose-model-to-compare')"
                 @change="initParallelChats"
@@ -24,10 +39,11 @@
                 已选择 {{ parallelChats.length }} 个模型
             </span>
         </div>
+
         <!-- 单聊天模式下显示清空对话按钮 -->
         <div>
             <el-popconfirm 
-                v-if="!isParallelMode" 
+                v-if="chatMode === 'single-chat'" 
                 :title="t('dialog-delete-confirm')"
                 @confirm="clearSingleChat"
             >
@@ -42,14 +58,15 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 
 // 定义组件的 props
 const props = defineProps({
-    isParallelMode: {
-        type: Boolean,
+    chatMode: {
+        type: String as () => 'single-chat' | 'parallel-chat' | 'tool-trace',
         required: true
     },
     selectedModels: {
@@ -73,18 +90,27 @@ const props = defineProps({
     }
 });
 
+const chatMode = computed({
+    get() {
+        return props.chatMode;
+    },
+    set(value) {
+        emit('update:chatMode', value);
+    }
+});
+
 // 定义组件的 emits
 const emit = defineEmits<{
+    (e: 'update:chatMode', value: 'single-chat' | 'parallel-chat' | 'tool-trace'): void;
     (e: 'update:selectedModels', value: string[]): void;
-    (e: 'toggleParallelMode'): void;
     (e: 'initParallelChats', value: string[]): void;
     (e: 'filterModels', query: string): void;
     (e: 'clearSingleChat'): void;
 }>();
 
 // 定义方法并转发到父组件
-const toggleParallelMode = () => {
-    emit('toggleParallelMode');
+const changeChatMode = (value: string) => {
+    emit('update:chatMode', value as 'single-chat' | 'parallel-chat' | 'tool-trace');
 };
 
 const initParallelChats = (value: string[]) => {
@@ -101,7 +127,7 @@ const clearSingleChat = () => {
 </script>
 
 <style scoped>
-.parallel-toolbar {
+.chat-toolbar {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -115,5 +141,9 @@ const clearSingleChat = () => {
     display: flex;
     align-items: center;
     gap: 10px;
+}
+
+.mode-selector {
+    width: 200px;
 }
 </style>

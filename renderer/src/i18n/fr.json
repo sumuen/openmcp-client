@@ -245,5 +245,10 @@
     "connect.appearance.disconnect": "Déconnecter",
     "disconnect-fail": "Échec de la déconnexion",
     "disconnect-success": "Déconnexion réussie",
-    "search-model": "Rechercher un modèle"
+    "search-model": "Rechercher un modèle",
+    "switch-to-tool-trace": "Passer à la chaîne d'appels d'outils",
+    "single-chat": "Conversation à modèle unique",
+    "parallel-chat": "Conversation Multi-Modèles Parallèle",
+    "tool-trace": "Chaîne d'appel d'outil",
+    "no-tool-calls": "Aucune chaîne d'appel d'outil"
 }

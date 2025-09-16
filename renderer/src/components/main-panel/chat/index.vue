@@ -1,13 +1,13 @@
 <template>
     <div class="chat-container" :ref="el => chatContainerRef = el">
-
+        <!-- 聊天模式切换工具栏 -->
         <ChatToolbar 
-            :is-parallel-mode="isParallelMode"
+            :chat-mode="chatMode"
             :selected-models="selectedModels"
             :filtered-models="filteredModels"
             :parallel-chats="parallelChats"
+            @update:chat-mode="value => chatMode = value"
             @update:selected-models="value => selectedModels = value"
-            @toggle-parallel-mode="toggleParallelMode"
             @init-parallel-chats="initParallelChats"
             @filter-models="filterModels"
             @clear-single-chat="clearSingleChat"
@@ -15,7 +15,7 @@
 
         <!-- 单聊天模式 -->
         <SingleChat 
-            v-if="!isParallelMode"
+            v-if="chatMode === 'single-chat'"
             :tab-id="props.tabId"
             :render-messages="renderMessages"
             :streaming-content="streamingContent"
@@ -25,9 +25,9 @@
 
         <!-- 并行聊天模式 -->
         <ParallelChat 
-            v-else
+            v-else-if="chatMode === 'parallel-chat'"
             :tab-id="props.tabId"
-            :is-parallel-mode="isParallelMode"
+            :is-parallel-mode="chatMode === 'parallel-chat'"
             :selected-models="selectedModels"
             :parallel-chats="parallelChats"
             :streaming-content="streamingContent"
@@ -35,7 +35,17 @@
             :is-loading="isLoading"
         />
 
-        <ChatBox :ref="el => footerRef = el" :tab-id="props.tabId" />
+        <!-- 工具调用追踪模式 -->
+        <ToolTrace
+            v-else-if="chatMode === 'tool-trace'"
+            :tab-id="props.tabId"
+        />
+
+        <ChatBox 
+            v-if="chatMode !== 'tool-trace'"
+            :ref="el => footerRef = el" 
+            :tab-id="props.tabId" 
+        />
     </div>
 </template>
 
@@ -47,11 +57,12 @@ import { tabs } from '../panel';
 import type { ChatMessage, ChatStorage, IRenderMessage, ToolCall, ParallelChatInstance } from './chat-box/chat';
 import { MessageState } from './chat-box/chat';
 
-import ChatToolbar from './chat-toolbar.vue';
+import * as Message from './message';
+import ChatBox from './chat-box/index.vue';
 import SingleChat from './single-chat.vue';
 import ParallelChat from './parallel-chat.vue';
-import ChatBox from './chat-box/index.vue';
-
+import ToolTrace from './tool-trace.vue';
+import ChatToolbar from './chat-toolbar.vue';
 import { getToolCallFromXmlString, getToolResultFromXmlString, getXmlsFromString, toNormaliseToolcall } from './core/xml-wrapper';
 import { getIdAsIndexAdapter } from './core/handle-tool-calls';
 import { llms } from '@/views/setting/llm';
@@ -70,16 +81,18 @@ const props = defineProps({
 const singleChatRef = ref<any>(null);
 
 const tab = tabs.content[props.tabId];
-const tabStorage = tab.storage as ChatStorage;
+const tabStorage = tab.storage as ChatStorage & { 
+    chatMode?: 'single-chat' | 'parallel-chat' | 'tool-trace' 
+};
 
 // 创建 messages
 if (!tabStorage.messages) {
     tabStorage.messages = [] as ChatMessage[];
 }
 
-// 初始化并行模式相关数据
-if (tabStorage.parallelMode === undefined) {
-    tabStorage.parallelMode = false;
+// 初始化聊天模式相关数据
+if (tabStorage.chatMode === undefined) {
+    tabStorage.chatMode = 'single-chat';
 }
 if (!tabStorage.parallelChats) {
     tabStorage.parallelChats = [];
@@ -88,11 +101,11 @@ if (!tabStorage.selectedModels) {
     tabStorage.selectedModels = [];
 }
 
-// 并行模式状态
-const isParallelMode = computed({
-    get: () => tabStorage.parallelMode || false,
-    set: (value: boolean) => {
-        tabStorage.parallelMode = value;
+// 聊天模式状态
+const chatMode = computed({
+    get: () => tabStorage.chatMode || 'single-chat',
+    set: (value: 'single-chat' | 'parallel-chat' | 'tool-trace') => {
+        tabStorage.chatMode = value;
     }
 });
 
@@ -200,7 +213,7 @@ const handleClearChatHistory = (event: CustomEvent) => {
 
 // 切换并行模式
 function toggleParallelMode() {
-    if (isParallelMode.value) {
+    if (chatMode.value === 'parallel-chat') {
         // 退出并行模式：清理临时配置
         cleanupTempConfigs();
         parallelChats.value = [];
@@ -209,18 +222,7 @@ function toggleParallelMode() {
         // 进入并行模式：记录原始配置数量
         originalLlmsLength.value = llms.length;
     }
-    isParallelMode.value = !isParallelMode.value;
-}
-
-// 清理临时LLM配置
-function cleanupTempConfigs() {
-    // 安全地移除所有临时配置，使用倒序遍历避免索引问题
-    for (let i = llms.length - 1; i >= 0; i--) {
-        if (llms[i]._isTemporary) {
-            console.log(`[DEBUG] 清理临时配置: ${llms[i].id}`);
-            llms.splice(i, 1);
-        }
-    }
+    chatMode.value = chatMode.value === 'parallel-chat' ? 'single-chat' : 'parallel-chat';
 }
 
 // 初始化并行聊天
@@ -336,7 +338,7 @@ function removeParallelChat(index: number) {
     
     // 如果没有剩余的并行聊天了，自动退出并行模式
     if (parallelChats.value.length === 0) {
-        isParallelMode.value = false;
+        chatMode.value = 'single-chat';
         cleanupTempConfigs();
     }
 }
@@ -358,6 +360,26 @@ function clearChatHistory(index: number) {
     console.log(`模型 ${chat.modelId} 的上下文已清空`);
 }
 
+// 获取模型名称
+function getModelName(modelId: string) {
+    if (modelId.includes(':')) {
+        // 新格式：configIndex:modelIndex
+        const [configIndex, modelIndex] = modelId.split(':').map(Number);
+        if (!isNaN(configIndex) && configIndex >= 0 && configIndex < llms.length) {
+            const llm = llms[configIndex];
+            const model = llm.models?.[modelIndex] || llm.userModel;
+            return `${model} (${llm.name})`;
+        }
+    } else {
+        // 兼容旧格式
+        const index = parseInt(modelId);
+        if (!isNaN(index) && index >= 0 && index < llms.length) {
+            const llm = llms[index];
+            return `${llm.userModel || llm.models?.[0] || 'unknown'} (${llm.name})`;
+        }
+    }
+    return modelId;
+}
 
 // 更新聊天实例的渲染消息  
 async function updateChatRenderMessages(chat: ParallelChatInstance & { renderMessages: IRenderMessage[] }, streamingToolCalls?: ToolCall[]) {
@@ -689,7 +711,7 @@ provide('isLoading', isLoading);
 provide('autoScroll', autoScroll);
 
 // 提供并行模式相关的数据和方法
-provide('isParallelMode', isParallelMode);
+provide('chatMode', chatMode);
 provide('parallelChats', parallelChats);
 provide('updateChatRenderMessages', updateChatRenderMessages);
 
@@ -710,9 +732,9 @@ onBeforeUnmount(() => {
 
 // 修改 scrollToBottom 方法
 async function scrollToBottom() {
-    if (!isParallelMode.value && singleChatRef.value) {
+    if (chatMode.value === 'single-chat' && singleChatRef.value) {
         singleChatRef.value.scrollToBottom();
-    } else if (isParallelMode.value) {
+    } else if (chatMode.value === 'parallel-chat') {
         // 在并行模式下，可能需要处理每个并行聊天的滚动
         // 这里可以添加适当的逻辑
     }
@@ -733,6 +755,16 @@ watch(streamingToolCalls, () => {
     }
 }, { deep: true });
 
+// 清理临时LLM配置
+function cleanupTempConfigs() {
+    // 安全地移除所有临时配置，使用倒序遍历避免索引问题
+    for (let i = llms.length - 1; i >= 0; i--) {
+        if (llms[i]._isTemporary) {
+            console.log(`[DEBUG] 清理临时配置: ${llms[i].id}`);
+            llms.splice(i, 1);
+        }
+    }
+}
 </script>
 
 <style>
@@ -741,22 +773,5 @@ watch(streamingToolCalls, () => {
     display: flex;
     position: relative;
     flex-direction: column;
-}
-
-/* 并行聊天样式 */
-.parallel-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px;
-    background-color: var(--sidebar);
-    border-radius: 0.8em 0.8em 0 0;
-    border-bottom: 1px solid var(--background);
-}
-
-.model-selector {
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 </style>

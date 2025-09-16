@@ -245,5 +245,10 @@
     "connect.appearance.disconnect": "切断する",
     "disconnect-fail": "切断に失敗しました",
     "disconnect-success": "切断に成功しました",
-    "search-model": "モデルを検索"
+    "search-model": "モデルを検索",
+    "switch-to-tool-trace": "ツール呼び出しチェーンに切り替え",
+    "single-chat": "単一モデル会話",
+    "parallel-chat": "並列マルチモデル会話",
+    "tool-trace": "ツール呼び出しチェーン",
+    "no-tool-calls": "ツール呼び出しチェーンなし"
 }

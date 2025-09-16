@@ -245,5 +245,10 @@
     "connect.appearance.disconnect": "Disconnect",
     "disconnect-fail": "Disconnect failed",
     "disconnect-success": "Disconnected successfully",
-    "search-model": "Search Model"
+    "search-model": "Search Model",
+    "switch-to-tool-trace": "Switch to tool call chain",
+    "single-chat": "Single model conversation",
+    "parallel-chat": "Parallel Multi-Model Conversation",
+    "tool-trace": "Tool Call Chain",
+    "no-tool-calls": "No tool call chain"
 }

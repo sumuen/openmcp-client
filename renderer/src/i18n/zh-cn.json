@@ -245,5 +245,10 @@
     "connect.appearance.disconnect": "断开连接",
     "disconnect-fail": "断开连接失败",
     "disconnect-success": "断开连接成功",
-    "search-model": "搜索模型"
+    "search-model": "搜索模型",
+    "switch-to-tool-trace": "切换到工具调用链",
+    "single-chat": "单模型对话",
+    "parallel-chat": "多模型并行对话",
+    "tool-trace": "工具调用链",
+    "no-tool-calls": "没有工具调用链"
 }
