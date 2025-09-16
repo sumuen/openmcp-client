@@ -184,7 +184,7 @@
     "export-filename": "Nom du fichier d'exportation",
     "how-to-use": "Comment utiliser ?",
     "is-required": "est un champ obligatoire",
-    "edit-ai-mook-prompt": "Modifier les invites AI Mook",
+    "edit-ai-mock-prompt": "Modifier les invites AI Mook",
     "start-auto-detect": "Démarrer l'autovérification",
     "tool-module": "Module d'outils",
     "prompt-module": "Module d'invite",
@@ -244,5 +244,6 @@
     "at-least-one-server": "Au moins une connexion serveur doit être conservée",
     "connect.appearance.disconnect": "Déconnecter",
     "disconnect-fail": "Échec de la déconnexion",
-    "disconnect-success": "Déconnexion réussie"
+    "disconnect-success": "Déconnexion réussie",
+    "search-model": "Rechercher un modèle"
 }

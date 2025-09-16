@@ -1,168 +1,39 @@
 <template>
     <div class="chat-container" :ref="el => chatContainerRef = el">
-        <!-- 并行模式切换工具栏 -->
-        <div class="parallel-toolbar">
-            <el-button @click="toggleParallelMode" size="small">
-                {{ isParallelMode ? t('switch-to-single-chat') : t('switch-to-parallel-chat') }}
-            </el-button>
-            <div v-if="isParallelMode" class="model-selector">
-                <el-select 
-                    v-model="selectedModels" 
-                    multiple 
-                    filterable
-                    :placeholder="t('choose-model-to-compare')"
-                    @change="initParallelChats"
-                    :filter-method="filterModels"
-                    :no-match-text="t('no-match-model')"
-                >
-                    <el-option
-                        v-for="model in filteredModels"
-                        :key="model.id"
-                        :label="model.name"
-                        :value="model.id"
-                    />
-                </el-select>
-                <span v-if="parallelChats.length > 0" style="margin-left: 10px; font-size: 12px; width: 130px;">
-                    已选择 {{ parallelChats.length }} 个模型
-                </span>
-            </div>
-            <!-- 单聊天模式下显示清空对话按钮 -->
-            <div>
-                <el-popconfirm 
-                    v-if="!isParallelMode" 
-                    :title="t('dialog-delete-confirm')"
-                    @confirm="clearSingleChat"
-                >
-                    <template #reference>
-                        <el-button size="small">
-                            <span class="iconfont icon-delete"></span>
-                        </el-button>
-                    </template>
-                </el-popconfirm>
-            </div>
-        </div>
+
+        <ChatToolbar 
+            :is-parallel-mode="isParallelMode"
+            :selected-models="selectedModels"
+            :filtered-models="filteredModels"
+            :parallel-chats="parallelChats"
+            @update:selected-models="value => selectedModels = value"
+            @toggle-parallel-mode="toggleParallelMode"
+            @init-parallel-chats="initParallelChats"
+            @filter-models="filterModels"
+            @clear-single-chat="clearSingleChat"
+        />
 
         <!-- 单聊天模式 -->
-        <template v-if="!isParallelMode">
-            <el-scrollbar ref="scrollbarRef" :height="'90%'" @scroll="handleScroll"
-                v-if="renderMessages.length > 0 || isLoading">
-                <div class="message-list" :ref="el => messageListRef = el">
-                    <div v-for="(message, index) in renderMessages" :key="index"
-                        :class="['message-item', message.role.split('/')[0], message.role.split('/')[1]]">
-                        <div class="message-avatar" v-if="message.role === 'assistant/content'">
-                            <span class="iconfont icon-robot"></span>
-                        </div>
-                        <div class="message-avatar" v-else-if="message.role === 'assistant/tool_calls'">
-                        </div>
-
-                        <!-- 用户输入的部分 -->
-                        <div class="message-content" v-if="message.role === 'user'">
-                            <Message.User :message="message" :tab-id="props.tabId" />
-                        </div>
-
-                        <!-- 助手返回的内容部分 -->
-                        <div class="message-content" v-else-if="message.role === 'assistant/content'">
-                            <Message.Assistant :message="message" :tab-id="props.tabId" />
-                        </div>
-
-                        <!-- 助手调用的工具部分 -->
-                        <div class="message-content" v-else-if="message.role === 'assistant/tool_calls'">
-                            <Message.Toolcall :message="message" :tab-id="props.tabId"
-                                @update:tool-result="(value, toolIndex, index) => message.toolResults[toolIndex][index] = value" />
-                        </div>
-                    </div>
-
-                    <!-- 正在加载的部分实时解析 markdown -->
-                    <div v-if="isLoading" class="message-item assistant">
-                        <Message.StreamingBox :streaming-content="streamingContent" :tab-id="props.tabId" />
-                    </div>
-                </div>
-            </el-scrollbar>
-            <div v-else class="chat-openmcp-icon">
-                <div>
-                    <span>{{ t('press-and-run') }}
-                        <span style="padding: 5px 15px; border-radius: .5em; background-color: var(--background);">
-                            <span class="iconfont icon-send"></span>
-                        </span>
-                    </span>
-                </div>
-            </div>
-        </template>
+        <SingleChat 
+            v-if="!isParallelMode"
+            :tab-id="props.tabId"
+            :render-messages="renderMessages"
+            :streaming-content="streamingContent"
+            :is-loading="isLoading"
+            ref="singleChatRef"
+        />
 
         <!-- 并行聊天模式 -->
-        <template v-else>
-            <div class="parallel-chat-container">
-                <div 
-                    v-for="(chat, chatIndex) in parallelChats" 
-                    :key="chat.modelId"
-                    class="parallel-chat-instance"
-                    :style="{ width: `${100 / parallelChats.length}%` }"
-                >
-                    <div class="chat-header">
-                        <span class="model-name">{{ getModelName(chat.modelId) }}</span>
-                        <div class="chat-actions">
-                              <el-popconfirm title="确定要清空此对话的上下文吗？"
-                                @confirm="clearChatHistory(chatIndex)"
-                              >
-                                <template #reference>
-                                    <el-button 
-                                        size="small" 
-                                        type="warning"
-                                        title="清空上下文"
-                                    >
-                                        {{ t('clear') }}
-                                    </el-button>
-                                </template>
-                            </el-popconfirm>
-
-                            <el-button 
-                                @click="removeParallelChat(chatIndex)" 
-                                size="small" 
-                                type="danger"
-                                title="移除此对话"
-                            >
-                                <span class="iconfont icon-delete"></span>
-                            </el-button>
-                        </div>
-                    </div>
-                    <el-scrollbar :height="'85%'" 
-                        v-if="chat.renderMessages.length > 0 || chat.isLoading">
-                        <div class="message-list">
-                            <div v-for="(message, index) in chat.renderMessages" :key="index"
-                                :class="['message-item', message.role.split('/')[0], message.role.split('/')[1]]">
-                                <div class="message-avatar" v-if="message.role === 'assistant/content'">
-                                    <span class="iconfont icon-robot"></span>
-                                </div>
-                                <div class="message-avatar" v-else-if="message.role === 'assistant/tool_calls'">
-                                </div>
-
-                                <div class="message-content" v-if="message.role === 'user'">
-                                    <Message.User :message="message" :tab-id="props.tabId" />
-                                </div>
-
-                                <div class="message-content" v-else-if="message.role === 'assistant/content'">
-                                    <Message.Assistant :message="message" :tab-id="props.tabId" />
-                                </div>
-
-                                <div class="message-content" v-else-if="message.role === 'assistant/tool_calls'">
-                                    <Message.Toolcall :message="message" :tab-id="props.tabId"
-                                        @update:tool-result="(value, toolIndex, index) => message.toolResults[toolIndex][index] = value" />
-                                </div>
-                            </div>
-
-                            <div v-if="chat.isLoading" class="message-item assistant">
-                                <Message.StreamingBox :streaming-content="chat.streamingContent" :tab-id="props.tabId" />
-                            </div>
-                        </div>
-                    </el-scrollbar>
-                    <div v-else class="chat-openmcp-icon">
-                        <div>
-                            <span>{{ getModelName(chat.modelId) }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </template>
+        <ParallelChat 
+            v-else
+            :tab-id="props.tabId"
+            :is-parallel-mode="isParallelMode"
+            :selected-models="selectedModels"
+            :parallel-chats="parallelChats"
+            :streaming-content="streamingContent"
+            :streaming-tool-calls="streamingToolCalls"
+            :is-loading="isLoading"
+        />
 
         <ChatBox :ref="el => footerRef = el" :tab-id="props.tabId" />
     </div>
@@ -176,12 +47,14 @@ import { tabs } from '../panel';
 import type { ChatMessage, ChatStorage, IRenderMessage, ToolCall, ParallelChatInstance } from './chat-box/chat';
 import { MessageState } from './chat-box/chat';
 
-import * as Message from './message';
+import ChatToolbar from './chat-toolbar.vue';
+import SingleChat from './single-chat.vue';
+import ParallelChat from './parallel-chat.vue';
 import ChatBox from './chat-box/index.vue';
+
 import { getToolCallFromXmlString, getToolResultFromXmlString, getXmlsFromString, toNormaliseToolcall } from './core/xml-wrapper';
 import { getIdAsIndexAdapter } from './core/handle-tool-calls';
 import { llms } from '@/views/setting/llm';
-
 
 defineComponent({ name: 'chat' });
 
@@ -193,6 +66,8 @@ const props = defineProps({
         required: true
     }
 });
+
+const singleChatRef = ref<any>(null);
 
 const tab = tabs.content[props.tabId];
 const tabStorage = tab.storage as ChatStorage;
@@ -313,6 +188,15 @@ const parallelChats = ref<(ParallelChatInstance & {
     isLoading: boolean, 
     streamingContent: string 
 })[]>([]);
+
+// 处理来自子组件的事件
+const handleRemoveParallelChat = (event: CustomEvent) => {
+    removeParallelChat(event.detail.index);
+};
+
+const handleClearChatHistory = (event: CustomEvent) => {
+    clearChatHistory(event.detail.index);
+};
 
 // 切换并行模式
 function toggleParallelMode() {
@@ -474,26 +358,6 @@ function clearChatHistory(index: number) {
     console.log(`模型 ${chat.modelId} 的上下文已清空`);
 }
 
-// 获取模型名称
-function getModelName(modelId: string) {
-    if (modelId.includes(':')) {
-        // 新格式：configIndex:modelIndex
-        const [configIndex, modelIndex] = modelId.split(':').map(Number);
-        if (!isNaN(configIndex) && configIndex >= 0 && configIndex < llms.length) {
-            const llm = llms[configIndex];
-            const model = llm.models?.[modelIndex] || llm.userModel;
-            return `${model} (${llm.name})`;
-        }
-    } else {
-        // 兼容旧格式
-        const index = parseInt(modelId);
-        if (!isNaN(index) && index >= 0 && index < llms.length) {
-            const llm = llms[index];
-            return `${llm.userModel || llm.models?.[0] || 'unknown'} (${llm.name})`;
-        }
-    }
-    return modelId;
-}
 
 // 更新聊天实例的渲染消息  
 async function updateChatRenderMessages(chat: ParallelChatInstance & { renderMessages: IRenderMessage[] }, streamingToolCalls?: ToolCall[]) {
@@ -623,6 +487,7 @@ async function updateChatRenderMessages(chat: ParallelChatInstance & { renderMes
             const lastAssistantMessage = newRenderMessages[newRenderMessages.length - 1];
             if (lastAssistantMessage && lastAssistantMessage.role === 'assistant/tool_calls') {
                 lastAssistantMessage.toolResults[message.index] = message.content;
+
                 if (lastAssistantMessage.extraInfo.state === MessageState.Unknown) {
                     lastAssistantMessage.extraInfo.state = message.extraInfo.state;
                 } else if (lastAssistantMessage.extraInfo.state === MessageState.Success
@@ -630,6 +495,7 @@ async function updateChatRenderMessages(chat: ParallelChatInstance & { renderMes
                 ) {
                     lastAssistantMessage.extraInfo.state = message.extraInfo.state;
                 }
+
                 lastAssistantMessage.extraInfo.usage = lastAssistantMessage.extraInfo.usage || message.extraInfo.usage;
             }
         }
@@ -659,7 +525,11 @@ function getXmlToolCalls(message: ChatMessage) {
 const renderMessages = ref<IRenderMessage[]>([]);
 
 onMounted(() => {
-    initParallelChats();    
+    initParallelChats();
+    
+    // 监听来自子组件的事件
+    window.addEventListener('removeParallelChat', handleRemoveParallelChat as EventListener);
+    window.addEventListener('clearChatHistory', handleClearChatHistory as EventListener);
 });
 
 watchEffect(async () => {
@@ -832,21 +702,19 @@ provide('chatContext', chatContext);
 onBeforeUnmount(() => {
     console.log('[DEBUG] 聊天组件卸载，清理临时配置');
     cleanupTempConfigs();
+    
+    // 移除事件监听器
+    window.removeEventListener('removeParallelChat', handleRemoveParallelChat as EventListener);
+    window.removeEventListener('clearChatHistory', handleClearChatHistory as EventListener);
 });
 
 // 修改 scrollToBottom 方法
 async function scrollToBottom() {
-    if (!scrollbarRef.value || !messageListRef.value) return;
-
-    await nextTick(); // 等待 DOM 更新
-
-    try {
-        const container = scrollbarRef.value.wrapRef;
-        if (container) {
-            container.scrollTop = container.scrollHeight;
-        }
-    } catch (error) {
-        console.error('Scroll to bottom failed:', error);
+    if (!isParallelMode.value && singleChatRef.value) {
+        singleChatRef.value.scrollToBottom();
+    } else if (isParallelMode.value) {
+        // 在并行模式下，可能需要处理每个并行聊天的滚动
+        // 这里可以添加适当的逻辑
     }
 }
 
@@ -865,7 +733,6 @@ watch(streamingToolCalls, () => {
     }
 }, { deep: true });
 
-
 </script>
 
 <style>
@@ -874,132 +741,6 @@ watch(streamingToolCalls, () => {
     display: flex;
     position: relative;
     flex-direction: column;
-}
-
-.chat-openmcp-icon {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    height: 100%;
-    opacity: 0.75;
-    padding-top: 70px;
-}
-
-.chat-openmcp-icon>div {
-    display: flex;
-    flex-direction: column;
-    align-items: left;
-    font-size: 28px;
-}
-
-.chat-openmcp-icon>div>span {
-    margin-bottom: 23px;
-}
-
-.chat-openmcp-icon .iconfont {
-    font-size: 22px;
-}
-
-.message-list {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 16px;
-    padding-bottom: 100px;
-}
-
-.message-item {
-    display: flex;
-    margin-bottom: 16px;
-}
-
-.message-avatar {
-    margin-right: 12px;
-    margin-top: 1px;
-}
-
-.message-content {
-    flex: 1;
-    width: 100%;
-}
-
-.message-role {
-    font-weight: bold;
-    margin-bottom: 4px;
-    color: var(--el-text-color-regular);
-}
-
-.message-text {
-    line-height: 1.6;
-}
-
-.user .message-text {
-    margin-top: 10px;
-    margin-bottom: 10px;
-    width: 100%;
-}
-
-.user .message-text>span {
-    border-radius: .9em;
-    background-color: var(--main-light-color);
-    padding: 10px 15px;
-}
-
-.user {
-    flex-direction: row-reverse;
-    text-align: right;
-}
-
-.user .message-avatar {
-    margin-right: 0;
-    margin-left: 12px;
-}
-
-.user .message-content {
-    align-items: flex-end;
-}
-
-.assistant {
-    text-align: left;
-    margin-top: 30px;
-}
-
-.assistant.tool_calls {
-    margin-top: 5px;
-}
-
-.message-text p,
-.message-text h3,
-.message-text ol,
-.message-text ul {
-    margin-top: 0.5em;
-    margin-bottom: 0.5em;
-    line-height: 1.4;
-}
-
-.message-text ol li,
-.message-text ul li {
-    margin-top: 0.2em;
-    margin-bottom: 0.2em;
-}
-
-/* 新增旋转标记样式 */
-.tool-loading {
-    display: inline-block;
-    margin-left: 8px;
-    animation: spin 1s linear infinite;
-    color: var(--main-color);
-    font-size: 20px;
-}
-
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
 }
 
 /* 并行聊天样式 */
@@ -1017,66 +758,5 @@ watch(streamingToolCalls, () => {
     display: flex;
     align-items: center;
     gap: 10px;
-}
-
-.parallel-chat-container {
-    display: flex;
-    height: calc(90% - 50px);
-    gap: 2px;
-    flex: 1;
-}
-
-.parallel-chat-instance {
-    border-right: 1px solid var(--background);
-    display: flex;
-    flex-direction: column;
-}
-
-.parallel-chat-instance:last-child {
-    border-right: none;
-}
-
-.chat-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 12px;
-    background-color: var(--input-active-background);
-    border-bottom: 1px solid var(--background);
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.model-name {
-    color: var(--main-color);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    flex: 1;
-}
-
-.parallel-chat-instance .message-list {
-    max-width: none;
-    margin: 0;
-    padding: 8px;
-    padding-bottom: 50px;
-}
-
-.parallel-chat-instance .chat-openmcp-icon {
-    padding-top: 30px;
-    font-size: 14px;
-}
-
-.parallel-chat-instance .message-item {
-    margin-bottom: 12px;
-}
-
-.parallel-chat-instance .message-avatar {
-    margin-right: 8px;
-}
-
-.parallel-chat-instance .user .message-avatar {
-    margin-right: 0;
-    margin-left: 8px;
 }
 </style>

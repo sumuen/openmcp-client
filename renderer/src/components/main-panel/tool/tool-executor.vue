@@ -42,7 +42,7 @@
                 </el-button>
                 <el-button @click="generateMockData" :loading="mockLoading"
                     :disabled="loading || aiMockLoading || mockLoading">
-                    {{ 'mook' }}
+                    {{ 'mock' }}
                 </el-button>
 
                 <el-popover placement="top" width="350" trigger="click" v-model:visible="aiPromptVisible">
@@ -52,7 +52,7 @@
                         </el-button>
                     </template>
                     <div style="margin-bottom: 8px; font-weight: bold;">
-                        {{ t('edit-ai-mook-prompt') }}
+                        {{ t('edit-ai-mock-prompt') }}
                     </div>
                     <el-input type="textarea" v-model="aiMookPrompt" :rows="2" style="margin-bottom: 8px;" />
                     <div style="display: flex; align-items: center; margin-bottom: 8px;">

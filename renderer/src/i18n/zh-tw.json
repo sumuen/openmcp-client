@@ -184,7 +184,7 @@
     "export-filename": "導出文件名",
     "how-to-use": "如何使用?",
     "is-required": "是必填欄位",
-    "edit-ai-mook-prompt": "編輯AI Mook提示詞",
+    "edit-ai-mock-prompt": "編輯AI Mook提示詞",
     "start-auto-detect": "開啟自檢程序",
     "tool-module": "工具模組",
     "prompt-module": "提示詞模組",
@@ -244,5 +244,6 @@
     "at-least-one-server": "至少需要保留一個伺服器連接",
     "connect.appearance.disconnect": "斷開連接",
     "disconnect-fail": "斷開連接失敗",
-    "disconnect-success": "斷開連接成功"
+    "disconnect-success": "斷開連接成功",
+    "search-model": "搜尋模型"
 }

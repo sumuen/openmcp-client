@@ -185,7 +185,7 @@
     "export-filename": "Export filename",
     "how-to-use": "How to use?",
     "is-required": "is a required field",
-    "edit-ai-mook-prompt": "Edit AI Mook prompts",
+    "edit-ai-mock-prompt": "Edit AI Mook prompts",
     "start-auto-detect": "Start self-check",
     "tool-module": "Tool module",
     "prompt-module": "Prompt Module",
@@ -244,5 +244,6 @@
     "at-least-one-server": "At least one server connection must be retained",
     "connect.appearance.disconnect": "Disconnect",
     "disconnect-fail": "Disconnect failed",
-    "disconnect-success": "Disconnected successfully"
+    "disconnect-success": "Disconnected successfully",
+    "search-model": "Search Model"
 }

@@ -184,7 +184,7 @@
     "export-filename": "Имя файла экспорта",
     "how-to-use": "Как использовать?",
     "is-required": "является обязательным полем",
-    "edit-ai-mook-prompt": "Редактировать подсказки AI Mook",
+    "edit-ai-mock-prompt": "Редактировать подсказки AI Mook",
     "start-auto-detect": "Запустить самопроверку",
     "tool-module": "Модуль инструментов",
     "prompt-module": "Модуль подсказок",
@@ -244,5 +244,6 @@
     "at-least-one-server": "Необходимо сохранить как минимум одно подключение к серверу",
     "connect.appearance.disconnect": "Отключить",
     "disconnect-fail": "Не удалось отключиться",
-    "disconnect-success": "Отключение прошло успешно"
+    "disconnect-success": "Отключение прошло успешно",
+    "search-model": "Поиск модели"
 }

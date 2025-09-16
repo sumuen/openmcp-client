@@ -184,7 +184,7 @@
     "export-filename": "내보내기 파일 이름",
     "how-to-use": "사용 방법?",
     "is-required": "는 필수 필드입니다",
-    "edit-ai-mook-prompt": "AI Mook 프롬프트 편집",
+    "edit-ai-mock-prompt": "AI Mook 프롬프트 편집",
     "start-auto-detect": "자체 점검 시작",
     "tool-module": "도구 모듈",
     "prompt-module": "프롬프트 모듈",
@@ -244,5 +244,6 @@
     "at-least-one-server": "최소 하나의 서버 연결을 유지해야 합니다",
     "connect.appearance.disconnect": "연결 끊기",
     "disconnect-fail": "연결 끊기 실패",
-    "disconnect-success": "연결이 성공적으로 끊겼습니다"
+    "disconnect-success": "연결이 성공적으로 끊겼습니다",
+    "search-model": "모델 검색"
 }

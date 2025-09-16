@@ -184,7 +184,7 @@
     "export-filename": "اسم ملف التصدير",
     "how-to-use": "كيفية الاستخدام؟",
     "is-required": "هو حقل مطلوب",
-    "edit-ai-mook-prompt": "تحرير إشارات AI Mook",
+    "edit-ai-mock-prompt": "تحرير إشارات AI Mook",
     "start-auto-detect": "بدء عملية الفحص الذاتي",
     "tool-module": "وحدة الأدوات",
     "prompt-module": "وحدة المطالبات",
@@ -244,5 +244,6 @@
     "at-least-one-server": "يجب الاحتفاظ بوصول خادم واحد على الأقل",
     "connect.appearance.disconnect": "قطع الاتصال",
     "disconnect-fail": "فشل قطع الاتصال",
-    "disconnect-success": "تم قطع الاتصال بنجاح"
+    "disconnect-success": "تم قطع الاتصال بنجاح",
+    "search-model": "بحث النموذج"
 }

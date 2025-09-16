@@ -184,7 +184,7 @@
     "export-filename": "エクスポートファイル名",
     "how-to-use": "使用方法",
     "is-required": "は必須フィールドです",
-    "edit-ai-mook-prompt": "AI Mookプロンプトを編集",
+    "edit-ai-mock-prompt": "AI Mookプロンプトを編集",
     "start-auto-detect": "自己診断を開始",
     "tool-module": "ツールモジュール",
     "prompt-module": "プロンプトモジュール",
@@ -244,5 +244,6 @@
     "at-least-one-server": "少なくとも1つのサーバー接続を保持する必要があります",
     "connect.appearance.disconnect": "切断する",
     "disconnect-fail": "切断に失敗しました",
-    "disconnect-success": "切断に成功しました"
+    "disconnect-success": "切断に成功しました",
+    "search-model": "モデルを検索"
 }
