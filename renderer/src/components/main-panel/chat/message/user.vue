@@ -35,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, ref, type PropType, inject, watch } from 'vue';
+import { defineProps, ref, type PropType, inject, watch, type Ref } from 'vue';
 import { tabs } from '../../panel';
 import type { ChatStorage, IRenderMessage } from '../chat-box/chat';
 import { MessageState } from '../chat-box/chat';
@@ -65,8 +65,8 @@ const userInput = ref('');
 const chatContext = inject('chatContext') as any;
 
 // 在setup顶层获取并行模式相关的注入值
-const isParallelMode = inject('isParallelMode') as any;
-const parallelChats = inject('parallelChats') as any;
+const chatMode = inject('chatMode') as Ref<string>;
+const parallelChats = inject('parallelChats') as Ref<any[]>;
 const updateChatRenderMessages = inject('updateChatRenderMessages') as any;
 
 const toggleEdit = () => {
@@ -79,7 +79,7 @@ const toggleEdit = () => {
 const handleKeydown = (event: KeyboardEvent) => {
     console.log(chatContext);
     
-    if (isParallelMode?.value && parallelChats?.value?.length > 0) {
+    if (chatMode.value === 'parallel-chat' && parallelChats?.value?.length > 0) {
         // 并行模式：只编辑当前消息所属的聊天实例
         const messageServerName = props.message.extraInfo.serverName;
         
@@ -240,11 +240,11 @@ const retrySingleChat = async (chat: any, userMessage: string) => {
 
 const reload = async () => {
     console.log('重试按钮被点击');
-    console.log('并行模式:', isParallelMode?.value);
+    console.log('并行模式:', chatMode.value);
     console.log('并行聊天数量:', parallelChats?.value?.length);
     console.log('消息信息:', props.message);
     
-    if (isParallelMode?.value && parallelChats?.value?.length > 0) {
+    if (chatMode.value === 'parallel-chat' && parallelChats?.value?.length > 0) {
         // 并行模式：只重试当前消息所属的聊天实例
         const messageServerName = props.message.extraInfo.serverName;
         console.log('消息所属服务器:', messageServerName);

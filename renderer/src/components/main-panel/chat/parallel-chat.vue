@@ -75,14 +75,10 @@
 <script setup lang="ts">
 import { ref, defineProps, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { type ScrollbarInstance } from 'element-plus';
 import { tabs } from '../panel';
 import type { ChatMessage, ChatStorage, IRenderMessage, ToolCall, ParallelChatInstance } from './chat-box/chat';
-import { MessageState } from './chat-box/chat';
 
 import * as Message from './message';
-import { getToolCallFromXmlString, getToolResultFromXmlString, getXmlsFromString, toNormaliseToolcall } from './core/xml-wrapper';
-import { getIdAsIndexAdapter } from './core/handle-tool-calls';
 import { llms } from '@/views/setting/llm';
 
 const { t } = useI18n();
@@ -90,10 +86,6 @@ const { t } = useI18n();
 const props = defineProps({
     tabId: {
         type: Number,
-        required: true
-    },
-    isParallelMode: {
-        type: Boolean,
         required: true
     },
     selectedModels: {

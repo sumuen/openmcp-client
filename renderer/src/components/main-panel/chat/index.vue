@@ -27,7 +27,6 @@
         <ParallelChat 
             v-else-if="chatMode === 'parallel-chat'"
             :tab-id="props.tabId"
-            :is-parallel-mode="chatMode === 'parallel-chat'"
             :selected-models="selectedModels"
             :parallel-chats="parallelChats"
             :streaming-content="streamingContent"
@@ -360,26 +359,6 @@ function clearChatHistory(index: number) {
     console.log(`模型 ${chat.modelId} 的上下文已清空`);
 }
 
-// 获取模型名称
-function getModelName(modelId: string) {
-    if (modelId.includes(':')) {
-        // 新格式：configIndex:modelIndex
-        const [configIndex, modelIndex] = modelId.split(':').map(Number);
-        if (!isNaN(configIndex) && configIndex >= 0 && configIndex < llms.length) {
-            const llm = llms[configIndex];
-            const model = llm.models?.[modelIndex] || llm.userModel;
-            return `${model} (${llm.name})`;
-        }
-    } else {
-        // 兼容旧格式
-        const index = parseInt(modelId);
-        if (!isNaN(index) && index >= 0 && index < llms.length) {
-            const llm = llms[index];
-            return `${llm.userModel || llm.models?.[0] || 'unknown'} (${llm.name})`;
-        }
-    }
-    return modelId;
-}
 
 // 更新聊天实例的渲染消息  
 async function updateChatRenderMessages(chat: ParallelChatInstance & { renderMessages: IRenderMessage[] }, streamingToolCalls?: ToolCall[]) {

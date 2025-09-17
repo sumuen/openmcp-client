@@ -67,7 +67,7 @@ const updateScrollHeight = inject('updateScrollHeight') as () => void;
 const chatContext = inject('chatContext') as any;
 
 // 并行模式相关
-const isParallelMode = inject('isParallelMode') as Ref<boolean>;
+const chatMode = inject('chatMode') as Ref<string>;
 const parallelChats = inject('parallelChats') as Ref<any[]>;
 const updateChatRenderMessages = inject('updateChatRenderMessages') as (chat: any, streamingToolCalls?: ToolCall[]) => Promise<void>;
 
@@ -91,7 +91,9 @@ function clearErrorMessage(errorMessage: string) {
 }
 
 function handleSend(newMessage?: string) {
+    
     const userMessage = newMessage || userInput.value;
+
 
     if (!userMessage || isLoading.value) {
         return;
@@ -104,7 +106,7 @@ function handleSend(newMessage?: string) {
         editor.innerHTML = '';
     }
 
-    if (isParallelMode.value && parallelChats.value.length > 0) {
+    if (chatMode.value === 'parallel-chat' && parallelChats.value.length > 0) {
         // 并行模式：同时发送到多个模型
         handleParallelSend(userMessage);
     } else {
