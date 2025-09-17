@@ -260,5 +260,14 @@
     "arguments": "المعامل",
     "result": "النتيجة",
     "type": "النوع",
-    "tool-details": "تفاصيل الأداة"
+    "tool-details": "تفاصيل الأداة",
+    "close": "إغلاق",
+    "trace-table-mode": "وضع الجدول",
+    "trace-diagram-mode": "وضع المخطط الانسيابي",
+    "user-input": "إدخال المستخدم",
+    "assistant-output": "إخراج النموذج",
+    "select-columns-to-display": "اختيار أعمدة البيانات المعروضة",
+    "duration-ms": "الوقت المستغرق",
+    "table-setting": "إعدادات الجدول",
+    "content": "المحتوى"
 }

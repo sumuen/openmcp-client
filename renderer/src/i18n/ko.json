@@ -260,5 +260,14 @@
     "arguments": "매개변수",
     "result": "결과",
     "type": "유형",
-    "tool-details": "도구 세부 정보"
+    "tool-details": "도구 세부 정보",
+    "close": "닫기",
+    "trace-table-mode": "테이블 모드",
+    "trace-diagram-mode": "플로우차트 모드",
+    "user-input": "사용자 입력",
+    "assistant-output": "모델 출력",
+    "select-columns-to-display": "표시할 데이터 열 선택",
+    "duration-ms": "소요 시간",
+    "table-setting": "테이블 설정",
+    "content": "콘텐츠"
 }

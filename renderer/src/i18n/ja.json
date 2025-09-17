@@ -260,5 +260,14 @@
     "arguments": "パラメータ",
     "result": "結果",
     "type": "タイプ",
-    "tool-details": "ツールの詳細"
+    "tool-details": "ツールの詳細",
+    "close": "閉じる",
+    "trace-table-mode": "テーブルモード",
+    "trace-diagram-mode": "フローチャートモード",
+    "user-input": "ユーザー入力",
+    "assistant-output": "モデル出力",
+    "select-columns-to-display": "表示するデータ列を選択",
+    "duration-ms": "所要時間",
+    "table-setting": "テーブル設定",
+    "content": "コンテンツ"
 }

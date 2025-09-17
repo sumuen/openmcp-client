@@ -1,22 +1,60 @@
 <template>
     <div class="trace-table-container">
+        <div class="column-selector">
+            <el-popover
+                placement="bottom"
+                :width="300"
+                trigger="click"
+            >
+                <template #reference>
+                    <el-button size="small">
+                        <i class="iconfont icon-setting"/>
+                        &ensp;{{ t('table-setting') }}
+                    </el-button>
+                </template>
+                <div class="column-selector-content">
+                    <div class="column-selector-title">{{ t('select-columns-to-display') }}</div>
+                    <el-checkbox 
+                        v-for="column in allColumns" 
+                        :key="column.prop"
+                        v-model="column.visible"
+                        :label="column.label"
+                    />
+                </div>
+            </el-popover>
+        </div>
+
         <el-table 
             :data="tableData" 
             style="width: 100%" 
             row-class-name="trace-table-row"
             @row-click="handleRowClick"
         >
-            <el-table-column prop="index" label="#" width="60" />
-            <el-table-column prop="type" :label="t('type')" width="120" />
-            <el-table-column prop="toolName" :label="t('toolbar.search.name')" show-overflow-tooltip />
-            <el-table-column prop="inputTokens" :label="t('input-token')" width="120" align="right" />
-            <el-table-column prop="outputTokens" :label="t('output-token')" width="120" align="right" />
-            <el-table-column prop="totalTokens" :label="t('total-token')" width="120" align="right" />
-            <el-table-column prop="cacheHitRate" :label="t('cache-hit-ratio')" width="120" align="right" />
-            <el-table-column prop="cumulativeTokens" :label="t('cumulative-tokens')" width="150" align="right" />
-            <el-table-column prop="status" :label="t('status')" width="100" align="center">
+            <el-table-column 
+                v-for="column in visibleColumns" 
+                :key="column.prop"
+                :prop="column.prop" 
+                :label="column.label" 
+                :width="column.width"
+                :align="column.align"
+                :show-overflow-tooltip="true"
+            >
                 <template #default="scope">
-                    <el-tag :type="scope.row.statusType">{{ scope.row.status }}</el-tag>
+                    <template v-if="column.prop === 'status' && scope.row">
+                        <el-tag :type="scope.row.statusType">{{ scope.row.status }}</el-tag>
+                    </template>
+                    <template v-else-if="column.prop === 'toolName' && scope.row && scope.row.toolNames">
+                        <div class="tool-names-container">
+                            {{ scope.row.toolNames[0] }}
+
+                            <el-tag v-if="scope.row.toolNames.length > 1"
+                                type="info"
+                                >
+                                {{ scope.row.toolNames.length - 1 }}+
+                            </el-tag>
+
+                        </div>
+                    </template>
                 </template>
             </el-table-column>
         </el-table>
@@ -24,25 +62,47 @@
         <!-- 详细信息对话框 -->
         <el-dialog 
             v-model="dialogVisible" 
-            :title="t('tool-details')" 
-            width="600px"
+            :title="t('details')" 
             :before-close="handleDialogClose"
         >
             <div v-if="selectedRow">
                 <el-descriptions :column="1" border>
                     <el-descriptions-item :label="t('type')">{{ selectedRow.type }}</el-descriptions-item>
-                    <el-descriptions-item v-if="selectedRow.toolName" :label="t('toolbar.search.name')">{{ selectedRow.toolName }}</el-descriptions-item>
-                    <el-descriptions-item v-if="selectedRow.arguments" :label="t('arguments')">
-                        <pre class="arguments-pre">{{ selectedRow.arguments }}</pre>
+                    <el-descriptions-item v-if="selectedRow.toolNames" :label="t('toolbar.search.name')">
+                        <div class="tool-names-container">
+                            {{ selectedRow.toolNames[0] }}
+
+                            <el-tag v-if="selectedRow.toolNames.length > 1"
+                                type="info"
+                                >
+                                {{ selectedRow.toolNames.length - 1 }}+
+                            </el-tag>
+                        </div>
                     </el-descriptions-item>
-                    <el-descriptions-item v-if="selectedRow.result" :label="t('result')">
-                        <pre class="result-pre">{{ selectedRow.result }}</pre>
+                    <el-descriptions-item v-if="selectedRow.content" :label="t('content')">
+                        <pre class="content-pre">{{ selectedRow.content }}</pre>
+                    </el-descriptions-item>
+                    <el-descriptions-item v-if="selectedRow.toolCalls" :label="t('tool-call')">
+                        <div v-for="(toolCall, index) in selectedRow.toolCalls" :key="index" class="tool-call-item">
+                            <el-descriptions :column="1" size="small">
+                                <el-descriptions-item :label="t('toolbar.search.name')">{{ toolCall.function?.name }}</el-descriptions-item>
+                                <el-descriptions-item :label="t('arguments')">
+                                    <pre class="arguments-pre">{{ toolCall.function?.arguments }}</pre>
+                                </el-descriptions-item>
+                            </el-descriptions>
+                        </div>
+                    </el-descriptions-item>
+                    <el-descriptions-item v-if="selectedRow.toolResults" :label="t('result')">
+                        <div v-for="(result, index) in selectedRow.toolResults" :key="index" class="tool-result-item">
+                            <pre class="result-pre">{{ Array.isArray(result) ? result.map(r => r.text).join('\n') : result }}</pre>
+                        </div>
                     </el-descriptions-item>
                     <el-descriptions-item :label="t('input-token')">{{ selectedRow.inputTokens }}</el-descriptions-item>
                     <el-descriptions-item :label="t('output-token')">{{ selectedRow.outputTokens }}</el-descriptions-item>
                     <el-descriptions-item :label="t('total-token')">{{ selectedRow.totalTokens }}</el-descriptions-item>
                     <el-descriptions-item :label="t('cache-hit-ratio')">{{ selectedRow.cacheHitRate }}</el-descriptions-item>
                     <el-descriptions-item :label="t('cumulative-tokens')">{{ selectedRow.cumulativeTokens }}</el-descriptions-item>
+                    <el-descriptions-item :label="t('duration-ms')">{{ selectedRow.duration }}</el-descriptions-item>
                     <el-descriptions-item :label="t('status')">
                         <el-tag :type="selectedRow.statusType">{{ selectedRow.status }}</el-tag>
                     </el-descriptions-item>
@@ -58,7 +118,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, computed } from 'vue';
+import { ref, defineProps, computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { IRenderMessage, IToolRenderMessage } from '../chat-box/chat';
 
@@ -68,6 +128,25 @@ const props = defineProps<{
     renderMessages: IRenderMessage[];
 }>();
 
+// 定义所有列
+const allColumns = reactive([
+    { prop: 'index', label: '#', width: 60, align: 'left', visible: true },
+    { prop: 'type', label: t('type'), width: 150, align: 'left', visible: true },
+    { prop: 'toolName', label: t('toolbar.search.name'), width: undefined, align: 'left', visible: true },
+    { prop: 'inputTokens', label: t('input-token'), width: 120, align: 'right', visible: true },
+    { prop: 'outputTokens', label: t('output-token'), width: 120, align: 'right', visible: true },
+    { prop: 'totalTokens', label: t('total-token'), width: 120, align: 'right', visible: true },
+    { prop: 'cacheHitRate', label: t('cache-hit-ratio'), width: 120, align: 'right', visible: true },
+    { prop: 'cumulativeTokens', label: t('cumulative-tokens'), width: 150, align: 'right', visible: true },
+    { prop: 'duration', label: t('duration-ms'), width: 120, align: 'right', visible: true },
+    { prop: 'status', label: t('status'), width: 100, align: 'center', visible: true }
+]);
+
+// 计算可见列
+const visibleColumns = computed(() => {
+    return allColumns.filter(column => column.visible);
+});
+
 // 表格数据
 const tableData = computed(() => {
     const data = [];
@@ -76,85 +155,105 @@ const tableData = computed(() => {
     for (let i = 0; i < props.renderMessages.length; i++) {
         const message = props.renderMessages[i];
         
-        // 处理 assistant 消息（工具调用）
-        if (message.role === 'assistant/tool_calls' && 'tool_calls' in message) {
-            const toolMessage = message as IToolRenderMessage;
-            for (let j = 0; j < toolMessage.tool_calls.length; j++) {
-                const toolCall = toolMessage.tool_calls[j];
-                const usage = toolMessage.extraInfo.usage;
-                
-                // 计算 token 信息
-                const inputTokens = usage?.prompt_tokens || 0;
-                const outputTokens = usage?.completion_tokens || 0;
-                const totalTokens = usage?.total_tokens || 0;
-                // 使用 CompletionUsage 中定义的 cached_tokens 字段
-                const cacheHitTokens = usage?.prompt_tokens_details?.cached_tokens || 0;
-                const cacheHitRate = inputTokens > 0 ? Math.round((cacheHitTokens / inputTokens) * 100) : 0;
-                
-                cumulativeTokens += totalTokens;
-                
-                data.push({
-                    index: data.length + 1,
-                    type: t('tool-call'),
-                    toolName: toolCall.function?.name || '',
-                    arguments: toolCall.function?.arguments || '',
-                    inputTokens,
-                    outputTokens,
-                    totalTokens,
-                    cacheHitRate: cacheHitRate + '%',
-                    cumulativeTokens,
-                    status: toolMessage.extraInfo.state === 'success' ?
-                        t('success') :
-                        t('failed'),
-                    statusType: toolMessage.extraInfo.state === 'success' ? 'success' : 'danger',
-                    rawMessage: toolMessage,
-                    toolCallIndex: j
-                });
-            }
-        } 
-        // 处理 tool 消息（工具结果）
-        else if ('index' in message && 'content' in message) {
-            // 获取对应的工具调用
-            const toolCallMessageIndex = props.renderMessages.findIndex(
-                (msg, idx) => idx < i && 
-                msg.role === 'assistant/tool_calls' && 
-                'tool_calls' in msg &&
-                msg.tool_calls && 
-                msg.tool_calls.some((tc: any) => tc.index === (message as any).index)
-            );
+        // 计算耗时（当前节点与上一个节点的时间差）
+        let duration = '-';
+        if (i > 0 && props.renderMessages[i - 1].extraInfo?.created && message.extraInfo?.created) {
+            const prevMessage = props.renderMessages[i - 1];
+            duration = (message.extraInfo.created - prevMessage.extraInfo.created) + ' ms';
+        }
+
+        // 处理用户消息
+        if (message.role === 'user') {
+            const usage = message.extraInfo.usage;
             
-            if (toolCallMessageIndex !== -1) {
-                const toolCallMessage = props.renderMessages[toolCallMessageIndex] as IToolRenderMessage;
-                const toolCall = toolCallMessage.tool_calls?.find((tc: any) => tc.index === (message as any).index);
-                const usage = (message as any).extraInfo.usage;
-                
-                // 计算 token 信息
-                const inputTokens = usage?.prompt_tokens || 0;
-                const outputTokens = usage?.completion_tokens || 0;
-                const totalTokens = usage?.total_tokens || 0;
-                // 使用 CompletionUsage 中定义的 cached_tokens 字段
-                const cacheHitTokens = usage?.prompt_tokens_details?.cached_tokens || 0;
-                const cacheHitRate = inputTokens > 0 ? Math.round((cacheHitTokens / inputTokens) * 100) : 0;
-                
-                cumulativeTokens += totalTokens;
-                
-                data.push({
-                    index: data.length + 1,
-                    type: 'Tool Result',
-                    toolName: toolCall?.function?.name || '',
-                    result: Array.isArray((message as any).content) 
-                        ? (message as any).content.map((c: any) => c.text).join('\n') 
-                        : (message as any).content,
-                    inputTokens,
-                    outputTokens,
-                    totalTokens,
-                    cacheHitRate: cacheHitRate + '%',
-                    cumulativeTokens,
-                    status: (message as any).extraInfo.state === 'success' ? t('success') : t('failed'),
-                    statusType: (message as any).extraInfo.state === 'success' ? 'success' : 'danger',
-                    rawMessage: message
-                });
-            }
+            // 计算 token 信息
+            const inputTokens = '-';
+            const outputTokens = '-';
+            const totalTokens = '-';
+            const cacheHitTokens = '-';
+            const cacheHitRate = '-';
+            
+            cumulativeTokens += 0;
+            
+            data.push({
+                index: data.length + 1,
+                type: t('user-input'),
+                content: message.content,
+                inputTokens,
+                outputTokens,
+                totalTokens,
+                cacheHitRate,
+                cumulativeTokens,
+                duration: '-', // 用户输入没有耗时
+                status: message.extraInfo.state === 'success' ? t('success') : t('failed'),
+                statusType: message.extraInfo.state === 'success' ? 'success' : 'danger',
+                rawMessage: message
+            });
+        }
+        // 处理 assistant 消息（内容或工具调用）
+        else if (message.role === 'assistant/content') {
+            const usage = message.extraInfo.usage;
+            
+            // 计算 token 信息
+            const inputTokens = usage?.prompt_tokens || 0;
+            const outputTokens = usage?.completion_tokens || 0;
+            const totalTokens = usage?.total_tokens || 0;
+            const cacheHitTokens = usage?.prompt_tokens_details?.cached_tokens || 0;
+            const cacheHitRate = inputTokens > 0 ? Math.round((cacheHitTokens / inputTokens) * 100) : 0;
+            
+            cumulativeTokens += totalTokens;
+            
+            data.push({
+                index: data.length + 1,
+                type: t('assistant-output'),
+                content: message.content,
+                inputTokens,
+                outputTokens,
+                totalTokens,
+                cacheHitRate: cacheHitRate + '%',
+                cumulativeTokens,
+                duration,
+                status: message.extraInfo.state === 'success' ? t('success') : t('failed'),
+                statusType: message.extraInfo.state === 'success' ? 'success' : 'danger',
+                rawMessage: message
+            });
+        }
+        // 处理 assistant 工具调用消息
+        else if (message.role === 'assistant/tool_calls' && 'tool_calls' in message) {
+            const toolMessage = message as IToolRenderMessage;
+            const usage = toolMessage.extraInfo.usage;
+            
+            // 计算 token 信息
+            const inputTokens = usage?.prompt_tokens || 0;
+            const outputTokens = usage?.completion_tokens || 0;
+            const totalTokens = usage?.total_tokens || 0;
+            const cacheHitTokens = usage?.prompt_tokens_details?.cached_tokens || 0;
+            const cacheHitRate = inputTokens > 0 ? Math.round((cacheHitTokens / inputTokens) * 100) : 0;
+            
+            cumulativeTokens += totalTokens;
+            
+            // 将所有工具调用作为一个整体处理
+            const toolNames = toolMessage.tool_calls.map(toolCall => toolCall.function?.name || '');
+
+            const typeName = toolNames.length > 1 ? 
+                t('tool-call') + ` (${toolNames.length})` :
+                t('tool-call');
+            
+            data.push({
+                index: data.length + 1,
+                type: typeName,
+                toolNames,
+                toolCalls: toolMessage.tool_calls, // 所有工具调用
+                inputTokens,
+                outputTokens,
+                totalTokens,
+                cacheHitRate: cacheHitRate + '%',
+                cumulativeTokens,
+                duration,
+                status: toolMessage.extraInfo.state === 'success' ? t('success') : t('failed'),
+                statusType: toolMessage.extraInfo.state === 'success' ? 'success' : 'danger',
+                rawMessage: toolMessage
+            });
         }
     }
     
@@ -185,10 +284,28 @@ const handleDialogClose = () => {
     overflow-y: auto;
 }
 
+.column-selector {
+    margin-bottom: 16px;
+    text-align: left;
+}
+
+.column-selector-content {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.column-selector-title {
+    font-weight: bold;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--el-border-color);
+}
+
 .trace-table-row {
     cursor: pointer;
 }
 
+.content-pre,
 .arguments-pre,
 .result-pre {
     white-space: pre-wrap;
@@ -203,5 +320,20 @@ const handleDialogClose = () => {
 
 .dialog-footer {
     text-align: right;
+}
+
+.tool-call-item,
+.tool-result-item {
+    margin-bottom: 10px;
+}
+
+.tool-call-item:last-child,
+.tool-result-item:last-child {
+    margin-bottom: 0;
+}
+
+.tool-names-container {
+    display: flex;
+    gap: 4px;
 }
 </style>

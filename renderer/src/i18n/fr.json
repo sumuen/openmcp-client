@@ -260,5 +260,14 @@
     "arguments": "Paramètre",
     "result": "Résultat",
     "type": "Type",
-    "tool-details": "Détails de l'outil"
+    "tool-details": "Détails de l'outil",
+    "close": "Fermer",
+    "trace-table-mode": "Mode Tableau",
+    "trace-diagram-mode": "Mode Diagramme de Flux",
+    "user-input": "Entrée utilisateur",
+    "assistant-output": "Sortie du modèle",
+    "select-columns-to-display": "Sélectionner les colonnes de données à afficher",
+    "duration-ms": "Temps écoulé",
+    "table-setting": "Paramètres du tableau",
+    "content": "Contenu"
 }

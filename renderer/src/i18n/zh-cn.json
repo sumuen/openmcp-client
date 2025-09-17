@@ -260,5 +260,14 @@
     "arguments": "参数",
     "result": "结果",
     "type": "类型",
-    "tool-details": "工具细节"
+    "tool-details": "工具细节",
+    "close": "关闭",
+    "trace-table-mode": "表格模式",
+    "trace-diagram-mode": "流程图模式",
+    "user-input": "用户输入",
+    "assistant-output": "模型输出",
+    "select-columns-to-display": "选择展示的数据列",
+    "duration-ms": "耗时",
+    "table-setting": "表格设置",
+    "content": "内容"
 }

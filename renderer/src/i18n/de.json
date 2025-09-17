@@ -260,5 +260,14 @@
     "arguments": "Parameter",
     "result": "Ergebnis",
     "type": "Typ",
-    "tool-details": "Werkzeugdetails"
+    "tool-details": "Werkzeugdetails",
+    "close": "Schließen",
+    "trace-table-mode": "Tabellenmodus",
+    "trace-diagram-mode": "Flussdiagramm-Modus",
+    "user-input": "Benutzereingabe",
+    "assistant-output": "Modellausgabe",
+    "select-columns-to-display": "Anzuzeigende Datenspalten auswählen",
+    "duration-ms": "Verstrichene Zeit",
+    "table-setting": "Tabelleneinstellungen",
+    "content": "Inhalt"
 }

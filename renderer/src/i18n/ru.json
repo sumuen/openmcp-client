@@ -260,5 +260,14 @@
     "arguments": "Параметр",
     "result": "Результат",
     "type": "Тип",
-    "tool-details": "Детали инструмента"
+    "tool-details": "Детали инструмента",
+    "close": "Закрыть",
+    "trace-table-mode": "Табличный режим",
+    "trace-diagram-mode": "Режим блок-схемы",
+    "user-input": "Пользовательский ввод",
+    "assistant-output": "Вывод модели",
+    "select-columns-to-display": "Выбор отображаемых столбцов данных",
+    "duration-ms": "Затраченное время",
+    "table-setting": "Настройки таблицы",
+    "content": "Содержание"
 }

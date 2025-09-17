@@ -1,27 +1,16 @@
 <template>
     <div class="tool-trace-container">
         <div class="tool-trace-header">
-            <el-select 
-                v-model="traceMode"
-                size="small"
-                class="mode-selector"
-            >
-                <el-option 
-                    :label="t('trace-table-mode')" 
-                    value="table"
-                />
-                <el-option 
-                    :label="t('trace-diagram-mode')" 
-                    value="diagram"
-                />
-            </el-select>
+            <el-segmented v-model="traceMode" :options="traceModeItems" size="default"
+                style="background-color: var(--background);">
+                <template #default="scope">
+                    {{ scope.item.label }}
+                </template>
+            </el-segmented>
         </div>
-        
+
         <div class="tool-trace-content">
-            <TraceTable 
-                v-if="traceMode === 'table'"
-                :render-messages="renderMessages"
-            />
+            <TraceTable v-if="traceMode === 'table'" :render-messages="renderMessages" />
             <div v-else-if="traceMode === 'diagram'" class="diagram-placeholder">
                 <el-empty :description="t('diagram-mode-coming-soon')" />
             </div>
@@ -30,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, computed, watch } from 'vue';
+import { ref, defineProps, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { tabs } from '../../panel';
 import type { ChatStorage, IRenderMessage } from '../chat-box/chat';
@@ -54,6 +43,17 @@ const tabStorage = tab.storage as ChatStorage;
 // 追踪模式：table 或 diagram
 const traceMode = ref<'table' | 'diagram'>('table');
 
+const traceModeItems = ref([
+    {
+        label: t('trace-table-mode'),
+        value: 'table'
+    },
+    {
+        label: t('trace-diagram-mode'),
+        value: 'diagram'
+    }
+]);
+
 // 渲染消息
 const renderMessages = ref<IRenderMessage[]>([]);
 
@@ -61,7 +61,7 @@ const renderMessages = ref<IRenderMessage[]>([]);
 watch(() => tabStorage.messages, async () => {
     renderMessages.value = [];
     for (const message of tabStorage.messages) {
-        const indexAdapter = getIdAsIndexAdapter();        
+        const indexAdapter = getIdAsIndexAdapter();
         const xmls = getXmlToolCalls(message);
 
         if (message.role === 'user') {
@@ -175,7 +175,7 @@ function getXmlToolCalls(message: any) {
     }
 
     const enableXmlTools = message.extraInfo?.enableXmlWrapper ?? false;
-    
+
     if (!enableXmlTools) {
         return [];
     }

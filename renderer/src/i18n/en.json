@@ -260,5 +260,14 @@
     "arguments": "Parameter",
     "result": "Result",
     "type": "Type",
-    "tool-details": "Tool Details"
+    "tool-details": "Tool Details",
+    "close": "Close",
+    "trace-table-mode": "Table Mode",
+    "trace-diagram-mode": "Flowchart Mode",
+    "user-input": "User input",
+    "assistant-output": "Model Output",
+    "select-columns-to-display": "Select data columns to display",
+    "duration-ms": "Time taken",
+    "table-setting": "Table Settings",
+    "content": "Content"
 }

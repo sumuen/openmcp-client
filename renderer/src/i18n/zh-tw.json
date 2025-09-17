@@ -260,5 +260,14 @@
     "arguments": "參數",
     "result": "結果",
     "type": "類型",
-    "tool-details": "工具詳情"
+    "tool-details": "工具詳情",
+    "close": "關閉",
+    "trace-table-mode": "表格模式",
+    "trace-diagram-mode": "流程圖模式",
+    "user-input": "使用者輸入",
+    "assistant-output": "模型輸出",
+    "select-columns-to-display": "選擇顯示的資料欄",
+    "duration-ms": "耗時",
+    "table-setting": "表格設定",
+    "content": "內容"
 }
