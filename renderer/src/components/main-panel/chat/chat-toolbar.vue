@@ -20,7 +20,7 @@
 
         <div v-if="chatMode === 'parallel-chat'" class="model-selector">
             <el-select 
-                :value="selectedModels"
+                v-model="selectedModels"
                 multiple 
                 filterable
                 :placeholder="t('choose-model-to-compare')"
@@ -99,6 +99,15 @@ const chatMode = computed({
     }
 });
 
+const selectedModels = computed({
+    get() {
+        return props.selectedModels;
+    },
+    set(value) {
+        emit('update:selectedModels', value);
+    }
+});
+
 // 定义组件的 emits
 const emit = defineEmits<{
     (e: 'update:chatMode', value: 'single-chat' | 'parallel-chat' | 'tool-trace'): void;
@@ -113,7 +122,7 @@ const changeChatMode = (value: string) => {
     emit('update:chatMode', value as 'single-chat' | 'parallel-chat' | 'tool-trace');
 };
 
-const initParallelChats = (value: string[]) => {
+const initParallelChats = (value: string[]) => {    
     emit('initParallelChats', value);
 };
 
