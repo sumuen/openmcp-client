@@ -19,7 +19,7 @@
                     <el-descriptions-item v-if="selectedNodeData.duration" label="Duration">{{ selectedNodeData.duration }}</el-descriptions-item>
                     <el-descriptions-item v-if="selectedNodeData.tokens" label="Tokens">{{ selectedNodeData.tokens }}</el-descriptions-item>
                     <el-descriptions-item v-if="selectedNodeData.cacheHitRate" label="Cache Hit Rate">{{ selectedNodeData.cacheHitRate }}</el-descriptions-item>
-                    <el-descriptions-item label="Status" v-if="selectedNodeData.status">
+                    <el-descriptions-item label="Status">
                         <el-tag :type="getNodeStatusType(selectedNodeData.status)">
                             {{ selectedNodeData.status }}
                         </el-tag>
@@ -44,13 +44,16 @@ import { useI18n } from 'vue-i18n';
 
 // 全局常量定义
 const NODE_WIDTH = 200;
-const NODE_HEIGHT = 60;
+const NODE_HEIGHT = 80;
 const NODE_RADIUS = 16;
-const LEFT_TEXT_OFFSET = 60;
+const WRAPPER_PADDING = 20;
+const TOOL_NODE_WIDTH = 160;
+const TOOL_NODE_HEIGHT = 60;
+const TOOL_NODE_RADIUS = 12;
 const STATUS_CIRCLE_RADIUS = 6;
-const STATUS_CIRCLE_X = NODE_WIDTH / 2 - LEFT_TEXT_OFFSET - 16;
+const STATUS_CIRCLE_X = NODE_WIDTH / 2 - 32;
 const STATUS_CIRCLE_Y = NODE_HEIGHT - 16;
-const STATUS_TEXT_X = NODE_WIDTH / 2 - LEFT_TEXT_OFFSET;
+const STATUS_TEXT_X = NODE_WIDTH / 2 - 16;
 const STATUS_TEXT_Y = NODE_HEIGHT - 12;
 const LABEL_Y = 20;
 const DURATION_X = NODE_WIDTH - 10; // 耗时显示在右侧
@@ -125,6 +128,7 @@ function processMessages() {
                 name: 'User Message',
                 type: 'User Input',
                 content: message.content,
+                status: message.extraInfo.state === 'success' ? 'success' : message.extraInfo.state || 'default'
             });
             
             // 创建与前一个节点的边
@@ -191,81 +195,99 @@ function processMessages() {
             nodeIndex++;
         } else if (message.role === 'assistant/tool_calls' && 'tool_calls' in message) {
             const toolCalls = message.tool_calls || [];
+            const nodeId = `node-${nodeIndex}`;
             
-            // 为每个工具调用创建一个节点
-            const toolNodeIndices: number[] = [];
-            toolCalls.forEach((toolCall: any, toolIndex: number) => {
-                const nodeId = `node-${nodeIndex}`;
-                toolNodeIndices.push(nodeIndex);
-                
-                // 计算耗时（仅在第一个工具节点上显示）
-                let duration = '';
-                if (toolIndex === 0 && messageIndex > 0 && props.renderMessages[messageIndex - 1].extraInfo?.created && message.extraInfo?.created) {
-                    const prevMessage = props.renderMessages[messageIndex - 1];
-                    duration = (message.extraInfo.created - prevMessage.extraInfo.created) + ' ms';
+            // 计算耗时（仅在工具节点上显示）
+            let duration = '';
+            if (messageIndex > 0 && props.renderMessages[messageIndex - 1].extraInfo?.created && message.extraInfo?.created) {
+                const prevMessage = props.renderMessages[messageIndex - 1];
+                duration = (message.extraInfo.created - prevMessage.extraInfo.created) + ' ms';
+            }
+            
+            // Token信息
+            let tokens = '';
+            let cacheHitRate = '';
+            const usage = message.extraInfo.usage;
+            if (usage) {
+                tokens = `Input: ${usage.prompt_tokens || 0}, Output: ${usage.completion_tokens || 0}, Total: ${usage.total_tokens || 0}`;
+                const cacheHitTokens = usage.prompt_tokens_details?.cached_tokens || 0;
+                const inputTokens = usage.prompt_tokens || 0;
+                if (inputTokens > 0) {
+                    cacheHitRate = Math.round((cacheHitTokens / inputTokens) * 100) + '%';
                 }
+            }
+            
+            // 如果有多个工具调用，创建包装节点
+            if (toolCalls.length > 1) {
+                // 创建包装节点
+                const wrapperWidth = toolCalls.length * (TOOL_NODE_WIDTH + 10) + WRAPPER_PADDING * 2;
+                const wrapperHeight = TOOL_NODE_HEIGHT + WRAPPER_PADDING * 2;
                 
-                // Token信息（仅在第一个工具节点上显示）
-                let tokens = '';
-                let cacheHitRate = '';
-                if (toolIndex === 0) {
-                    const usage = message.extraInfo.usage;
-                    if (usage) {
-                        tokens = `Input: ${usage.prompt_tokens || 0}, Output: ${usage.completion_tokens || 0}, Total: ${usage.total_tokens || 0}`;
-                        const cacheHitTokens = usage.prompt_tokens_details?.cached_tokens || 0;
-                        const inputTokens = usage.prompt_tokens || 0;
-                        if (inputTokens > 0) {
-                            cacheHitRate = Math.round((cacheHitTokens / inputTokens) * 100) + '%';
-                        }
-                    }
-                }
+                nodes.push({
+                    id: nodeId,
+                    width: wrapperWidth,
+                    height: wrapperHeight,
+                    labels: [{ text: `Tool Calls (${toolCalls.length})` }],
+                    isWrapper: true,
+                    toolCalls: toolCalls,
+                    duration // 只在包装节点上添加耗时
+                });
                 
+                // 为每个工具调用创建子节点
+                toolCalls.forEach((toolCall: any, toolIndex: number) => {
+                    const toolNodeId = `${nodeId}-tool-${toolIndex}`;
+                    nodes.push({
+                        id: toolNodeId,
+                        width: TOOL_NODE_WIDTH,
+                        height: TOOL_NODE_HEIGHT,
+                        labels: [{ text: toolCall.function?.name || 'Tool Call' }],
+                        parentId: nodeId,
+                        isToolNode: true
+                    });
+                    
+                    // 保存工具节点详细信息
+                    nodeDataMap.set(toolNodeId, {
+                        id: toolNodeId,
+                        name: toolCall.function?.name || 'Tool Call',
+                        type: 'Tool Call',
+                        content: toolCall.function?.arguments,
+                        status: message.extraInfo.state === 'success' ? 'success' : message.extraInfo.state || 'default'
+                    });
+                });
+            } else if (toolCalls.length === 1) {
+                // 单个工具调用，直接创建普通节点
                 nodes.push({
                     id: nodeId,
                     width: NODE_WIDTH,
                     height: NODE_HEIGHT,
-                    labels: [{ text: toolCall.function?.name || 'Tool Call' }],
-                    duration: toolIndex === 0 ? duration : '' // 只在第一个工具节点上添加耗时
+                    labels: [{ text: toolCalls[0].function?.name || 'Tool Call' }],
+                    duration // 添加耗时信息
                 });
+            }
 
-                // 保存节点详细信息
-                nodeDataMap.set(nodeId, {
-                    id: nodeId,
-                    name: toolCall.function?.name || 'Tool Call',
-                    type: 'Tool Call',
-                    content: toolCall.function?.arguments,
-                    duration: toolIndex === 0 ? duration : '',
-                    tokens: toolIndex === 0 ? tokens : '',
-                    cacheHitRate: toolIndex === 0 ? cacheHitRate : '',
-                    status: message.extraInfo.state === 'success' ? 'success' : message.extraInfo.state || 'default'
-                });
-                
-                nodeIndex++;
+            // 保存节点详细信息
+            nodeDataMap.set(nodeId, {
+                id: nodeId,
+                name: toolCalls.length > 1 ? `Tool Calls (${toolCalls.length})` : (toolCalls[0]?.function?.name || 'Tool Call'),
+                type: 'Tool Call',
+                content: toolCalls.length > 1 ? toolCalls.map((tc: any) => tc.function?.name).join(', ') : toolCalls[0]?.function?.arguments,
+                duration,
+                tokens,
+                cacheHitRate,
+                status: message.extraInfo.state === 'success' ? 'success' : message.extraInfo.state || 'default',
+                toolCalls: toolCalls.length > 1 ? toolCalls : undefined
             });
             
-            // 创建工具调用之间的连接边
-            for (let i = 0; i < toolNodeIndices.length - 1; i++) {
+            // 创建与前一个节点的边
+            if (prevNodeIndex >= 0) {
                 edges.push({
-                    id: `edge-${toolNodeIndices[i]}-${toolNodeIndices[i + 1]}`,
-                    sources: [`node-${toolNodeIndices[i]}`],
-                    targets: [`node-${toolNodeIndices[i + 1]}`]
-                });
-            }
-            
-            // 创建与前一个节点的边（连接到第一个工具节点）
-            if (prevNodeIndex >= 0 && toolNodeIndices.length > 0) {
-                edges.push({
-                    id: `edge-${prevNodeIndex}-${toolNodeIndices[0]}`,
+                    id: `edge-${prevNodeIndex}-${nodeIndex}`,
                     sources: [`node-${prevNodeIndex}`],
-                    targets: [`node-${toolNodeIndices[0]}`]
+                    targets: [nodeId]
                 });
             }
             
-            // 创建与后一个节点的边（从最后一个工具节点连接）
-            if (toolNodeIndices.length > 0) {
-                // 下一个消息的节点索引是当前的 nodeIndex
-                // 我们稍后会处理这个连接
-            }
+            nodeIndex++;
         }
     });
 
@@ -282,18 +304,18 @@ const recomputeLayout = async () => {
             'elk.spacing.nodeNode': '40',
             'elk.layered.spacing.nodeNodeBetweenLayers': '40'
         },
-        children: state.nodes,
+        children: state.nodes.filter(n => !n.parentId), // 只包含非子节点
         edges: state.edges
     };
     const layout = await elk.layout(elkGraph) as unknown as any;
 
-    state.nodes.forEach((n, i) => {
+    state.nodes.filter(n => !n.parentId).forEach((n, i) => {
         const ln = layout.children?.find((c: any) => c.id === n.id);
         if (ln) {
             n.x = ln.x;
             n.y = ln.y;
-            n.width = ln.width || NODE_WIDTH;
-            n.height = ln.height || NODE_HEIGHT;
+            n.width = ln.width || (n.isWrapper ? 300 : NODE_WIDTH);
+            n.height = ln.height || (n.isWrapper ? 100 : NODE_HEIGHT);
         }
     });
     state.edges = layout.edges || [];
@@ -306,14 +328,14 @@ function renderSvg() {
     const prevEdgeMap = new Map(prevEdges.map(e => [e.id, e]));
 
     // 计算所有节点的最小x和最大x
-    const xs = state.nodes.map(n => (n.x || 0));
+    const xs = state.nodes.filter(n => !n.parentId).map(n => (n.x || 0));
     const minX = Math.min(...xs);
-    const maxX = Math.max(...xs.map((x, i) => x + (state.nodes[i].width || NODE_WIDTH)));
+    const maxX = Math.max(...xs.map((x, i) => x + (state.nodes.filter(n => !n.parentId)[i]?.width || NODE_WIDTH)));
     const contentWidth = maxX - minX;
     const svgWidth = Math.max(contentWidth + 120, 600); // 最小宽度600px
     const offsetX = (svgWidth - contentWidth) / 2 - minX;
 
-    const height = Math.max(...state.nodes.map(n => (n.y || 0) + (n.height || NODE_HEIGHT)), 400) + 60;
+    const height = Math.max(...state.nodes.filter(n => !n.parentId).map(n => (n.y || 0) + (n.height || NODE_HEIGHT)), 400) + 60;
 
     // 不再全量清空，只清空 svg 元素
     let svg = d3.select(svgContainer.value).select('svg');
@@ -423,7 +445,7 @@ function renderSvg() {
 
     // --- 节点 ---
     const nodeGroup = mainGroup.selectAll<SVGGElement, any>('.node')
-        .data(state.nodes, d => d.id);
+        .data(state.nodes.filter(n => !n.parentId), d => d.id); // 只选择非子节点
 
     nodeGroup.exit().remove();
 
@@ -448,7 +470,20 @@ function renderSvg() {
             }
         });
 
-    nodeGroupEnter.append('rect')
+    // 添加包装节点的矩形（仅对包装节点）
+    nodeGroupEnter.filter((d: any) => d.isWrapper)
+        .append('rect')
+        .attr('width', (d: any) => d.width)
+        .attr('height', (d: any) => d.height)
+        .attr('rx', NODE_RADIUS)
+        .attr('fill', 'none')
+        .attr('stroke', 'var(--main-color)')
+        .attr('stroke-width', 2)
+        .attr('stroke-dasharray', '5,5');
+
+    // 添加普通节点的矩形
+    nodeGroupEnter.filter((d: any) => !d.isWrapper)
+        .append('rect')
         .attr('width', (d: any) => d.width)
         .attr('height', (d: any) => d.height)
         .attr('rx', NODE_RADIUS)
@@ -466,8 +501,6 @@ function renderSvg() {
         .attr('font-weight', 600)
         .text(d => d.labels?.[0]?.text || 'Node');
 
-    nodeGroupEnter.append('g').attr('class', 'node-status');
-
     // 耗时显示（User Message 不显示）
     nodeGroupEnter.append('text')
         .attr('class', 'node-duration')
@@ -484,6 +517,8 @@ function renderSvg() {
             const nodeData = nodeDataMap.get(d.id);
             return nodeData?.duration || '';
         });
+
+    nodeGroupEnter.append('g').attr('class', 'node-status');
 
     // 合并 enter+update
     const nodeStatusGroup = nodeGroup.merge(nodeGroupEnter).select('.node-status');
@@ -520,15 +555,19 @@ function renderSvg() {
                 .attr('fill', 'var(--main-color)')
                 .text('running');
         } else if (status === 'default' || status === 'waiting') {
-
-            const renderContent = nodeData.content.length > 12 ? nodeData.content.substring(0, 12) + '...' : nodeData.content;
-            
+            g.append('circle')
+                .attr('cx', STATUS_CIRCLE_X)
+                .attr('cy', STATUS_CIRCLE_Y)
+                .attr('r', STATUS_CIRCLE_RADIUS)
+                .attr('fill', 'none')
+                .attr('stroke', '#bdbdbd')
+                .attr('stroke-width', 3);
             g.append('text')
-                .attr('x', STATUS_TEXT_X - STATUS_CIRCLE_RADIUS - STATUS_CIRCLE_RADIUS)
+                .attr('x', STATUS_TEXT_X)
                 .attr('y', STATUS_TEXT_Y)
                 .attr('font-size', 13)
                 .attr('fill', '#bdbdbd')
-                .text(renderContent);
+                .text('waiting');
         } else if (status === 'success') {
             g.append('circle')
                 .attr('cx', STATUS_CIRCLE_X)
@@ -583,6 +622,73 @@ function renderSvg() {
             const nodeData = nodeDataMap.get(d.id);
             return nodeData?.duration || '';
         });
+
+    // --- 工具节点（子节点）---
+    const toolNodeGroup = mainGroup.selectAll<SVGGElement, any>('.tool-node')
+        .data(state.nodes.filter(n => n.isToolNode), d => d.id);
+
+    toolNodeGroup.exit().remove();
+
+    const toolNodeGroupEnter = toolNodeGroup.enter()
+        .append('g')
+        .attr('class', 'tool-node')
+        .attr('transform', d => {
+            // 找到父节点的位置
+            const parentNode = state.nodes.find(n => n.id === d.parentId);
+            if (parentNode) {
+                // 计算在包装节点中的位置
+                const toolIndex = parentNode.toolCalls?.findIndex((tc: any) => tc.function?.name === d.labels?.[0]?.text) || 0;
+                const x = (parentNode.x || 0) + WRAPPER_PADDING + toolIndex * (TOOL_NODE_WIDTH + 10);
+                const y = (parentNode.y || 0) + WRAPPER_PADDING;
+                return `translate(${x}, ${y})`;
+            }
+            return 'translate(0, 0)';
+        })
+        .style('cursor', 'pointer')
+        .on('click', function (event, d) {
+            // 显示节点详情弹窗
+            const nodeData = nodeDataMap.get(d.id);
+            if (nodeData) {
+                selectedNodeData.value = nodeData;
+                nodeDetailVisible.value = true;
+            }
+        });
+
+    // 工具节点矩形
+    toolNodeGroupEnter.append('rect')
+        .attr('width', TOOL_NODE_WIDTH)
+        .attr('height', TOOL_NODE_HEIGHT)
+        .attr('rx', TOOL_NODE_RADIUS)
+        .attr('fill', 'var(--main-light-color-20)')
+        .attr('stroke', 'var(--main-light-color-10)')
+        .attr('stroke-width', 1);
+
+    // 工具节点文字
+    toolNodeGroupEnter.append('text')
+        .attr('x', TOOL_NODE_WIDTH / 2)
+        .attr('y', TOOL_NODE_HEIGHT / 2)
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'middle')
+        .attr('font-size', 12)
+        .attr('fill', 'var(--main-color)')
+        .text(d => d.labels?.[0]?.text || 'Tool');
+
+    // 合并工具节点
+    const allToolNodes = toolNodeGroup.merge(toolNodeGroupEnter);
+
+    // 更新工具节点位置
+    allToolNodes.attr('transform', d => {
+        // 找到父节点的位置
+        const parentNode = state.nodes.find(n => n.id === d.parentId);
+        if (parentNode) {
+            // 计算在包装节点中的位置
+            const toolIndex = parentNode.toolCalls?.findIndex((tc: any) => tc.function?.name === d.labels?.[0]?.text) || 0;
+            const x = (parentNode.x || 0) + WRAPPER_PADDING + toolIndex * (TOOL_NODE_WIDTH + 10);
+            const y = (parentNode.y || 0) + WRAPPER_PADDING;
+            return `translate(${x}, ${y})`;
+        }
+        return 'translate(0, 0)';
+    });
 
     // 渲染结束后保存当前快照
     prevNodes = state.nodes.map(n => ({ ...n }));
