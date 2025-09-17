@@ -250,5 +250,15 @@
     "single-chat": "單模型對話",
     "parallel-chat": "多模型並行對話",
     "tool-trace": "工具呼叫鏈",
-    "no-tool-calls": "沒有工具呼叫鏈"
+    "no-tool-calls": "沒有工具呼叫鏈",
+    "cumulative-tokens": "累計消耗",
+    "status": "狀態",
+    "tool-call": "工具呼叫",
+    "success": "成功",
+    "failed": "失敗",
+    "total-token": "總消耗",
+    "arguments": "參數",
+    "result": "結果",
+    "type": "類型",
+    "tool-details": "工具詳情"
 }

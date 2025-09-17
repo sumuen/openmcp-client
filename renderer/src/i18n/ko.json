@@ -250,5 +250,15 @@
     "single-chat": "단일 모델 대화",
     "parallel-chat": "병렬 멀티모델 대화",
     "tool-trace": "도구 호출 체인",
-    "no-tool-calls": "도구 호출 체인 없음"
+    "no-tool-calls": "도구 호출 체인 없음",
+    "cumulative-tokens": "누적 소비량",
+    "status": "상태",
+    "tool-call": "도구 호출",
+    "success": "성공",
+    "failed": "실패",
+    "total-token": "총 소비량",
+    "arguments": "매개변수",
+    "result": "결과",
+    "type": "유형",
+    "tool-details": "도구 세부 정보"
 }

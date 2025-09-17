@@ -250,5 +250,15 @@
     "single-chat": "単一モデル会話",
     "parallel-chat": "並列マルチモデル会話",
     "tool-trace": "ツール呼び出しチェーン",
-    "no-tool-calls": "ツール呼び出しチェーンなし"
+    "no-tool-calls": "ツール呼び出しチェーンなし",
+    "cumulative-tokens": "累積消費量",
+    "status": "状態",
+    "tool-call": "ツール呼び出し",
+    "success": "成功",
+    "failed": "失敗",
+    "total-token": "総消費量",
+    "arguments": "パラメータ",
+    "result": "結果",
+    "type": "タイプ",
+    "tool-details": "ツールの詳細"
 }

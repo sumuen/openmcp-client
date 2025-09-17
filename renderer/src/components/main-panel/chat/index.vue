@@ -60,7 +60,7 @@ import * as Message from './message';
 import ChatBox from './chat-box/index.vue';
 import SingleChat from './single-chat.vue';
 import ParallelChat from './parallel-chat.vue';
-import ToolTrace from './tool-trace.vue';
+import ToolTrace from './tool-trace/index.vue';
 import ChatToolbar from './chat-toolbar.vue';
 import { getToolCallFromXmlString, getToolResultFromXmlString, getXmlsFromString, toNormaliseToolcall } from './core/xml-wrapper';
 import { getIdAsIndexAdapter } from './core/handle-tool-calls';
@@ -210,19 +210,6 @@ const handleClearChatHistory = (event: CustomEvent) => {
     clearChatHistory(event.detail.index);
 };
 
-// 切换并行模式
-function toggleParallelMode() {
-    if (chatMode.value === 'parallel-chat') {
-        // 退出并行模式：清理临时配置
-        cleanupTempConfigs();
-        parallelChats.value = [];
-        selectedModels.value = [];
-    } else {
-        // 进入并行模式：记录原始配置数量
-        originalLlmsLength.value = llms.length;
-    }
-    chatMode.value = chatMode.value === 'parallel-chat' ? 'single-chat' : 'parallel-chat';
-}
 
 // 初始化并行聊天
 function initParallelChats() {

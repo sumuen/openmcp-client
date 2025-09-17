@@ -66,9 +66,10 @@
                             </span>
 
 
-                            <span style="width: 200px;" class="tools-dialog-container"
-                                v-if="currentMessageLevel === 'info'">
-                                <el-switch v-model="props.message.showJson!.value" inline-prompt active-text="JSON"
+                            <span v-if="currentMessageLevel === 'info'"
+                                style="width: 200px;" class="tools-dialog-container"
+                            >
+                                <el-switch v-model="showJsons[toolIndex]" inline-prompt active-text="JSON"
                                     inactive-text="Text" style="margin-left: 10px; width: 200px;"
                                     :inactive-action-style="'backgroundColor: var(--sidebar)'" />
                             </span>
@@ -76,7 +77,7 @@
 
                         <div class="tool-result" v-if="isValid(toolResult)">
                             <!-- 展示 JSON -->
-                            <div v-if="props.message.showJson!.value" class="tool-result-content">
+                            <div v-if="showJsons[toolIndex]" class="tool-result-content">
                                 <json-render :json="props.message.toolResults[toolIndex]"/>
                             </div>
 
@@ -173,6 +174,10 @@ const callingTools = computed(() => {
     return false;
 });
 
+const showJsons = ref<boolean[]>([]);
+props.message.toolResults.forEach(() => {
+    showJsons.value.push(false);
+});
 
 const activeNames = ref<string[]>(callingTools.value ? ['tool']: []);
 

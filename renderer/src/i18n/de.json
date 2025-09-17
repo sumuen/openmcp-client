@@ -250,5 +250,15 @@
     "single-chat": "Einzelmodell-Dialog",
     "parallel-chat": "Paralleler Multi-Model-Dialog",
     "tool-trace": "Werkzeugaufrufkette",
-    "no-tool-calls": "Keine Werkzeugaufrufkette"
+    "no-tool-calls": "Keine Werkzeugaufrufkette",
+    "cumulative-tokens": "Kumulativer Verbrauch",
+    "status": "Status",
+    "tool-call": "Werkzeugaufruf",
+    "success": "Erfolg",
+    "failed": "Fehlgeschlagen",
+    "total-token": "Gesamtverbrauch",
+    "arguments": "Parameter",
+    "result": "Ergebnis",
+    "type": "Typ",
+    "tool-details": "Werkzeugdetails"
 }

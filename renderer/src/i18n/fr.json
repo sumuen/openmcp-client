@@ -250,5 +250,15 @@
     "single-chat": "Conversation à modèle unique",
     "parallel-chat": "Conversation Multi-Modèles Parallèle",
     "tool-trace": "Chaîne d'appel d'outil",
-    "no-tool-calls": "Aucune chaîne d'appel d'outil"
+    "no-tool-calls": "Aucune chaîne d'appel d'outil",
+    "cumulative-tokens": "Consommation Cumulée",
+    "status": "Statut",
+    "tool-call": "Appel d'outil",
+    "success": "Succès",
+    "failed": "Échec",
+    "total-token": "Consommation totale",
+    "arguments": "Paramètre",
+    "result": "Résultat",
+    "type": "Type",
+    "tool-details": "Détails de l'outil"
 }
