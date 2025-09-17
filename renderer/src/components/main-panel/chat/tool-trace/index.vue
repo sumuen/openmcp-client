@@ -10,10 +10,14 @@
         </div>
 
         <div class="tool-trace-content">
-            <TraceTable v-if="traceMode === 'table'" :render-messages="renderMessages" />
-            <div v-else-if="traceMode === 'diagram'" class="diagram-placeholder">
-                <el-empty :description="t('diagram-mode-coming-soon')" />
-            </div>
+            <TraceTable
+                v-if="traceMode === 'table'"
+                :render-messages="renderMessages"
+            />
+            <TraceDiagram
+                v-else-if="traceMode === 'diagram'"
+                :render-messages="renderMessages"
+            />
         </div>
     </div>
 </template>
@@ -23,7 +27,10 @@ import { ref, defineProps, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { tabs } from '../../panel';
 import type { ChatStorage, IRenderMessage } from '../chat-box/chat';
+
 import TraceTable from './trace-table.vue';
+import TraceDiagram from './trace-diagram.vue';
+
 import { getToolCallFromXmlString, getToolResultFromXmlString, getXmlsFromString, toNormaliseToolcall } from '../core/xml-wrapper';
 import { getIdAsIndexAdapter } from '../core/handle-tool-calls';
 import { MessageState } from '../chat-box/chat';
