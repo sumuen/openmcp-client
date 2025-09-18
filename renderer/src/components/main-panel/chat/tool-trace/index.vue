@@ -18,6 +18,10 @@
                 v-else-if="traceMode === 'diagram'"
                 :render-messages="renderMessages"
             />
+            <TraceFsm
+                v-else-if="traceMode === 'fsm'"
+                :render-messages="renderMessages"
+            />
         </div>
     </div>
 </template>
@@ -30,6 +34,7 @@ import type { ChatStorage, IRenderMessage } from '../chat-box/chat';
 
 import TraceTable from './trace-table.vue';
 import TraceDiagram from './trace-diagram.vue';
+import TraceFsm from './trace-fsm.vue';
 
 import { getToolCallFromXmlString, getToolResultFromXmlString, getXmlsFromString, toNormaliseToolcall } from '../core/xml-wrapper';
 import { getIdAsIndexAdapter } from '../core/handle-tool-calls';
@@ -58,6 +63,10 @@ const traceModeItems = ref([
     {
         label: t('trace-diagram-mode'),
         value: 'diagram'
+    },
+    {
+        label: t('trace-fsm-mode'),
+        value: 'fsm'
     }
 ]);
 

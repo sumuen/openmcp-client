@@ -270,5 +270,6 @@
     "duration-ms": "소요 시간",
     "table-setting": "테이블 설정",
     "content": "콘텐츠",
-    "details": "세부사항"
+    "details": "세부사항",
+    "trace-fsm-mode": "유한 상태 기계 패턴"
 }

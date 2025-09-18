@@ -43,7 +43,7 @@ import { useI18n } from 'vue-i18n';
 
 // 全局常量定义
 const NODE_WIDTH = 200;
-const NODE_HEIGHT = 80;
+const NODE_HEIGHT = 60;
 const NODE_RADIUS = 16;
 const WRAPPER_PADDING = 20;
 const TOOL_NODE_WIDTH = 160;
@@ -267,7 +267,7 @@ function processMessages() {
             // 保存节点详细信息
             nodeDataMap.set(nodeId, {
                 id: nodeId,
-                name: toolCalls.length > 1 ? `Tool Calls (${toolCalls.length})` : (toolCalls[0]?.function?.name || 'Tool Call'),
+                name: toolCalls.length > 1 ? `${t("tool-call")} (${toolCalls.length})` : (toolCalls[0]?.function?.name || t("tool-call")),
                 type: 'Tool Call',
                 content: toolCalls.length > 1 ? toolCalls.map((tc: any) => tc.function?.name).join(', ') : toolCalls[0]?.function?.arguments,
                 duration,
@@ -513,6 +513,8 @@ function renderSvg() {
             if (d.labels?.[0]?.text === 'user-input') {
                 return '';
             }
+            console.log(d);
+            
             const nodeData = nodeDataMap.get(d.id);
             return nodeData?.duration || '';
         });

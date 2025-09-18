@@ -270,5 +270,6 @@
     "duration-ms": "Verstrichene Zeit",
     "table-setting": "Tabelleneinstellungen",
     "content": "Inhalt",
-    "details": "Details"
+    "details": "Details",
+    "trace-fsm-mode": "Finite-State-Machine-Muster"
 }

@@ -270,5 +270,6 @@
     "duration-ms": "Time taken",
     "table-setting": "Table Settings",
     "content": "Content",
-    "details": "Details"
+    "details": "Details",
+    "trace-fsm-mode": "Finite State Machine Pattern"
 }

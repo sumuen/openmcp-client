@@ -270,5 +270,6 @@
     "duration-ms": "Temps écoulé",
     "table-setting": "Paramètres du tableau",
     "content": "Contenu",
-    "details": "Détails"
+    "details": "Détails",
+    "trace-fsm-mode": "Modèle de Machine à États Finis"
 }

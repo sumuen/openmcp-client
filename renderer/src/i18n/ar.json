@@ -270,5 +270,6 @@
     "duration-ms": "الوقت المستغرق",
     "table-setting": "إعدادات الجدول",
     "content": "المحتوى",
-    "details": "التفاصيل"
+    "details": "التفاصيل",
+    "trace-fsm-mode": "نمط آلة الحالة المحدودة"
 }

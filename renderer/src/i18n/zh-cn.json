@@ -270,5 +270,6 @@
     "duration-ms": "耗时",
     "table-setting": "表格设置",
     "content": "内容",
-    "details": "细节"
+    "details": "细节",
+    "trace-fsm-mode": "有限状态机模式"
 }

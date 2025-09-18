@@ -270,5 +270,6 @@
     "duration-ms": "所要時間",
     "table-setting": "テーブル設定",
     "content": "コンテンツ",
-    "details": "詳細"
+    "details": "詳細",
+    "trace-fsm-mode": "有限状態機械パターン"
 }
