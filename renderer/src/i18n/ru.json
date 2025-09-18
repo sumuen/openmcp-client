@@ -269,5 +269,6 @@
     "select-columns-to-display": "Выбор отображаемых столбцов данных",
     "duration-ms": "Затраченное время",
     "table-setting": "Настройки таблицы",
-    "content": "Содержание"
+    "content": "Содержание",
+    "details": "Детали"
 }

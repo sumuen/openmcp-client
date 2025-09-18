@@ -269,5 +269,6 @@
     "select-columns-to-display": "表示するデータ列を選択",
     "duration-ms": "所要時間",
     "table-setting": "テーブル設定",
-    "content": "コンテンツ"
+    "content": "コンテンツ",
+    "details": "詳細"
 }

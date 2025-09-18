@@ -269,5 +269,6 @@
     "select-columns-to-display": "Anzuzeigende Datenspalten auswählen",
     "duration-ms": "Verstrichene Zeit",
     "table-setting": "Tabelleneinstellungen",
-    "content": "Inhalt"
+    "content": "Inhalt",
+    "details": "Details"
 }

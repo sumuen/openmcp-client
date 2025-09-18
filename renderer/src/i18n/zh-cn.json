@@ -269,5 +269,6 @@
     "select-columns-to-display": "选择展示的数据列",
     "duration-ms": "耗时",
     "table-setting": "表格设置",
-    "content": "内容"
+    "content": "内容",
+    "details": "细节"
 }

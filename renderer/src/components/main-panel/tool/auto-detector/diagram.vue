@@ -1,41 +1,3 @@
-<template>
-    <div style="display: flex; align-items: flex-start; gap: 32px;">
-        <div ref="svgContainer" class="diagram-container"></div>
-        <div class="diagram-info-panel">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div v-if="infoNodeId && state.dataView.get(infoNodeId)" class="item-status" :class="state.dataView.get(infoNodeId)?.status || 'waiting'">
-                    {{ state.dataView.get(infoNodeId)?.status || 'waiting' }}
-                </div>
-                <div v-else>
-                    {{ "Unknown Status" }}
-                </div>
-                <el-button
-                    circle
-                    size="small"
-                    :type="state.pinnedNodeId ? 'primary' : 'default'"
-                    @click="togglePin"
-                    style="margin-bottom: 4px;"
-                    :disabled="!infoNodeId"
-                >
-                    <span class="iconfont icon-pin"></span>
-                </el-button>
-            </div>
-            <template v-if="infoNodeId && state.dataView.get(infoNodeId)">
-                <el-scrollbar height="500px" width="300px">
-                    <DiagramItemRecord :data-view="state.dataView.get(infoNodeId)" />
-                </el-scrollbar>
-            </template>
-            <template v-else>
-                <div class="diagram-info-empty">
-                    <div style="color: #bbb; font-size: 15px;">
-                        {{ t('diagram-node-empty') }}
-                    </div>
-                </div>
-            </template>
-        </div>
-    </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted, nextTick, reactive, inject, computed } from 'vue';
 import * as d3 from 'd3';
@@ -63,6 +25,12 @@ const svgContainer = ref<HTMLDivElement | null>(null);
 let prevNodes: any[] = [];
 let prevEdges: any[] = [];
 
+// 缩放相关变量
+const scale = ref(1);
+const minScale = 0.5;
+const maxScale = 2;
+const scaleStep = 0.1;
+
 const state = reactive({
     nodes: [] as Node[],
     edges: [] as Edge[],
@@ -72,6 +40,13 @@ const state = reactive({
     pinnedNodeId: null as string | null, // 新增
     offset: { x: 0, y: 0 },
     dataView: new Map<string, NodeDataView>
+});
+
+// 状态机可视化相关
+const stateMachineState = reactive({
+    messages: [] as any[], // 存储渲染消息
+    nodeMap: new Map<string, any>(), // 节点映射
+    edgeSet: new Set<string>() // 边集合，避免重复连接
 });
 
 const tab = tabs.content[props.tabId];
@@ -237,6 +212,223 @@ const drawDiagram = async () => {
     renderSvg();
 };
 
+// 添加状态机可视化功能
+const createStateMachineVisualization = async (messages: any[]) => {
+    // 清空现有状态
+    state.nodes = [];
+    state.edges = [];
+    stateMachineState.messages = messages;
+    stateMachineState.nodeMap.clear();
+    stateMachineState.edgeSet.clear();
+    
+    // 获取所有工具
+    const tools = await getAllTools();
+    
+    // 创建工具名称到工具对象的映射
+    const toolMap = new Map<string, any>();
+    tools.forEach(tool => {
+        toolMap.set(tool.name, tool);
+    });
+    
+    // 1. 先创建所有节点
+    const nodeIds = new Set<string>();
+    
+    // 处理消息，创建节点
+    for (const message of messages) {
+        if (message.role === 'user') {
+            // 用户输入节点
+            const nodeId = `user-${message.id}`;
+            if (!nodeIds.has(nodeId)) {
+                state.nodes.push({
+                    id: nodeId,
+                    width: 200,
+                    height: 80,
+                    labels: [{ text: t('user-input') }],
+                    type: 'user-input',
+                    content: message.content
+                });
+                nodeIds.add(nodeId);
+                stateMachineState.nodeMap.set(nodeId, {
+                    id: nodeId,
+                    name: t('user-input'),
+                    type: 'user-input',
+                    content: message.content,
+                    status: 'success'
+                });
+            }
+        } else if (message.role === 'assistant') {
+            // 助手消息节点
+            const nodeId = `assistant-${message.id}`;
+            if (!nodeIds.has(nodeId)) {
+                state.nodes.push({
+                    id: nodeId,
+                    width: 200,
+                    height: 80,
+                    labels: [{ text: t('assistant-output') }],
+                    type: 'assistant-output',
+                    content: message.content
+                });
+                nodeIds.add(nodeId);
+                stateMachineState.nodeMap.set(nodeId, {
+                    id: nodeId,
+                    name: t('assistant-output'),
+                    type: 'assistant-output',
+                    content: message.content,
+                    status: message.status || 'success'
+                });
+            }
+            
+            // 处理工具调用
+            if (message.tool_calls) {
+                for (const toolCall of message.tool_calls) {
+                    const toolName = toolCall.function?.name;
+                    if (toolName) {
+                        // 工具节点（根据名称规约）
+                        if (!nodeIds.has(toolName)) {
+                            state.nodes.push({
+                                id: toolName,
+                                width: 200,
+                                height: 80,
+                                labels: [{ text: toolName }],
+                                type: 'tool-call'
+                            });
+                            nodeIds.add(toolName);
+                            
+                            // 查找工具信息
+                            const tool = toolMap.get(toolName);
+                            stateMachineState.nodeMap.set(toolName, {
+                                id: toolName,
+                                name: toolName,
+                                type: 'tool-call',
+                                content: tool ? tool.description : '',
+                                status: 'waiting'
+                            });
+                        }
+                    }
+                }
+            }
+        } else if (message.role === 'tool') {
+            // 工具结果节点
+            const nodeId = `tool-result-${message.id}`;
+            const toolName = message.name || 'Unknown Tool';
+            if (!nodeIds.has(nodeId)) {
+                state.nodes.push({
+                    id: nodeId,
+                    width: 200,
+                    height: 80,
+                    labels: [{ text: `${toolName} ${t('result')}` }],
+                    type: 'tool-result'
+                });
+                nodeIds.add(nodeId);
+                stateMachineState.nodeMap.set(nodeId, {
+                    id: nodeId,
+                    name: `${toolName} ${t('result')}`,
+                    type: 'tool-result',
+                    content: message.content,
+                    status: 'success'
+                });
+            }
+        }
+    }
+    
+    // 2. 根据消息顺序创建连接
+    for (let i = 0; i < messages.length - 1; i++) {
+        const currentMessage = messages[i];
+        const nextMessage = messages[i + 1];
+        
+        let sourceNodeId = '';
+        let targetNodeId = '';
+        
+        // 确定当前节点ID
+        if (currentMessage.role === 'user') {
+            sourceNodeId = `user-${currentMessage.id}`;
+        } else if (currentMessage.role === 'assistant') {
+            sourceNodeId = `assistant-${currentMessage.id}`;
+            
+            // 如果当前消息有工具调用，连接到工具
+            if (currentMessage.tool_calls && currentMessage.tool_calls.length > 0) {
+                for (const toolCall of currentMessage.tool_calls) {
+                    const toolName = toolCall.function?.name;
+                    if (toolName) {
+                        // 创建从助手到工具的连接
+                        const edgeId = `${sourceNodeId}-${toolName}`;
+                        if (!stateMachineState.edgeSet.has(edgeId)) {
+                            state.edges.push({
+                                id: edgeId,
+                                sources: [sourceNodeId],
+                                targets: [toolName]
+                            });
+                            stateMachineState.edgeSet.add(edgeId);
+                        }
+                        
+                        // 如果下一个消息是工具调用的结果，创建从工具到下一个消息的连接
+                        if (nextMessage.role === 'tool' && nextMessage.name === toolName) {
+                            const targetNodeId = `tool-result-${nextMessage.id}`;
+                            const toolEdgeId = `${toolName}-${targetNodeId}`;
+                            if (!stateMachineState.edgeSet.has(toolEdgeId)) {
+                                state.edges.push({
+                                    id: toolEdgeId,
+                                    sources: [toolName],
+                                    targets: [targetNodeId]
+                                });
+                                stateMachineState.edgeSet.add(toolEdgeId);
+                            }
+                        }
+                    }
+                }
+                continue; // 工具调用的消息不需要与其他消息直接连接
+            }
+        } else if (currentMessage.role === 'tool') {
+            sourceNodeId = `tool-result-${currentMessage.id}`;
+        }
+        
+        // 确定目标节点ID
+        if (nextMessage.role === 'user') {
+            targetNodeId = `user-${nextMessage.id}`;
+        } else if (nextMessage.role === 'assistant') {
+            targetNodeId = `assistant-${nextMessage.id}`;
+        } else if (nextMessage.role === 'tool') {
+            targetNodeId = `tool-result-${nextMessage.id}`;
+        }
+        
+        // 创建连接（避免重复）
+        if (sourceNodeId && targetNodeId) {
+            const edgeId = `${sourceNodeId}-${targetNodeId}`;
+            if (!stateMachineState.edgeSet.has(edgeId)) {
+                state.edges.push({
+                    id: edgeId,
+                    sources: [sourceNodeId],
+                    targets: [targetNodeId]
+                });
+                stateMachineState.edgeSet.add(edgeId);
+            }
+        }
+    }
+    
+    // 特殊处理：工具调用到自身的连接
+    for (const message of messages) {
+        if (message.role === 'assistant' && message.tool_calls) {
+            for (const toolCall of message.tool_calls) {
+                const toolName = toolCall.function?.name;
+                if (toolName) {
+                    // 检查是否有下一个工具调用是相同的工具
+                    const edgeId = `${toolName}-${toolName}`;
+                    if (!stateMachineState.edgeSet.has(edgeId)) {
+                        // 这里我们不创建自连接，因为这在可视化上可能不清晰
+                        // 如果需要自连接，可以在这里添加逻辑
+                    }
+                }
+            }
+        }
+    }
+    
+    // 重新计算布局
+    await recomputeLayout();
+    
+    // 绘制 SVG
+    renderSvg();
+};
+
 function renderSvg() {
     const prevNodeMap = new Map(prevNodes.map(n => [n.id, n]));
     const prevEdgeMap = new Map(prevEdges.map(e => [e.id, e]));
@@ -285,10 +477,12 @@ function renderSvg() {
     if (mainGroup.empty()) {
         mainGroup = svg.append('g').attr('class', 'main-group') as any;
     }
+    // 应用平移和缩放
     mainGroup
+        .attr('transform', `translate(${offsetX}, 0) scale(${scale.value})`)
         .transition()
         .duration(600)
-        .attr('transform', `translate(${offsetX}, 0)`);
+        .attr('transform', `translate(${offsetX}, 0) scale(${scale.value})`);
 
     // Draw edges with enter animation
     const allSections: { id: string, section: any }[] = [];
@@ -434,7 +628,14 @@ function renderSvg() {
         .attr('width', (d: any) => d.width)
         .attr('height', (d: any) => d.height)
         .attr('rx', 16)
-        .attr('fill', 'var(--main-light-color-20)')
+        .attr('fill', (d: any) => {
+            // 根据节点类型设置不同的填充颜色
+            if (d.type === 'user-input') return '#e3f2fd'; // 蓝色系 - 用户输入
+            if (d.type === 'assistant-output') return '#f3e5f5'; // 紫色系 - 助手输出
+            if (d.type === 'tool-call') return '#e8f5e8'; // 绿色系 - 工具调用
+            if (d.type === 'tool-result') return '#fff3e0'; // 橙色系 - 工具结果
+            return 'var(--main-light-color-20)'; // 默认颜色
+        })
         .attr('stroke', d => state.selectedNodeId === d.id ? 'var(--main-color)' : 'var(--main-light-color-10)')
         .attr('stroke-width', 2);
 
@@ -446,7 +647,7 @@ function renderSvg() {
         .attr('font-size', 16)
         .attr('fill', 'var(--main-color)')
         .attr('font-weight', 600)
-        .text(d => d.labels?.[0]?.text || 'Tool');
+        .text(d => d.labels?.[0]?.text || 'Node');
 
     nodeGroupEnter.append('g').attr('class', 'node-status');
 
@@ -458,7 +659,10 @@ function renderSvg() {
         const g = d3.select(this);
         g.selectAll('*').remove(); // 清空旧内容
 
-        const status = state.dataView.get(d.id)?.status || 'waiting';
+        // 获取节点状态（针对状态机可视化）
+        const nodeData = stateMachineState.nodeMap.get(d.id);
+        const status = nodeData?.status || state.dataView.get(d.id)?.status || 'waiting';
+        
         if (status === 'running') {
             g.append('circle')
                 .attr('cx', d.width / 2 - 32)
@@ -625,8 +829,58 @@ context.preset = (type: string) => {
 context.state = state;
 context.render = renderSvg;
 
+// 暴露状态机可视化方法给外部使用
+context.createStateMachineVisualization = createStateMachineVisualization;
+
 onMounted(() => {
     nextTick(drawDiagram);
+    
+    // 添加触控板手势支持
+    if (svgContainer.value) {
+        let pinchStartScale = 1;
+        let initialDistance = 0;
+        
+        // 监听触摸开始事件
+        svgContainer.value.addEventListener('touchstart', (event: TouchEvent) => {
+            if (event.touches.length === 2) {
+                // 双指触摸，准备进行缩放
+                const touch1 = event.touches[0];
+                const touch2 = event.touches[1];
+                initialDistance = Math.hypot(
+                    touch2.clientX - touch1.clientX,
+                    touch2.clientY - touch1.clientY
+                );
+                pinchStartScale = scale.value;
+                event.preventDefault();
+            }
+        });
+        
+        // 监听触摸移动事件
+        svgContainer.value.addEventListener('touchmove', (event: TouchEvent) => {
+            if (event.touches.length === 2 && initialDistance > 0) {
+                // 双指移动，进行缩放
+                const touch1 = event.touches[0];
+                const touch2 = event.touches[1];
+                const currentDistance = Math.hypot(
+                    touch2.clientX - touch1.clientX,
+                    touch2.clientY - touch1.clientY
+                );
+                
+                // 计算缩放比例
+                const scaleChange = currentDistance / initialDistance;
+                scale.value = Math.min(maxScale, Math.max(minScale, pinchStartScale * scaleChange));
+                
+                // 应用缩放
+                applyZoom();
+                event.preventDefault();
+            }
+        });
+        
+        // 监听触摸结束事件
+        svgContainer.value.addEventListener('touchend', () => {
+            initialDistance = 0;
+        });
+    }
 });
 
 // 4. 计算窗口位置
@@ -680,97 +934,35 @@ function resetDataView() {
 
 context.resetDataView = resetDataView;
 
-</script>
-
-<style>
-.diagram-container {
-    width: 600px;
-    min-height: 200px;
-    border-radius: 8px;
-    padding: 24px 0;
-    display: flex;
-    justify-content: flex-start;
-    overflow-x: auto;
-}
-
-.node-popup {
-    position: absolute;
-    background: var(--background);
-    border: 1px solid var(--main-color);
-    border-radius: 8px;
-    padding: 8px 12px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    white-space: nowrap;
-    z-index: 10;
-}
-
-/* 旋转动画 */
-.status-running-circle {
-    animation: spin 1s linear infinite;
-    transform-origin: center;
-}
-
-@keyframes spin {
-    100% {
-        transform: rotate(360deg);
+// 处理滚轮事件实现缩放功能
+const handleWheel = (event: WheelEvent) => {
+    if (!svgContainer.value) return;
+    
+    // 只有在按住 Ctrl 键时才进行缩放
+    if (event.ctrlKey) {
+        event.preventDefault();
+        
+        // 根据滚动方向调整缩放比例
+        if (event.deltaY < 0) {
+            // 向上滚动，放大
+            scale.value = Math.min(maxScale, scale.value + scaleStep);
+        } else {
+            // 向下滚动，缩小
+            scale.value = Math.max(minScale, scale.value - scaleStep);
+        }
+        
+        // 应用缩放
+        applyZoom();
     }
-}
+};
 
-.diagram-container {
-    width: 600px;
-    min-height: 200px;
-    display: flex;
-    align-items: flex-start;
-    border-radius: 8px;
-    padding: 24px 0;
-    overflow-x: auto;
-}
-
-.diagram-info-panel {
-    position: absolute;
-    right: 30px;
-    top: 10px;
-    width: 300px;
-    min-height: 180px;
-    border: 1px solid var(--main-color);
-    border-radius: 12px;
-    box-shadow: 0 2px 12px 0 rgba(0,0,0,0.06);
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    margin-top: 8px;
-    transition: box-shadow 0.2s;
-}
-
-.diagram-info-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    min-height: 120px;
-    opacity: 0.85;
-    font-size: 15px;
-}
-
-.item-status.running {
-    color: var(--main-color);
-}
-
-.item-status.success {
-    color: #43a047;
-}
-
-.item-status.error {
-    color: #e53935;
-}
-
-.item-status.waiting {
-    color: #aaa;
-}
-
-.item-status.default {
-    color: #888;
-}
-
-</style>
+// 应用缩放变换到 SVG
+const applyZoom = () => {
+    if (!svgContainer.value) return;
+    
+    const svg = d3.select(svgContainer.value).select('svg');
+    if (!svg.empty()) {
+        svg.select('.main-group')
+            .attr('transform', `scale(${scale.value})`);
+    }
+};

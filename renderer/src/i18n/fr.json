@@ -269,5 +269,6 @@
     "select-columns-to-display": "Sélectionner les colonnes de données à afficher",
     "duration-ms": "Temps écoulé",
     "table-setting": "Paramètres du tableau",
-    "content": "Contenu"
+    "content": "Contenu",
+    "details": "Détails"
 }

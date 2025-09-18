@@ -269,5 +269,6 @@
     "select-columns-to-display": "표시할 데이터 열 선택",
     "duration-ms": "소요 시간",
     "table-setting": "테이블 설정",
-    "content": "콘텐츠"
+    "content": "콘텐츠",
+    "details": "세부사항"
 }

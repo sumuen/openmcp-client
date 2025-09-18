@@ -269,5 +269,6 @@
     "select-columns-to-display": "選擇顯示的資料欄",
     "duration-ms": "耗時",
     "table-setting": "表格設定",
-    "content": "內容"
+    "content": "內容",
+    "details": "細節"
 }

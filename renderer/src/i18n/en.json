@@ -269,5 +269,6 @@
     "select-columns-to-display": "Select data columns to display",
     "duration-ms": "Time taken",
     "table-setting": "Table Settings",
-    "content": "Content"
+    "content": "Content",
+    "details": "Details"
 }

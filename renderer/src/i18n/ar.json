@@ -269,5 +269,6 @@
     "select-columns-to-display": "اختيار أعمدة البيانات المعروضة",
     "duration-ms": "الوقت المستغرق",
     "table-setting": "إعدادات الجدول",
-    "content": "المحتوى"
+    "content": "المحتوى",
+    "details": "التفاصيل"
 }

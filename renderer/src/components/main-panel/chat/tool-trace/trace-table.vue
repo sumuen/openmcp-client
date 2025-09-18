@@ -1,45 +1,26 @@
 <template>
     <div class="trace-table-container">
         <div class="column-selector">
-            <el-popover
-                placement="bottom"
-                :width="300"
-                trigger="click"
-            >
+            <el-popover placement="bottom" :width="300" trigger="click">
                 <template #reference>
                     <el-button size="small">
-                        <i class="iconfont icon-setting"/>
+                        <i class="iconfont icon-setting" />
                         &ensp;{{ t('table-setting') }}
                     </el-button>
                 </template>
                 <div class="column-selector-content">
                     <div class="column-selector-title">{{ t('select-columns-to-display') }}</div>
-                    <el-checkbox 
-                        v-for="column in allColumns" 
-                        :key="column.prop"
-                        v-model="column.visible"
-                        :label="column.label"
-                    />
+                    <el-checkbox v-for="column in allColumns" :key="column.prop" v-model="column.visible"
+                        :label="column.label" />
                 </div>
             </el-popover>
         </div>
 
         <el-scrollbar height="75%" width="100%">
-            <el-table 
-                :data="tableData" 
-                style="width: 100%" 
-                row-class-name="trace-table-row"
-                @row-click="handleRowClick"
-            >
-                <el-table-column 
-                    v-for="column in visibleColumns" 
-                    :key="column.prop"
-                    :prop="column.prop" 
-                    :label="column.label" 
-                    :width="column.width"
-                    :align="column.align"
-                    :show-overflow-tooltip="true"
-                >
+            <el-table :data="tableData" style="width: 100%" row-class-name="trace-table-row"
+                @row-click="handleRowClick">
+                <el-table-column v-for="column in visibleColumns" :key="column.prop" :prop="column.prop"
+                    :label="column.label" :width="column.width" :align="column.align" :show-overflow-tooltip="true">
                     <template #default="scope">
                         <template v-if="column.prop === 'status' && scope.row">
                             <el-tag :type="scope.row.statusType">{{ scope.row.status }}</el-tag>
@@ -48,9 +29,7 @@
                             <div class="tool-names-container">
                                 {{ scope.row.toolNames[0] }}
 
-                                <el-tag v-if="scope.row.toolNames.length > 1"
-                                    type="info"
-                                    >
+                                <el-tag v-if="scope.row.toolNames.length > 1" type="info">
                                     {{ scope.row.toolNames.length - 1 }}+
                                 </el-tag>
 
@@ -62,11 +41,7 @@
         </el-scrollbar>
 
         <!-- 详细信息对话框 -->
-        <el-dialog 
-            v-model="dialogVisible" 
-            :title="t('details')" 
-            :before-close="handleDialogClose"
-        >
+        <el-dialog v-model="dialogVisible" width="80%" :title="t('details')" :before-close="handleDialogClose">
             <div v-if="selectedRow">
                 <el-descriptions :column="1" border>
                     <el-descriptions-item :label="t('type')">{{ selectedRow.type }}</el-descriptions-item>
@@ -74,27 +49,35 @@
                         <pre class="content-pre">{{ selectedRow.content }}</pre>
                     </el-descriptions-item>
                     <el-descriptions-item v-if="selectedRow.toolCalls" :label="t('tool-call')">
-                        <div v-for="(toolCall, index) in selectedRow.toolCalls" :key="index" class="tool-call-item">
-                            <el-descriptions :column="1" size="small">
-                                <el-descriptions-item :label="t('toolbar.search.name')">
-                                    <code>{{ toolCall.function?.name }}</code>
-                                </el-descriptions-item>
-                                <el-descriptions-item :label="t('arguments')">
-                                    <pre class="arguments-pre">{{ toolCall.function?.arguments }}</pre>
-                                </el-descriptions-item>
-                            </el-descriptions>
-                        </div>
+                        <el-scrollbar height="300px">
+                            <div v-for="(toolCall, index) in selectedRow.toolCalls" :key="index" class="tool-call-item">
+                                <el-descriptions :column="1" size="small">
+                                    <el-descriptions-item :label="t('toolbar.search.name')">
+                                        <code>{{ toolCall.function?.name }}</code>
+                                    </el-descriptions-item>
+                                    <el-descriptions-item :label="t('arguments')">
+                                        <div class="arguments-pre">
+                                            {{ toolCall.function?.arguments }}
+                                        </div>
+                                    </el-descriptions-item>
+                                    <el-descriptions-item :label="t('result')">
+                                        <div class="arguments-pre">
+                                            {{ selectedRow.toolResults[index] }}
+                                        </div>
+                                    </el-descriptions-item>
+                                </el-descriptions>
+                            </div>
+                        </el-scrollbar>
                     </el-descriptions-item>
-                    <el-descriptions-item v-if="selectedRow.toolResults" :label="t('result')">
-                        <div v-for="(result, index) in selectedRow.toolResults" :key="index" class="tool-result-item">
-                            <pre class="result-pre">{{ Array.isArray(result) ? result.map(r => r.text).join('\n') : result }}</pre>
-                        </div>
-                    </el-descriptions-item>
+
                     <el-descriptions-item :label="t('input-token')">{{ selectedRow.inputTokens }}</el-descriptions-item>
-                    <el-descriptions-item :label="t('output-token')">{{ selectedRow.outputTokens }}</el-descriptions-item>
+                    <el-descriptions-item :label="t('output-token')">{{ selectedRow.outputTokens
+                        }}</el-descriptions-item>
                     <el-descriptions-item :label="t('total-token')">{{ selectedRow.totalTokens }}</el-descriptions-item>
-                    <el-descriptions-item :label="t('cache-hit-ratio')">{{ selectedRow.cacheHitRate }}</el-descriptions-item>
-                    <el-descriptions-item :label="t('cumulative-tokens')">{{ selectedRow.cumulativeTokens }}</el-descriptions-item>
+                    <el-descriptions-item :label="t('cache-hit-ratio')">{{ selectedRow.cacheHitRate
+                        }}</el-descriptions-item>
+                    <el-descriptions-item :label="t('cumulative-tokens')">{{ selectedRow.cumulativeTokens
+                        }}</el-descriptions-item>
                     <el-descriptions-item :label="t('duration-ms')">{{ selectedRow.duration }}</el-descriptions-item>
                     <el-descriptions-item :label="t('status')">
                         <el-tag :type="selectedRow.statusType">{{ selectedRow.status }}</el-tag>
@@ -114,6 +97,9 @@
 import { ref, defineProps, computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { IRenderMessage, IToolRenderMessage } from '../chat-box/chat';
+
+import JsonRender from '@/components/json-render/index.vue';
+
 
 const { t } = useI18n();
 
@@ -147,7 +133,7 @@ const tableData = computed(() => {
 
     for (let i = 0; i < props.renderMessages.length; i++) {
         const message = props.renderMessages[i];
-        
+
         // 计算耗时（当前节点与上一个节点的时间差）
         let duration = '-';
         if (i > 0 && props.renderMessages[i - 1].extraInfo?.created && message.extraInfo?.created) {
@@ -158,18 +144,18 @@ const tableData = computed(() => {
         // 处理用户消息
         if (message.role === 'user') {
             const usage = message.extraInfo.usage;
-            
+
             // 计算 token 信息
             const inputTokens = '-';
             const outputTokens = '-';
             const totalTokens = '-';
             const cacheHitTokens = '-';
             const cacheHitRate = '-';
-            
+
             cumulativeTokens += 0;
 
             const renderContent = message.content.length > 50 ? message.content.substring(0, 50) + '...' : message.content;
-            
+
             data.push({
                 index: data.length + 1,
                 type: t('user-input'),
@@ -190,17 +176,17 @@ const tableData = computed(() => {
         // 处理 assistant 消息（内容或工具调用）
         else if (message.role === 'assistant/content') {
             const usage = message.extraInfo.usage;
-            
+
             // 计算 token 信息
             const inputTokens = usage?.prompt_tokens || 0;
             const outputTokens = usage?.completion_tokens || 0;
             const totalTokens = usage?.total_tokens || 0;
             const cacheHitTokens = usage?.prompt_tokens_details?.cached_tokens || 0;
             const cacheHitRate = inputTokens > 0 ? Math.round((cacheHitTokens / inputTokens) * 100) : 0;
-            
+
             cumulativeTokens += totalTokens;
             const renderContent = message.content.length > 50 ? message.content.substring(0, 50) + '...' : message.content;
-            
+
             data.push({
                 index: data.length + 1,
                 type: t('assistant-output'),
@@ -222,29 +208,30 @@ const tableData = computed(() => {
         else if (message.role === 'assistant/tool_calls' && 'tool_calls' in message) {
             const toolMessage = message as IToolRenderMessage;
             const usage = toolMessage.extraInfo.usage;
-            
+
             // 计算 token 信息
             const inputTokens = usage?.prompt_tokens || 0;
             const outputTokens = usage?.completion_tokens || 0;
             const totalTokens = usage?.total_tokens || 0;
             const cacheHitTokens = usage?.prompt_tokens_details?.cached_tokens || 0;
             const cacheHitRate = inputTokens > 0 ? Math.round((cacheHitTokens / inputTokens) * 100) : 0;
-            
+
             cumulativeTokens += totalTokens;
-            
+
             // 将所有工具调用作为一个整体处理
             const toolNames = toolMessage.tool_calls.map(toolCall => toolCall.function?.name || '');
 
-            const typeName = toolNames.length > 1 ? 
+            const typeName = toolNames.length > 1 ?
                 t('tool-call') + ` (${toolNames.length})` :
                 t('tool-call');
-            
+
             data.push({
                 index: data.length + 1,
                 type: typeName,
                 typeIndex: 2,
                 toolNames,
                 toolCalls: toolMessage.tool_calls, // 所有工具调用
+                toolResults: toolMessage.toolResults || [],
                 inputTokens,
                 outputTokens,
                 totalTokens,
@@ -257,7 +244,7 @@ const tableData = computed(() => {
             });
         }
     }
-    
+
     return data;
 });
 
@@ -305,7 +292,6 @@ const handleDialogClose = () => {
 }
 
 .content-pre,
-.arguments-pre,
 .result-pre {
     white-space: pre-wrap;
     word-break: break-all;
@@ -315,6 +301,17 @@ const handleDialogClose = () => {
     border-radius: 4px;
     max-height: 200px;
     overflow-y: auto;
+}
+
+.arguments-pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+    margin: 0;
+    padding: 0 8px;
+    background-color: var(--el-fill-color-light);
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: hidden;
 }
 
 .dialog-footer {

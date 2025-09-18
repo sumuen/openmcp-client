@@ -5,21 +5,20 @@
         <!-- 节点详情弹窗 -->
         <el-dialog 
             v-model="nodeDetailVisible" 
-            :title="selectedNodeData?.name || 'Node Details'" 
+            :title="selectedNodeData?.name || t('tool-details')" 
             width="600px"
             :before-close="handleDialogClose"
         >
             <div v-if="selectedNodeData">
                 <el-descriptions :column="1" border>
-                    <el-descriptions-item label="Name">{{ selectedNodeData.name }}</el-descriptions-item>
-                    <el-descriptions-item v-if="selectedNodeData.type" label="Type">{{ selectedNodeData.type }}</el-descriptions-item>
-                    <el-descriptions-item v-if="selectedNodeData.content" label="Content">
+                    <el-descriptions-item v-if="selectedNodeData.type" :label="t('type')">{{ selectedNodeData.type }}</el-descriptions-item>
+                    <el-descriptions-item v-if="selectedNodeData.content" :label="t('content')">
                         <pre class="content-pre">{{ selectedNodeData.content }}</pre>
                     </el-descriptions-item>
-                    <el-descriptions-item v-if="selectedNodeData.duration" label="Duration">{{ selectedNodeData.duration }}</el-descriptions-item>
-                    <el-descriptions-item v-if="selectedNodeData.tokens" label="Tokens">{{ selectedNodeData.tokens }}</el-descriptions-item>
-                    <el-descriptions-item v-if="selectedNodeData.cacheHitRate" label="Cache Hit Rate">{{ selectedNodeData.cacheHitRate }}</el-descriptions-item>
-                    <el-descriptions-item label="Status">
+                    <el-descriptions-item v-if="selectedNodeData.duration" :label="t('duration-ms')">{{ selectedNodeData.duration }}</el-descriptions-item>
+                    <el-descriptions-item v-if="selectedNodeData.tokens" :label="t('total-token')">{{ selectedNodeData.tokens }}</el-descriptions-item>
+                    <el-descriptions-item v-if="selectedNodeData.cacheHitRate" :label="t('cache-hit-ratio')">{{ selectedNodeData.cacheHitRate }}</el-descriptions-item>
+                    <el-descriptions-item :label="t('status')">
                         <el-tag :type="getNodeStatusType(selectedNodeData.status)">
                             {{ selectedNodeData.status }}
                         </el-tag>
@@ -28,7 +27,7 @@
             </div>
             <template #footer>
                 <span class="dialog-footer">
-                    <el-button @click="nodeDetailVisible = false">Close</el-button>
+                    <el-button @click="nodeDetailVisible = false">{{ t('close') }}</el-button>
                 </span>
             </template>
         </el-dialog>
@@ -119,14 +118,14 @@ function processMessages() {
                 id: nodeId,
                 width: NODE_WIDTH,
                 height: NODE_HEIGHT,
-                labels: [{ text: 'User Message' }]
+                labels: [{ text: 'user-input' }]
             });
 
             // 保存节点详细信息
             nodeDataMap.set(nodeId, {
                 id: nodeId,
-                name: 'User Message',
-                type: 'User Input',
+                name: t('user-input'),
+                type: t('user-input'),
                 content: message.content,
                 status: message.extraInfo.state === 'success' ? 'success' : message.extraInfo.state || 'default'
             });
@@ -510,8 +509,8 @@ function renderSvg() {
         .attr('font-size', 12)
         .attr('fill', '#666')
         .text(d => {
-            // User Message 不显示耗时
-            if (d.labels?.[0]?.text === 'User Message') {
+            // user-input 不显示耗时
+            if (d.labels?.[0]?.text === 'user-input') {
                 return '';
             }
             const nodeData = nodeDataMap.get(d.id);
@@ -615,8 +614,8 @@ function renderSvg() {
     // 更新耗时文本
     nodeGroup.select('.node-duration')
         .text(d => {
-            // User Message 不显示耗时
-            if (d.labels?.[0]?.text === 'User Message') {
+            // user-input 不显示耗时
+            if (d.labels?.[0]?.text === 'user-input') {
                 return '';
             }
             const nodeData = nodeDataMap.get(d.id);
@@ -637,7 +636,10 @@ function renderSvg() {
             const parentNode = state.nodes.find(n => n.id === d.parentId);
             if (parentNode) {
                 // 计算在包装节点中的位置
-                const toolIndex = parentNode.toolCalls?.findIndex((tc: any) => tc.function?.name === d.labels?.[0]?.text) || 0;
+                // 修复重叠问题：使用索引而不是根据名称查找
+                const toolIndex = state.nodes
+                    .filter(n => n.parentId === d.parentId)
+                    .findIndex(n => n.id === d.id);
                 const x = (parentNode.x || 0) + WRAPPER_PADDING + toolIndex * (TOOL_NODE_WIDTH + 10);
                 const y = (parentNode.y || 0) + WRAPPER_PADDING;
                 return `translate(${x}, ${y})`;
@@ -682,7 +684,10 @@ function renderSvg() {
         const parentNode = state.nodes.find(n => n.id === d.parentId);
         if (parentNode) {
             // 计算在包装节点中的位置
-            const toolIndex = parentNode.toolCalls?.findIndex((tc: any) => tc.function?.name === d.labels?.[0]?.text) || 0;
+            // 修复重叠问题：使用索引而不是根据名称查找
+            const toolIndex = state.nodes
+                .filter(n => n.parentId === d.parentId)
+                .findIndex(n => n.id === d.id);
             const x = (parentNode.x || 0) + WRAPPER_PADDING + toolIndex * (TOOL_NODE_WIDTH + 10);
             const y = (parentNode.y || 0) + WRAPPER_PADDING;
             return `translate(${x}, ${y})`;
