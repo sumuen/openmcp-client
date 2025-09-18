@@ -118,7 +118,7 @@ function processMessages() {
                 id: nodeId,
                 width: NODE_WIDTH,
                 height: NODE_HEIGHT,
-                labels: [{ text: 'user-input' }]
+                labels: [{ text: t('user-input') }]
             });
 
             // 保存节点详细信息
@@ -166,7 +166,7 @@ function processMessages() {
                 id: nodeId,
                 width: NODE_WIDTH,
                 height: NODE_HEIGHT,
-                labels: [{ text: 'Assistant Message' }],
+                labels: [{ text: t('assistant-output') }],
                 duration // 添加耗时信息
             });
 
@@ -226,7 +226,7 @@ function processMessages() {
                     id: nodeId,
                     width: wrapperWidth,
                     height: wrapperHeight,
-                    labels: [{ text: `Tool Calls (${toolCalls.length})` }],
+                    labels: [{ text: `${t("tool-call")} (${toolCalls.length})` }],
                     isWrapper: true,
                     toolCalls: toolCalls,
                     duration // 只在包装节点上添加耗时
@@ -510,10 +510,9 @@ function renderSvg() {
         .attr('fill', '#666')
         .text(d => {
             // user-input 不显示耗时
-            if (d.labels?.[0]?.text === 'user-input') {
+            if (d.labels?.[0]?.text === 'user-input' || d.isWrapper) {
                 return '';
-            }
-            console.log(d);
+            }            
             
             const nodeData = nodeDataMap.get(d.id);
             return nodeData?.duration || '';
@@ -525,11 +524,18 @@ function renderSvg() {
     const nodeStatusGroup = nodeGroup.merge(nodeGroupEnter).select('.node-status');
 
     // 先清空再重绘
+    // 绘制状态和耗时
     nodeStatusGroup.each(function (d) {
         const g = d3.select(this);
         g.selectAll('*').remove(); // 清空旧内容
 
         const nodeData = nodeDataMap.get(d.id);
+        
+        if (nodeData.toolCalls?.length > 1) {
+            return;
+        }
+        
+
         const status = nodeData?.status || 'default';
         if (status === 'running') {
             g.append('circle')
@@ -616,7 +622,7 @@ function renderSvg() {
     // 更新耗时文本
     nodeGroup.select('.node-duration')
         .text(d => {
-            // user-input 不显示耗时
+            // user-input 不显示耗时            
             if (d.labels?.[0]?.text === 'user-input') {
                 return '';
             }
