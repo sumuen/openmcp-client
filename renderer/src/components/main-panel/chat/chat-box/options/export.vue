@@ -94,7 +94,7 @@ const generateExportData = computed(() => {
             }
         } else {
             mcpServers[client.name] = {
-                type: 'streamable_http',
+                type: 'http',
                 url: option.url,
                 description: "",
             }

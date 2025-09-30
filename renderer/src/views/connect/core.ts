@@ -204,9 +204,11 @@ export class McpClient {
 
         this.tools = new Map<string, ToolItem>();
         msg.tools.forEach(tool => {
-            const standardSchema = _processSchemaNode(tool.inputSchema, tool.inputSchema.$defs || {});
+            console.log(tool.inputSchema);
+            
+            // const standardSchema = _processSchemaNode(tool.inputSchema, tool.inputSchema.$defs || {});
 
-            tool.inputSchema = standardSchema;
+            // tool.inputSchema = standardSchema;
 
             this.tools!.set(tool.name, tool);
         });
@@ -703,16 +705,26 @@ class McpClientAdapter {
             // 连接
             const ok = await client.connect();
 
+            let wrapperChalk = chalk as any;
+
+            if (platform === 'web') {
+                wrapperChalk = {
+                    gray: (s: string) => s,
+                    green: (s: string) => s,
+                    red: (s: string) => s
+                }
+            }
+
             if (ok) {
                 console.log(
-                    chalk.gray(`[${new Date().toLocaleString()}]`),
-                    chalk.green(`🚀 [${client.name}] ${client.version} connected`)
+                    wrapperChalk.gray(`[${new Date().toLocaleString()}]`),
+                    wrapperChalk.green(`🚀 [${client.name}] ${client.version} connected`)
                 );
             } else {
                 console.log(
-                    chalk.gray(`[${new Date().toLocaleString()}]`),
-                    chalk.red(`× fail to connect `),
-                    chalk.red(JSON.stringify(client.connectionResult.logString, null, 2))
+                    wrapperChalk.gray(`[${new Date().toLocaleString()}]`),
+                    wrapperChalk.red(`× fail to connect `),
+                    wrapperChalk.red(JSON.stringify(client.connectionResult.logString, null, 2))
                 );
             }
 

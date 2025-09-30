@@ -3,7 +3,8 @@
 		@click.stop="toggleConnectionPanel()" :class="{ 'connected': client.connectionResult.success }">
 		<span class="mcp-server-info">
 			<el-tooltip class="extra-connect-container" effect="light" placement="right"
-				:content="fullDisplayServerName">
+				:content="mcpClientAdapter.masterNode.connectionResult.name + ' / ' + mcpClientAdapter.masterNode.connectionResult.version"
+            >
 				<span class="name">{{ displayServerName }}</span>
 			</el-tooltip>
 		</span>
@@ -21,9 +22,10 @@
 	<div v-else class="connected-status-container">
 		<span class="mcp-server-info">
 			<el-tooltip class="extra-connect-container" effect="light" placement="right"
-				:content="fullDisplayServerName">
+				:content="'loading ...'"
+            >
 				<span class="name">
-					加载中
+					{{ t("loading") }}
 				</span>
 			</el-tooltip>
 		</span>
@@ -59,11 +61,6 @@ defineComponent({ name: 'connected' });
 const { t } = useI18n();
 const client = computed(() => mcpClientAdapter.masterNode);
 
-console.log(client);
-
-const fullDisplayServerName = computed(() => {
-	return client.value.connectionResult.name + '/' + client.value.connectionResult.version;
-});
 
 const displayServerName = computed(() => {
 	const name = client.value.connectionResult.name;
@@ -90,6 +87,7 @@ const displayServerName = computed(() => {
 		.slice(0, 3)
 		.join('');
 });
+
 
 function toggleConnectionPanel() {
 	Connection.showPanel = true;
