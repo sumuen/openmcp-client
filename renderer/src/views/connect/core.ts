@@ -360,9 +360,6 @@ export class McpClient {
             });
         }
 
-        console.log(msg);
-        
-
         this.connectionResult.reuseConntion = msg.reuseConntion;
         this.connectionResult.status = msg.status;
         this.connectionResult.clientId = msg.clientId;

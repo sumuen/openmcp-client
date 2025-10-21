@@ -89,7 +89,6 @@ export class McpClient {
                     new URL(this.options.url),
                     {
                         authProvider: this.oauthPovider,
-                        sessionId: randomUUID(),
                     }
                 );
                 break;
@@ -126,10 +125,6 @@ export class McpClient {
 
 
     public getServerVersion() {
-        if (this.serverVersion) {
-            return this.serverVersion;
-        }
-
         const version = this.client.getServerVersion();
         this.serverVersion = version;
         return version;
