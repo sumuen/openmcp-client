@@ -20,13 +20,7 @@
                     <el-switch v-else-if="property.type === 'boolean'" active-text="true" inactive-text="false"
                         v-model="tabStorage.formData[name]" />
 
-                    <el-input-tag
-                        v-else-if="property.type === 'array'"
-                        v-model="tabStorage.formData[name]"
-                        :placeholder="property.description || t('enter') + ' ' + (property.title || name) + ' (逗号分隔)'"
-                    />
-
-                    <k-input-object v-else-if="property.type === 'object'" v-model="tabStorage.formData[name]"
+                    <k-input-object v-else-if="property.type === 'object' || property.type === 'array'" v-model="tabStorage.formData[name]"
                         :schema="property"
                         :placeholder="property.description || t('enter') + ' ' + (property.title || name)" />
 
@@ -164,6 +158,8 @@ const initFormData = () => {
     if (!currentTool.value?.inputSchema?.properties) return;
 
     const newSchemaDataForm: Record<string, number | boolean | string | object> = {};
+
+    console.log(currentTool.value.inputSchema);
 
     Object.entries(currentTool.value.inputSchema.properties).forEach(([name, property]) => {
         newSchemaDataForm[name] = getDefaultValue(property);

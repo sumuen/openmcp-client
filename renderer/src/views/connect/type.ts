@@ -77,3 +77,5 @@ export interface ConnectionResult {
 export interface McpClientGetCommonOption {
     cache: boolean;
 }
+
+export const CONNECTION_READY_EVENT = 'CONNECTION_READY_EVENT';

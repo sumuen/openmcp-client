@@ -61,10 +61,10 @@ defineComponent({ name: 'connected' });
 const { t } = useI18n();
 const client = computed(() => mcpClientAdapter.masterNode);
 
-
 const displayServerName = computed(() => {
 	const name = client.value.connectionResult.name;
-	if (name.length <= 3) return name;
+    
+	if (name?.length <= 3) return name;
 
 	// 处理中文混合名称
 	const chineseMatch = name.match(/[\u4e00-\u9fa5]/g);

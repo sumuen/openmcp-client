@@ -316,15 +316,15 @@ export async function connectService(
             clientMonitorMap.set(uuid, new McpServerConnectMonitor(uuid, option, updateClientMap, webview));
         }
 
-        const versionInfo = client.getServerVersion();
+        const versionInfo = client.getServerVersion();        
         const connectResult = {
             code: 200,
             msg: {
                 status: 'success',
                 clientId: uuid,
                 reuseConntion,
-                name: versionInfo?.name,
-                version: versionInfo?.version
+                name: versionInfo?.name || 'unknown',
+                version: versionInfo?.version || 'unknown'
             }
         };
 

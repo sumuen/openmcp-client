@@ -1,6 +1,6 @@
 import { useMessageBridge } from "@/api/message-bridge";
 import { reactive, type Reactive } from "vue";
-import type { IConnectionResult, ConnectionTypeOptionItem, IConnectionArgs, IConnectionEnvironment, McpOptions, McpClientGetCommonOption } from "./type";
+import { type IConnectionResult, type ConnectionTypeOptionItem, type IConnectionArgs, type IConnectionEnvironment, type McpOptions, type McpClientGetCommonOption, CONNECTION_READY_EVENT } from "./type";
 import { ElMessage } from "element-plus";
 import { loadPanels } from "@/hook/panel";
 import { getPlatform } from "@/api/platform";
@@ -204,10 +204,7 @@ export class McpClient {
 
         this.tools = new Map<string, ToolItem>();
         msg.tools.forEach(tool => {
-            console.log(tool.inputSchema);
-            
             // const standardSchema = _processSchemaNode(tool.inputSchema, tool.inputSchema.$defs || {});
-
             // tool.inputSchema = standardSchema;
 
             this.tools!.set(tool.name, tool);
@@ -362,6 +359,9 @@ export class McpClient {
                 message: JSON.stringify(msg, null, 2)
             });
         }
+
+        console.log(msg);
+        
 
         this.connectionResult.reuseConntion = msg.reuseConntion;
         this.connectionResult.status = msg.status;
@@ -524,8 +524,11 @@ export class McpClient {
             await this.getPromptTemplates({ cache: false });
             await this.getResources({ cache: false });
             await this.getResourceTemplates({ cache: false });
-            console.log(chalk.gray(`[${new Date().toLocaleString()}]`),
-                chalk.green(`🚀 [${this.name}] REFRESH COMPLETE`));
+            console.log(
+                chalk.gray(`[${new Date().toLocaleString()}]`),
+                chalk.green(`🚀 [${this.name}] REFRESH COMPLETE`)
+            );
+
         } catch (error) {
             if (signal.aborted) {
                 throw new Error(`Refresh timed out after ${timeoutMs}ms`);
@@ -637,17 +640,11 @@ class McpClientAdapter {
             this.connectrefreshListener = bridge.addCommandListener('connect/refresh', async (message) => {
                 const { code, msg } = message;
 
-                console.log('refresh');
-
-
                 if (code === 200) {
                     // 查找目标客户端
                     const clientIndex = this.findClientIndexByUuid(msg.uuid);
 
                     if (clientIndex > -1) {
-                        // 刷新该客户端的所有资源
-                        console.log('clientIndex', clientIndex);
-
                         await this.clients[clientIndex].refreshAllResources();
 
                         // 更新 refreshSignal，所有 watch refreshSignal 的部分会发生更新
@@ -734,6 +731,12 @@ class McpClientAdapter {
         // 如果全部成功，保存连接参数
         if (allOk) {
             this.saveLaunchSignature();
+        }
+
+        // 释放信号
+        if (platform === 'web') {
+            const event = new CustomEvent(CONNECTION_READY_EVENT, { detail: { message: 'ready' } });
+            document.dispatchEvent(event);
         }
     }
 

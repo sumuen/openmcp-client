@@ -3,9 +3,10 @@
 ## [main] 0.1.13
 - 增加工具调用链的可视化
 - 修复工具调用结果中响应的渲染无法切换为 json 的 bug
-- mook -> mock （错别字 哈哈哈）
+- mook -> mock
 - 解决左下角 hover 没有显著字符的 bug
 - 修复 streamable http 模式下导出 type 的问题
+- 数组输入框修改为编辑性更强的对象输入框
 
 ## [main] 0.1.12
 - 修复 client bug： 测试环境的环境变量无法在导出功能中被显示且无法正常保存。 https://picx.zhimg.com/80/v2-d2abc5ffcb97adbecf6ec94068c3169d_1440w.png
