@@ -92,7 +92,7 @@ export async function streamingChatCompletion(
         }
     }
 
-    console.log('sessionId finish ' + sessionId);
+    // console.log('sessionId finish ' + sessionId);
 
     // 传输结束，移除对应的 stream
     if (sessionId) {

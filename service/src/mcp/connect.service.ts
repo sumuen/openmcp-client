@@ -308,10 +308,15 @@ export async function connectService(
 
         const client = await connect(option);
         clientMap.set(uuid, client);
-        clientMonitorMap.set(uuid, new McpServerConnectMonitor(uuid, option, updateClientMap, webview));
+
+        console.log('[CONNECTION]', option.connectionType);
+        
+        // 只有 stdio 才需要监听
+        if (option.connectionType === 'STDIO') {
+            clientMonitorMap.set(uuid, new McpServerConnectMonitor(uuid, option, updateClientMap, webview));
+        }
 
         const versionInfo = client.getServerVersion();
-
         const connectResult = {
             code: 200,
             msg: {

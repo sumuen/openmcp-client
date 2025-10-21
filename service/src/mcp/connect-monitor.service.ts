@@ -48,10 +48,10 @@ export class McpServerConnectMonitor {
                 this.setupStdioMonitor(onchange);
                 break;
             case 'SSE':
-                logger.info({ uuid }, 'SSE connection type configured but not implemented');
+                // logger.info({ uuid }, 'SSE connection type configured but not implemented');
                 break;
             case 'STREAMABLE_HTTP':
-                logger.info({ uuid }, 'STREAMABLE_HTTP connection type configured but not implemented');
+                // logger.info({ uuid }, 'STREAMABLE_HTTP connection type configured but not implemented');
                 break;
         }
     }

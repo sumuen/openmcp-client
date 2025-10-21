@@ -41,22 +41,22 @@ export class MessageBridge {
 		switch (platform) {
 			case 'vscode':
 				this.setupVsCodeListener();
-				pinkLog('current platform: vscode');
+				pinkLog('[PLATFORM] Vscode');
 				break;
 
 			case 'electron':
 				this.setupElectronListener();
-				pinkLog('current platform: electron');
+				pinkLog('[PLATFORM] Electron');
 				break;
 			
 			case 'nodejs':
 				this.setupNodejsListener();
-				pinkLog('current platform: nodejs');
+				pinkLog('[PLATFORM] NodeJS');
 				break;
 			
 			case 'web':
 				this.setupWebSocket();
-				pinkLog('current platform: web');
+				pinkLog('[PLATFORM] Web');
 				break;
 		}
 	}

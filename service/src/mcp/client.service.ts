@@ -79,7 +79,7 @@ export class McpClient {
                 this.transport = new StreamableHTTPClientTransport(
                     new URL(this.options.url),
                     {
-                        authProvider:this.oauthPovider
+                        authProvider: this.oauthPovider
                     }
                 );
                 break;
