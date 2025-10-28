@@ -12,8 +12,9 @@ import { getSystemPrompt } from "../chat-box/options/system-prompt";
 import { mcpSetting } from "@/hook/mcp";
 import { mcpClientAdapter } from "@/views/connect/core";
 import type { ToolItem } from "@/hook/type";
-import chalk from 'chalk';
+
 import { getXmlWrapperPrompt, getToolCallFromXmlString, getXmlsFromString, handleXmlWrapperToolcall, toNormaliseToolcall, getXmlResultPrompt } from "./xml-wrapper";
+import { OmFeedback } from "./feedback";
 
 export type ChatCompletionChunk = OpenAI.Chat.Completions.ChatCompletionChunk;
 export interface TaskLoopChatOption {
@@ -58,8 +59,9 @@ export class TaskLoop {
     private onToolCall: (toolCall: ToolCall) => ToolCall = toolCall => toolCall;
     private onToolCalled: (toolCallResult: ToolCallResult) => ToolCallResult = toolCallResult => toolCallResult;
     private onEpoch: () => void = () => { };
-    private completionUsage: ChatCompletionChunk['usage'] | undefined;
+    private completionUsage?: ChatCompletionChunk['usage'];
     private llmConfig?: BasicLlmDescription;
+    private feedback;
 
     // 只会在 nodejs 环境下使用的部分变量
     private nodejsStatus = {
@@ -99,6 +101,9 @@ export class TaskLoop {
 
         // 注册 HMR
         mcpClientAdapter.addConnectRefreshListener();
+
+        // 注册回流系统
+        this.feedback = new OmFeedback(taskOptions.verbose || 0);
     }
 
     public async waitConnection() {
@@ -111,7 +116,7 @@ export class TaskLoop {
             maxJsonParseRetry = 3,
             verbose = 1,
         } = taskOptions;
-        
+
         this.taskOptions = {
             maxEpochs,
             maxJsonParseRetry,
@@ -180,9 +185,9 @@ export class TaskLoop {
         }
     }
 
-    private handleChunkUsage(chunk: ChatCompletionChunk) {        
+    private handleChunkUsage(chunk: ChatCompletionChunk) {
         const usage = chunk.usage;
-        
+
         if (usage) {
             this.completionUsage = usage;
         } else {
@@ -190,6 +195,8 @@ export class TaskLoop {
             const choice = chunk.choices[0] as any;
             if (choice.usage) {
                 this.completionUsage = choice.usage;
+            } else {
+                this.completionUsage = undefined;
             }
         }
     }
@@ -199,11 +206,11 @@ export class TaskLoop {
 
         return new Promise<IDoConversationResult>((resolve, reject) => {
             const chunkHandler = this.bridge.addCommandListener('llm/chat/completions/chunk', data => {
-                
+
                 if (data.sessionId !== sessionId) {
                     return;
                 }
-                
+
                 // data.code 一定为 200，否则不会走这个 route
                 const { chunk } = data.msg as { chunk: ChatCompletionChunk };
 
@@ -222,7 +229,7 @@ export class TaskLoop {
             }, { once: false });
 
             const doneHandler = this.bridge.addCommandListener('llm/chat/completions/done', data => {
-                
+
                 if (data.sessionId !== sessionId) {
                     return;
                 }
@@ -242,7 +249,7 @@ export class TaskLoop {
                 if (data.sessionId !== sessionId) {
                     return;
                 }
-                
+
                 this.consumeErrors({
                     state: MessageState.ReceiveChunkError,
                     msg: data.msg || '请求模型服务时发生错误'
@@ -289,7 +296,7 @@ export class TaskLoop {
 
         // 如果是 xml 模式，则 tools 为空
         const enableXmlWrapper = tabStorage.settings.enableXmlWrapper;
-        const tools = enableXmlWrapper ? []: getToolSchema(tabStorage.settings.enableTools);
+        const tools = enableXmlWrapper ? [] : getToolSchema(tabStorage.settings.enableTools);
 
         const userMessages = [];
 
@@ -395,98 +402,32 @@ export class TaskLoop {
     }
 
     private consumeErrors(error: IErrorMssage) {
-        const { verbose = 0 } = this.taskOptions;
-        if (verbose > 0) {
-            console.log(
-                chalk.gray(`[${new Date().toLocaleString()}]`),
-                chalk.red('error happen in task loop '),
-                chalk.red(error.msg)
-            );
-        }
+        this.feedback.consumeErrors(error);
         return this.onError(error);
     }
 
     private consumeChunks(chunk: ChatCompletionChunk) {
-        const { verbose = 0 } = this.taskOptions;
-        if (verbose > 1) {
-            console.log(
-                chalk.gray(`[${new Date().toLocaleString()}]`),
-                chalk.blue('receive chunk')
-            );
-        } else if (verbose > 2) {
-            const delta = chunk.choices[0]?.delta;
-            if (delta) {
-                console.log(
-                    chalk.gray(`[${new Date().toLocaleString()}]`),
-                    chalk.blue('receive chunk'),
-                    chalk.bold(JSON.stringify(delta, null, 2))
-                );
-            } else {
-                console.log(
-                    chalk.gray(`[${new Date().toLocaleString()}]`),
-                    chalk.blue('receive chunk'),
-                    chalk.blue('delta is empty')
-                );
-            }
-        }
+        this.feedback.consumeChunks(chunk);
         return this.onChunk(chunk);
     }
 
     private consumeToolCalls(toolCall: ToolCall) {
-        const { verbose = 0 } = this.taskOptions;
-
-        if (verbose > 0) {
-            console.log(
-                chalk.gray(`[${new Date().toLocaleString()}]`),
-                chalk.blueBright('🔧 using tool'),
-                chalk.blueBright(toolCall.function!.name)
-            );
-        }
-
+        this.feedback.consumeToolCalls(toolCall);
         return this.onToolCall(toolCall);
     }
 
     private consumeToolCalleds(result: ToolCallResult) {
-        const { verbose = 0 } = this.taskOptions;
-        if (verbose > 0) {
-            if (result.state === 'success') {
-                console.log(
-                    chalk.gray(`[${new Date().toLocaleString()}]`),
-                    chalk.green('✓  use tools'),
-                    chalk.green(result.state)
-                );
-            } else {
-                console.log(
-                    chalk.gray(`[${new Date().toLocaleString()}]`),
-                    chalk.red('×  use tools'),
-                    chalk.red(result.content.map(item => item.text).join(', '))
-                );
-            }
-        }
+        this.feedback.consumeToolCalleds(result);
         return this.onToolCalled(result);
     }
 
     private consumeEpochs() {
-        const { verbose = 0 } = this.taskOptions;
-        if (verbose > 1) {
-            console.log(
-                chalk.gray(`[${new Date().toLocaleString()}]`),
-                chalk.blue('task loop enters a new epoch')
-            );
-        }
+        this.feedback.consumeEpochs();
         return this.onEpoch();
     }
 
     private consumeDones() {
-        const { verbose = 0 } = this.taskOptions;
-
-        if (verbose > 1) {
-            console.log(
-                chalk.gray(`[${new Date().toLocaleString()}]`),
-                chalk.green('task loop finish a epoch')
-            );
-        }
-
+        this.feedback.consumeDones();
         return this.onDone();
     }
 
@@ -612,25 +553,23 @@ export class TaskLoop {
             // 如果存在需要调度的工具
             if (this.streamingToolCalls.value.length > 0) {
 
+                const usage = this.completionUsage;
+                const extraInfo = {
+                    created: Date.now(),
+                    state: MessageState.Success,
+                    serverName: this.getLlmConfig().id || 'unknown',
+                    enableXmlWrapper,
+                    usage
+                };
+
                 tabStorage.messages.push({
                     role: 'assistant',
                     content: this.streamingContent.value || '',
                     tool_calls: this.streamingToolCalls.value,
-                    extraInfo: {
-                        created: Date.now(),
-                        state: MessageState.Success,
-                        serverName: this.getLlmConfig().id || 'unknown',
-                        enableXmlWrapper
-                    }
+                    extraInfo
                 });
 
-                if (verbose > 0) {
-                    console.log(
-                        chalk.gray(`[${new Date().toLocaleString()}]`),
-                        chalk.yellow('🤖 Agent wants to use these tools'),
-                        chalk.yellow(this.streamingToolCalls.value.map(tool => tool.function!.name || '').join(', '))
-                    );
-                }
+                this.feedback.consumeLlmResponse(this.streamingToolCalls.value, extraInfo);
 
                 for (let toolCall of this.streamingToolCalls.value || []) {
 
@@ -753,7 +692,7 @@ export class TaskLoop {
                         if (!toolcall) {
                             continue;
                         }
-                        
+
                         // toolcall 事件
                         // 此处使用的是 xml 使用的 toolcall，为了保持一致性，需要转换成 openai 标准下的 toolcall
                         const normaliseToolcall = toNormaliseToolcall(toolcall, toolcallIndexAdapter);
@@ -770,10 +709,10 @@ export class TaskLoop {
                         if (toolCallResult.state === MessageState.InvalidXml) {
                             // 如果是因为解析 XML 错误，则重新开始
                             tabStorage.messages.pop();
-                            jsonParseErrorRetryCount ++;
-    
+                            jsonParseErrorRetryCount++;
+
                             redLog('解析 XML 错误 ' + normaliseToolcall?.function?.arguments);
-    
+
                             // 如果因为 XML 错误而失败太多，就只能中断了
                             if (jsonParseErrorRetryCount >= (this.taskOptions.maxJsonParseRetry || 3)) {
 

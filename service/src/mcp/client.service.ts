@@ -142,10 +142,12 @@ export class McpClient {
     }
 
     // 获取提示
-    public async getPrompt(name: string, args: Record<string, any> = {}) {        
-        return await this.client.getPrompt({
+    public async getPrompt(name: string, args: Record<string, any> = {}) {
+        const res = await this.client.getPrompt({
             name, arguments: args
         });
+
+        return res;
     }
 
     // 列出资源

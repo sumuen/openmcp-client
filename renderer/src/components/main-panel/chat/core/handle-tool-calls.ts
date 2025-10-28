@@ -13,19 +13,24 @@ export type ChatCompletionCreateParamsBase = OpenAI.Chat.Completions.ChatComplet
 
 export interface ToolCallResult {
     id?: string;
+    name: string;
     index: number;
     state: MessageState;
+    timecost: number;
     content: ToolCallContent[];
 }
 
 export type IToolCallIndex = number;
 
 export async function handleToolCalls(toolCall: ToolCall): Promise<ToolCallResult> {
+    const name = toolCall.function?.name || '';
 
     if (!toolCall.function) {
         return {
             index: toolCall.index,
             id: toolCall.id,
+            name,
+            timecost: 0,
             content: [{
                 type: 'error',
                 text: 'no tool function'
@@ -43,6 +48,8 @@ export async function handleToolCalls(toolCall: ToolCall): Promise<ToolCallResul
         return {
             index: toolCall.index,
             id: toolCall.id,
+            name,
+            timecost: 0,
             content: [{
                 type: 'error',
                 text: parseErrorObject(argsResult.error)
@@ -54,12 +61,16 @@ export async function handleToolCalls(toolCall: ToolCall): Promise<ToolCallResul
     const toolArgs = argsResult.value;
 
     // 进行调用，根据结果返回不同的值
+    const start = Date.now();
     const toolResponse = await mcpClientAdapter.callTool(toolName, toolArgs);
+    const timecost = Date.now() - start;
     const response = handleToolResponse(toolResponse);
 
     return {
         index: toolCall.index,
         id: toolCall.id,
+        name,
+        timecost,
         ...response
     };
 }

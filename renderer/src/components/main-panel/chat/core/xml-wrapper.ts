@@ -279,10 +279,13 @@ export function toNormaliseToolcall(xmlToolcall: XmlToolCall, toolcallIndexAdapt
 }
 
 export async function handleXmlWrapperToolcall(toolcall: XmlToolCall): Promise<ToolCallResult> {
+    const name = toolcall.name || '';
     if (!toolcall) {
         return {
             index: 0,
             id: '',
+            name,
+            timecost: 0,
             content: [{
                 type: 'error',
                 text: 'invalid xml'
@@ -291,10 +294,15 @@ export async function handleXmlWrapperToolcall(toolcall: XmlToolCall): Promise<T
         }
     }
     
+    const start = Date.now();
     const toolResponse = await mcpClientAdapter.callTool(toolcall.name, toolcall.parameters);
+    const timecost = Date.now() - start;
     const response = handleToolResponse(toolResponse);
+    
     return {
         index: 0,
+        name,
+        timecost,
         id: toolcall.callId,
         ...response
     };

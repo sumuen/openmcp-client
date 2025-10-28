@@ -50,7 +50,7 @@ export class ClientController {
                 code: 501,
                 msg: 'mcp client 尚未连接'
             };
-        }
+        }        
 
         const prompt = await client.getPrompt(data.promptId, data.args || {});
         return {

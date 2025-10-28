@@ -276,6 +276,7 @@
         "agentkeepalive": "^4.2.1",
         "axios": "^1.9.0",
         "bson": "^6.8.0",
+        "duckdb": "^1.4.1",
         "form-data-encoder": "^1.7.2",
         "formdata-node": "^4.3.2",
         "glob": "^7.2.3",
@@ -284,11 +285,11 @@
         "openai": "^5.0.1",
         "pako": "^2.1.0",
         "pkce-challenge": "^5.0.0",
+        "strict-url-sanitise": "^0.0.1",
         "tesseract.js": "^6.0.1",
         "tslib": "^2.8.1",
         "uuid": "^11.1.0",
-        "ws": "^8.18.1",
-        "strict-url-sanitise": "^0.0.1" 
+        "ws": "^8.18.1"
     },
     "devDependencies": {
         "@rollup/plugin-babel": "^6.0.4",
