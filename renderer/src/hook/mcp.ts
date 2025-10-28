@@ -38,5 +38,7 @@ export function normaliseJavascriptType(type: string) {
 export const mcpSetting = reactive({
     language: 'zh',
     timeout: 60,
+    enableDatasetReflux: false,
+    datasetName: '',
     proxyServer: '',
 });

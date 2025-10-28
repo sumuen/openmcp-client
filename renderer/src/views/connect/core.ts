@@ -366,6 +366,10 @@ export class McpClient {
         this.connectionResult.name = msg.name;
         this.connectionResult.version = msg.version;
 
+        if (!mcpSetting.datasetName) {
+            mcpSetting.datasetName = msg.name;
+        }
+
         // 刷新所有资源
         const tools = await this.getTools({ cache: false });
         this.connectionResult.logString.push({

@@ -1,47 +1,72 @@
 <template>
-	<div class="setting-section">
-		<h2>{{ t('general-setting') }}</h2>
-		<div class="setting-option">
-			<span>
-				<span class="iconfont icon-i18n"></span>
-				<span class="option-title">{{ t('language-setting') }}</span>
-			</span>
-			<div style="width: 100px;">
-				<el-select name="language-setting" class="language-setting" v-model="locale" @change="onlanguagechange">
-					<el-option v-for="option in languageSetting.options" :value="option.value" :label="option.text"
-						:key="option.value">
-					</el-option>
-				</el-select>
-			</div>
-		</div>
+    <div class="setting-section">
+        <h2>{{ t('general-setting') }}</h2>
+        <div class="setting-option">
+            <span>
+                <span class="iconfont icon-i18n"></span>
+                <span class="option-title">{{ t('language-setting') }}</span>
+            </span>
+            <div style="width: 100px;">
+                <el-select name="language-setting" class="language-setting" v-model="locale" @change="onlanguagechange">
+                    <el-option v-for="option in languageSetting.options" :value="option.value" :label="option.text"
+                        :key="option.value">
+                    </el-option>
+                </el-select>
+            </div>
+        </div>
 
-		<div class="setting-option">
-			<span>
-				<span class="iconfont icon-timeout"></span>
-				<span class="option-title">{{ t('mcp-server-timeout') }} (sec)</span>
-			</span>
-			<div style="width: 200px;">
-				<el-slider
-					v-model="mcpSetting.timeout"
-					:min="10" :max="10000" :step="1"
-					@change="safeSaveSetting" />
-			</div>
-		</div>
+        <div class="setting-option">
+            <span>
+                <span class="iconfont icon-timeout"></span>
+                <span class="option-title">{{ t('mcp-server-timeout') }} (s)</span>
+            </span>
+            <div style="width: 200px;">
+                <el-slider v-model="mcpSetting.timeout" :min="0" :max="600" :step="60" show-stops
+                    @change="safeSaveSetting" />
+            </div>
+        </div>
 
-		<div class="setting-option">
-			<span>
-				<span class="iconfont icon-proxy"></span>
-				<span class="option-title">{{ t('proxy-server') }}</span>
-			</span>
-			<div style="width: 200px;">
-				<el-input
-					v-model="mcpSetting.proxyServer"
-					:placeholder="'http://localhost:7890'"
-					@input="safeSaveSetting"
-				/>
-			</div>
-		</div>
-	</div>
+        <div class="setting-option" style="flex-direction: column; height: fit-content; gap: 10px;">
+            <div class="sub-item">
+                <span>
+                    <span class="iconfont icon-dataset"></span>
+                    <span class="option-title">{{ '是否开启数据回流' }}</span>
+                </span>
+                <div>
+                    <el-switch v-model="mcpSetting.enableDatasetReflux" @change="safeSaveSetting" />
+                </div>
+            </div>
+            <div class="sub-item" v-if="mcpSetting.enableDatasetReflux">
+                <span>
+                    <span class="iconfont icon-filepath"></span>
+                    <el-tooltip
+                        content="存储在项目目录的 .openmcp 文件夹中"
+                    >
+                        <span class="option-title">{{ '数据文件名' }}</span>
+                    </el-tooltip>
+                </span>
+                <div>
+                    <el-input
+                        v-model="mcpSetting.datasetName"
+                        @input="safeSaveSetting"
+                    >
+                        <template #append>.duckdb</template>
+                    </el-input>
+                </div>
+            </div>
+        </div>
+
+        <div class="setting-option">
+            <span>
+                <span class="iconfont icon-proxy"></span>
+                <span class="option-title">{{ t('proxy-server') }}</span>
+            </span>
+            <div style="width: 200px;">
+                <el-input v-model="mcpSetting.proxyServer" :placeholder="'http://localhost:7890'"
+                    @input="safeSaveSetting" />
+            </div>
+        </div>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -56,12 +81,12 @@ defineComponent({ name: 'appearance' });
 
 const { t, locale } = useI18n();
 
-function onlanguagechange() {	
-	saveSetting();
+function onlanguagechange() {
+    saveSetting();
 }
 
 const safeSaveSetting = debounce(() => {
-	saveSetting();
+    saveSetting();
 }, 10);
 
 onMounted(() => {
@@ -70,4 +95,13 @@ onMounted(() => {
 
 </script>
 
-<style></style>
+<style scoped>
+
+.sub-item {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+}
+
+</style>

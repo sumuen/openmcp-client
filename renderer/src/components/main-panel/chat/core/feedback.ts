@@ -4,6 +4,7 @@ import type { IExtraInfo, MessageState, ToolCall } from "../chat-box/chat";
 import type { ToolCallResult } from './handle-tool-calls';
 import type { ChatCompletionChunk } from 'openai/resources/index.mjs';
 import { makeUsageStatistic } from './usage';
+import { useMessageBridge } from '@/api/message-bridge';
 
 export function logTimeStampString() {
     const now = new Date();
@@ -129,5 +130,12 @@ export class OmFeedback {
                 chalk.green('task loop finish a epoch')
             );
         }
+    }
+
+    
+    async reflux() {
+        const bridge = useMessageBridge();
+        const res = await bridge.commandRequest('feedback/reflux', {});
+        
     }
 }

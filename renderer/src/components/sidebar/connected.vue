@@ -55,7 +55,6 @@ import { useI18n } from 'vue-i18n';
 import { Connection } from './sidebar';
 import { mcpClientAdapter } from '@/views/connect/core';
 import { isConnecting } from './connected';
-
 defineComponent({ name: 'connected' });
 
 const { t } = useI18n();
