@@ -15,6 +15,7 @@ import type { ToolItem } from "@/hook/type";
 
 import { getXmlWrapperPrompt, getToolCallFromXmlString, getXmlsFromString, handleXmlWrapperToolcall, toNormaliseToolcall, getXmlResultPrompt } from "./xml-wrapper";
 import { OmFeedback } from "./feedback";
+import { v4 as uuidv4 } from 'uuid';
 
 export type ChatCompletionChunk = OpenAI.Chat.Completions.ChatCompletionChunk;
 export interface TaskLoopChatOption {
@@ -327,7 +328,7 @@ export class TaskLoop {
         userMessages.push(...loadMessages);
 
         // 增加一个id用于锁定状态
-        const id = crypto.randomUUID();
+        const id = uuidv4();
 
         const chatData = {
             sessionId: id,
@@ -490,7 +491,15 @@ export class TaskLoop {
     /**
      * @description 开启循环，异步更新 DOM
      */
-    public async start(tabStorage: ChatStorage, userMessage: string) {
+    public async start(
+        tabStorage: ChatStorage,
+        userMessage: string,
+        config: any = {}
+    ) {
+
+        const {
+            mode = 'normal',
+        } = config || {};
 
         const platform = getPlatform();
         if (platform === 'nodejs') {
@@ -593,10 +602,21 @@ export class TaskLoop {
 
                     if (toolCallResult.state === MessageState.ParseJsonError) {
                         // 如果是因为解析 JSON 错误，则重新开始
-                        tabStorage.messages.pop();
-                        jsonParseErrorRetryCount++;
+                        jsonParseErrorRetryCount ++;
 
                         redLog('解析 JSON 错误 ' + toolCall?.function?.arguments);
+
+                        tabStorage.messages.push({
+                            role: 'user',
+                            content: `你调用 ${toolCall.function?.name} 提供的参数解析 JSON 错误，请生成合法 JSON 作为参数 (累计错误次数 ${jsonParseErrorRetryCount})`,
+                            extraInfo: {
+                                created: Date.now(),
+                                state: MessageState.ParseJsonError,
+                                serverName: this.getLlmConfig().id || 'unknown',
+                                usage: undefined,
+                                enableXmlWrapper
+                            }
+                        });
 
                         // 如果因为 JSON 错误而失败太多，就只能中断了
                         if (jsonParseErrorRetryCount >= (this.taskOptions.maxJsonParseRetry || 3)) {
@@ -759,8 +779,10 @@ export class TaskLoop {
                 break;
             }
         }
-        
-        this.feedback.reflux(tabStorage);
+
+        if (mode === 'single-chat') {
+            this.feedback.reflux(tabStorage);
+        }
     }
 
     public async createStorage(settings?: Partial<ChatSetting>): Promise<ChatStorage> {
@@ -794,6 +816,7 @@ export class TaskLoop {
         } as ChatSetting;
 
         return {
+            id: uuidv4(),
             messages: [],
             settings: _settings
         }

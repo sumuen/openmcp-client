@@ -43,6 +43,10 @@ export interface McpOptions {
         name: string
         version: string
     }
+
+    // 特殊功能
+    enableDatasetReflux?: boolean;
+    datasetName?: string
 }
 
 export interface EnvItem {
@@ -64,6 +68,8 @@ export interface IConnectionArgs {
     url?: string;
     oauth?: string;
     env?: Record<string, string>;
+    enableDatasetReflux?: boolean;
+    datasetName?: string
 }
 
 

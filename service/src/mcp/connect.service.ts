@@ -308,8 +308,6 @@ export async function connectService(
 
         const client = await connect(option);
         clientMap.set(uuid, client);
-
-        console.log('[CONNECTION]', option.connectionType);
         
         // 只有 stdio 才需要监听
         if (option.connectionType === 'STDIO') {

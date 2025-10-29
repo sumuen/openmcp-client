@@ -33,7 +33,7 @@
                     <span class="option-title">{{ '是否开启数据回流' }}</span>
                 </span>
                 <div>
-                    <el-switch v-model="mcpSetting.enableDatasetReflux" @change="safeSaveSetting" />
+                    <el-switch v-model="mcpSetting.enableDatasetReflux" @change="safeSaveConnection" />
                 </div>
             </div>
             <div class="sub-item" v-if="mcpSetting.enableDatasetReflux">
@@ -48,7 +48,7 @@
                 <div>
                     <el-input
                         v-model="mcpSetting.datasetName"
-                        @input="safeSaveSetting"
+                        @input="safeSaveConnection"
                     >
                         <template #append>.duckdb</template>
                     </el-input>
@@ -76,6 +76,7 @@ import { useI18n } from 'vue-i18n';
 import { mcpSetting } from '@/hook/mcp';
 import { debounce } from 'lodash';
 import { saveSetting } from '@/hook/setting';
+import { mcpClientAdapter } from '../connect/core';
 
 defineComponent({ name: 'appearance' });
 
@@ -87,6 +88,13 @@ function onlanguagechange() {
 
 const safeSaveSetting = debounce(() => {
     saveSetting();
+}, 10);
+
+const safeSaveConnection = debounce(async () => {
+    const masterNode = mcpClientAdapter.masterNode;
+    masterNode.connectionArgs.enableDatasetReflux = mcpSetting.enableDatasetReflux;
+    masterNode.connectionArgs.datasetName = mcpSetting.datasetName;
+    mcpClientAdapter.saveLaunchSignature();
 }, 10);
 
 onMounted(() => {

@@ -1,71 +1,30 @@
-import { RefluxDB } from '../hook/duckdb.js';
-
-export interface RefluxEntry {
-    id: string;
-    timestamp: number;
-    query: string;
-    response: string;
-    model: string;
-    [key: string]: any;
-}
+import { ChatStorage, TokenConsumption } from './reflux.dto.js';
+import { RefluxDB, RefluxDBManagement } from './reflux.repository.js';
 
 export class RefluxService {
-    private db: RefluxDB;
 
-    constructor() {
-        this.db = new RefluxDB('reflux');
+    constructor(
+        private db: RefluxDBManagement = new RefluxDBManagement(),
+    ) {
     }
 
     /**
      * 保存回流数据
      * @param entry 回流数据条目
      */
-    async save(entry: RefluxEntry): Promise<void> {
-        await this.db.insert(entry);
-    }
+    async save(name: string, storage: ChatStorage): Promise<void> {
+        const refluxDb = this.db.get(name);
+        
+        // 生成trace和tokenConsumption数据
+        const trace = this.makeTrace(storage);
+        const tokenConsumption = this.makeTokenConsumption(storage);
 
-    /**
-     * 根据ID获取回流数据
-     * @param id 数据ID
-     * @returns 回流数据条目
-     */
-    async getById(id: string): Promise<RefluxEntry | undefined> {
-        return await this.db.findById(id);
-    }
-
-    /**
-     * 获取所有回流数据
-     * @returns 回流数据列表
-     */
-    async getAll(): Promise<RefluxEntry[]> {
-        return await this.db.findAll();
-    }
-
-    /**
-     * 删除指定ID的回流数据
-     * @param id 数据ID
-     */
-    async delete(id: string): Promise<void> {
-        await this.db.delete(id);
-    }
-
-    /**
-     * 根据模型名称获取回流数据
-     * @param model 模型名称
-     * @returns 回流数据列表
-     */
-    async getByModel(model: string): Promise<RefluxEntry[]> {
-        return await this.db.findByModel(model);
-    }
-
-    /**
-     * 根据时间范围获取回流数据
-     * @param start 开始时间戳
-     * @param end 结束时间戳
-     * @returns 回流数据列表
-     */
-    async getByTimeRange(start: number, end: number): Promise<RefluxEntry[]> {
-        return await this.db.findByTimeRange(start, end);
+        await refluxDb.insert(
+            storage.id,
+            storage,
+            trace,
+            tokenConsumption
+        );
     }
 
     /**
@@ -73,5 +32,66 @@ export class RefluxService {
      */
     async close(): Promise<void> {
         await this.db.close();
+    }
+
+    public makeTrace(storage: ChatStorage): string {
+        const trace: string[] = [];
+
+        for (let i = 0; i < storage.messages.length; i++) {
+            const message = storage.messages[i];
+            
+            // 根据trace-table.vue中的处理逻辑，我们需要处理不同类型的message
+            if (message.role === 'assistant' && message.content) {
+                // 处理assistant消息
+                trace.push(`assistant`);
+            } else if (message.role === 'user' && message.content) {
+                // 处理user消息
+                trace.push(`user`);
+            } else if (message.role === 'tool' && message.content) {
+                // 处理tool消息
+                // 根据类型定义，message.content是ToolCallContent[]数组
+                const toolNames = message.content.map(tool => tool.name).filter(name => name);
+                if (toolNames.length > 0) {
+                    trace.push(toolNames.join(','));
+                }
+            }
+        }
+
+        return trace.join('|');
+    }
+
+    public makeTokenConsumption(storage: ChatStorage): TokenConsumption {
+        let total = 0;
+        let input = 0;
+        let output = 0;
+        let cacheTokens = 0;
+        let totalCacheTokens = 0;
+        
+        // 遍历所有消息，收集token使用情况
+        for (let i = 0; i < storage.messages.length; i++) {
+            const message = storage.messages[i];
+            const usage = message.extraInfo.usage;
+            
+            if (usage) {
+                input += usage.prompt_tokens || 0;
+                output += usage.completion_tokens || 0;
+                total += usage.total_tokens || 0;
+                
+                // 收集缓存信息
+                if (usage.prompt_tokens_details?.cached_tokens) {
+                    cacheTokens += usage.prompt_tokens_details.cached_tokens;
+                }
+            }
+        }
+        
+        // 计算缓存命中率
+        const cacheRatio = input > 0 ? cacheTokens / input : 0;
+        
+        return {
+            total,
+            input,
+            output,
+            cacheRatio
+        };
     }
 }

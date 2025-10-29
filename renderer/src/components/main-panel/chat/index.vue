@@ -2,6 +2,7 @@
     <div class="chat-container" :ref="el => chatContainerRef = el">
         <!-- 聊天模式切换工具栏 -->
         <ChatToolbar 
+            v-if="chatMode !== 'test'"
             :chat-mode="chatMode"
             :selected-models="selectedModels"
             :filtered-models="filteredModels"
@@ -65,6 +66,7 @@ import ChatToolbar from './chat-toolbar.vue';
 import { getToolCallFromXmlString, getToolResultFromXmlString, getXmlsFromString, toNormaliseToolcall } from './core/xml-wrapper';
 import { getIdAsIndexAdapter } from './core/handle-tool-calls';
 import { llms } from '@/views/setting/llm';
+import { v4 as uuidv4 } from 'uuid';
 
 defineComponent({ name: 'chat' });
 
@@ -81,12 +83,17 @@ const singleChatRef = ref<any>(null);
 
 const tab = tabs.content[props.tabId];
 const tabStorage = tab.storage as ChatStorage & { 
-    chatMode?: 'single-chat' | 'parallel-chat' | 'tool-trace' 
+    chatMode?: 'single-chat' | 'parallel-chat' | 'tool-trace' | 'test'
 };
 
 // 创建 messages
 if (!tabStorage.messages) {
     tabStorage.messages = [] as ChatMessage[];
+}
+
+// 创建 ID
+if (!tabStorage.id) {    
+    tabStorage.id = uuidv4();
 }
 
 // 初始化聊天模式相关数据

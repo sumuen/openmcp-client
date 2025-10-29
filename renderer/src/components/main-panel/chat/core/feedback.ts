@@ -6,13 +6,7 @@ import type { ChatCompletionChunk } from 'openai/resources/index.mjs';
 import { makeUsageStatistic } from './usage';
 import { useMessageBridge } from '@/api/message-bridge';
 import { mcpSetting } from '@/hook/mcp';
-
-export function logTimeStampString() {
-    const now = new Date();
-    const pad = (n: number) => n.toString().padStart(2, "0");
-    const formatted = `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())} - ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    return formatted;
-}
+import { logTimeStampString } from '@/hook/util';
 
 export class OmFeedback {
     constructor(
@@ -123,7 +117,6 @@ export class OmFeedback {
         }
     }
 
-
     consumeDones() {
         if (this.verbose > 1) {
             console.log(
@@ -145,7 +138,8 @@ export class OmFeedback {
         // TODO: 根据 storage 内容和预定义的 evaluator 判断是否需要执行更新
         const bridge = useMessageBridge();
         const res = await bridge.commandRequest('feedback/reflux', {
-            storage
+            storage,
+            name: mcpSetting.datasetName
         });
         
         if (this.verbose > 1) {

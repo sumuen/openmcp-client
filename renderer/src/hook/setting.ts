@@ -22,8 +22,6 @@ export async function loadSetting() {
         mcpSetting.language = persistConfig.LANG || 'zh';
         mcpSetting.timeout = persistConfig.MCP_TIMEOUT_SEC || 60;
         mcpSetting.proxyServer = persistConfig.PROXY_SERVER || '';
-        mcpSetting.enableDatasetReflux = persistConfig.ENABLE_DATASET_REFLUX || false;
-        mcpSetting.datasetName = persistConfig.DATASET_NAME || '';
 
         persistConfig.LLM_INFO.forEach((element: any) => {
             llms.push(element);
@@ -60,8 +58,6 @@ export function saveSetting(saveHandler?: () => void) {
         LANG: I18n.global.locale.value,
         MCP_TIMEOUT_SEC: mcpSetting.timeout,
         PROXY_SERVER: mcpSetting.proxyServer,
-        ENABLE_DATASET_REFLUX: mcpSetting.enableDatasetReflux,
-        DATASET_NAME: mcpSetting.datasetName,
     };
     
     console.log(`[DEBUG] 保存设置: 总配置 ${llms.length} 个，永久配置 ${permanentLlms.length} 个`);

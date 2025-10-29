@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { DEFAULT_LANG, VSCODE_WORKSPACE } from '../hook/setting.js';
+import { DEFAULT_LANG } from '../hook/setting.js';
 import { IConfig } from './setting.dto.js';
 import { llms } from '../hook/llm.js';
 
@@ -21,8 +21,6 @@ function getDefaultConfig() {
         LANG: DEFAULT_LANG,
         MCP_TIMEOUT_SEC: 60,
         PROXY_SERVER: '',
-        ENABLE_DATASET_REFLUX: false,
-        DATASET_NAME: ''
     }
 }
 

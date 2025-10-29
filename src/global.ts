@@ -41,6 +41,10 @@ export interface McpOptions {
     type?: ConnectionType;
     rename?: boolean;
 
+    // 额外功能
+    enableDatasetReflux?: boolean;
+    datasetName?: string;
+
     [key: string]: any;
 }
 

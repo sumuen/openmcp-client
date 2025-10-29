@@ -8,6 +8,7 @@ import type { PromptsGetResponse, PromptsListResponse, PromptTemplate, Resources
 import { mcpSetting } from "@/hook/mcp";
 import chalk from "chalk";
 import I18n from '@/i18n';
+import { logTimeStampString } from "@/hook/util";
 
 const { t } = I18n.global;
 
@@ -155,6 +156,8 @@ export class McpClient {
         this.connectionArgs.url = args.url || '';
         this.connectionArgs.oauth = args.oauth || '';
         this.connectionArgs.env = args.env || {};
+        this.connectionArgs.enableDatasetReflux = args.enableDatasetReflux || false;
+        this.connectionArgs.datasetName = args.datasetName || '';
     }
 
     get clientId() {
@@ -305,6 +308,8 @@ export class McpClient {
         const cwd = this.connectionArgs.cwd;
         const oauth = this.connectionArgs.oauth;
         const connectionType = this.connectionArgs.connectionType;
+        const enableDatasetReflux = this.connectionArgs.enableDatasetReflux;
+        const datasetName = this.connectionArgs.datasetName;
 
         const clientName = this.clientNamePrefix + '.' + this.connectionArgs.connectionType;
         const clientVersion = this.clientVersion;
@@ -330,7 +335,9 @@ export class McpClient {
             serverInfo: {
                 name: this.connectionResult.name,
                 version: this.connectionResult.version
-            }
+            },
+            enableDatasetReflux,
+            datasetName,
         };
 
         return option;
@@ -715,18 +722,32 @@ class McpClientAdapter {
 
             if (ok) {
                 console.log(
-                    wrapperChalk.gray(`[${new Date().toLocaleString()}]`),
-                    wrapperChalk.green(`🚀 [${client.name}] ${client.version} connected`)
+                    wrapperChalk.gray(`${logTimeStampString()} | `),
+                    wrapperChalk.green(`🚀 [${client.name}] ${client.version} connected, type ${client.connectOption.connectionType}`)
                 );
             } else {
                 console.log(
-                    wrapperChalk.gray(`[${new Date().toLocaleString()}]`),
-                    wrapperChalk.red(`× fail to connect `),
+                    wrapperChalk.gray(`${logTimeStampString()} | `),
+                    wrapperChalk.red(`❌ fail to connect `),
                     wrapperChalk.red(JSON.stringify(client.connectionResult.logString, null, 2))
                 );
             }
 
             allOk &&= ok;
+        }
+
+        // 更新部分设置
+        if (launchSignature.length > 0 && this.clients.length > 0) {
+            const masterNode = this.clients[0];
+
+            mcpSetting.enableDatasetReflux = masterNode.connectionArgs.enableDatasetReflux || false;
+            mcpSetting.datasetName = masterNode.connectionArgs.datasetName || '';
+            // 如果 datasetName 尚未初始化，使用第一个连接服务器名称来
+            if (mcpSetting.datasetName === '') {
+                const serverName = this.clients[0].connectionResult.name || '';
+                mcpSetting.datasetName = serverName;
+                masterNode.connectionArgs.datasetName = serverName;
+            }
         }
 
         // 如果全部成功，保存连接参数

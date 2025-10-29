@@ -33,6 +33,7 @@ import { MessageState } from './chat';
 import { TaskLoop } from '../core/task-loop';
 import { llmManager, llms } from '@/views/setting/llm';
 import { ElMessage } from 'element-plus';
+import { v4 as uuidv4 } from 'uuid';
 
 const { t } = useI18n();
 
@@ -153,7 +154,7 @@ function handleSingleSend(userMessage: string) {
         scrollToBottom();
     });
 
-    loop.start(tabStorage, userMessage).then(() => {
+    loop.start(tabStorage, userMessage, { mode: 'single-chat' }).then(() => {
         isLoading.value = false;
     });
 }
@@ -194,6 +195,7 @@ function handleParallelSend(userMessage: string) {
         try {
             // 为这个聊天实例创建完全独立的存储，包含独立的模型配置
             const chatStorage = {
+                id: uuidv4(),
                 messages: [...chat.messages], // 深拷贝消息
                 settings: {
                     ...tabStorage.settings,

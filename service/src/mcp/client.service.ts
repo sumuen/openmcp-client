@@ -9,7 +9,7 @@ import { createOcrWorker, saveBase64ImageData } from "./ocr.service.js";
 import { OAuthClient } from "./auth.service.js";
 import { UnauthorizedError } from '@modelcontextprotocol/sdk/client/auth.js';
 import { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js';
-import { randomUUID } from "node:crypto";
+
 // 增强的客户端类
 export class McpClient {
     private client: Client;

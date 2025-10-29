@@ -65,6 +65,8 @@ import KCuteTextarea from '@/components/k-cute-textarea/index.vue';
 import { ElMessage } from 'element-plus';
 
 import { useI18n } from 'vue-i18n';
+import { v4 as uuidv4 } from 'uuid';
+
 const { t } = useI18n();
 
 const props = defineProps({
@@ -193,6 +195,7 @@ const retrySingleChat = async (chat: any, userMessage: string) => {
     
     // 为这个聊天实例创建临时存储
     const chatStorage = {
+        id: uuidv4(),
         messages: chat.messages,
         settings: { ...tabStorage.settings }
     };
