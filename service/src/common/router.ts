@@ -6,6 +6,7 @@ import { ConnectController } from "../mcp/connect.controller.js";
 import { OcrController } from "../mcp/ocr.controller.js";
 import { PanelController } from "../panel/panel.controller.js";
 import { SettingController } from "../setting/setting.controller.js";
+import { RefluxController } from "src/feedback/reflux.controller.js";
 export { disconnectService } from "../mcp/connect.service.js";
 
 export const ModuleControllers = [
@@ -14,7 +15,8 @@ export const ModuleControllers = [
     LlmController,
     PanelController,
     SettingController,
-    OcrController
+    OcrController,
+    RefluxController
 ];
 
 export async function routeMessage(command: string, data: any, webview: PostMessageble) {

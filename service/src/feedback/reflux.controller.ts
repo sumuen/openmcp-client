@@ -1,48 +1,49 @@
+import { Controller } from '../common/index.js';
 import { RefluxService, RefluxEntry } from './reflux.service.js';
+import { RequestData } from '../common/index.dto.js';
+import { PostMessageble } from '../hook/adapter.js';
 
 const refluxService = new RefluxService();
 
 export class RefluxController {
-    /**
-     * 保存回流数据示例
-     */
-    static async saveRefluxData(data: any): Promise<{ id: string }> {
-        const id = Date.now().toString(); // 简单的ID生成策略
-        const entry: RefluxEntry = {
-            id,
-            timestamp: Date.now(),
-            ...data
-        };
+    @Controller('feedback/reflux')
+    async saveRefluxData(data: RequestData, webview: PostMessageble) {
+        const storage = data.storage;
 
-        await refluxService.save(entry);
-        return { id };
+        // TODO: 根据验证器选择是否保存
+        
+        
+        return {
+            code: 200,
+            msg: ''
+        };
     }
 
     /**
      * 获取所有回流数据
      */
-    static async getAllRefluxData(): Promise<RefluxEntry[]> {
+    async getAllRefluxData(): Promise<RefluxEntry[]> {
         return await refluxService.getAll();
     }
 
     /**
      * 根据ID获取回流数据
      */
-    static async getRefluxDataById(id: string): Promise<RefluxEntry | undefined> {
+    async getRefluxDataById(id: string): Promise<RefluxEntry | undefined> {
         return await refluxService.getById(id);
     }
 
     /**
      * 根据模型获取回流数据
      */
-    static async getRefluxDataByModel(model: string): Promise<RefluxEntry[]> {
+    async getRefluxDataByModel(model: string): Promise<RefluxEntry[]> {
         return await refluxService.getByModel(model);
     }
 
     /**
      * 删除回流数据
      */
-    static async deleteRefluxData(id: string): Promise<void> {
+    async deleteRefluxData(id: string): Promise<void> {
         await refluxService.delete(id);
     }
 }

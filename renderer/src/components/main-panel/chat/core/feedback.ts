@@ -1,10 +1,11 @@
 import chalk from 'chalk';
 
-import type { IExtraInfo, MessageState, ToolCall } from "../chat-box/chat";
+import type { ChatStorage, IExtraInfo, MessageState, ToolCall } from "../chat-box/chat";
 import type { ToolCallResult } from './handle-tool-calls';
 import type { ChatCompletionChunk } from 'openai/resources/index.mjs';
 import { makeUsageStatistic } from './usage';
 import { useMessageBridge } from '@/api/message-bridge';
+import { mcpSetting } from '@/hook/mcp';
 
 export function logTimeStampString() {
     const now = new Date();
@@ -132,10 +133,27 @@ export class OmFeedback {
         }
     }
 
+    async makeTraceSchema() {
+
+    }
     
-    async reflux() {
+    async reflux(storage: ChatStorage) {
+        if (!mcpSetting.enableDatasetReflux) {
+            return;
+        }
+
+        // TODO: 根据 storage 内容和预定义的 evaluator 判断是否需要执行更新
         const bridge = useMessageBridge();
-        const res = await bridge.commandRequest('feedback/reflux', {});
+        const res = await bridge.commandRequest('feedback/reflux', {
+            storage
+        });
         
+        if (this.verbose > 1) {
+            console.log(
+                chalk.gray(`${logTimeStampString()} | `),
+                chalk.blue('reflux'),
+                chalk.blue(res.msg)
+            );
+        }
     }
 }

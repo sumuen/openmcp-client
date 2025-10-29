@@ -4,6 +4,27 @@
         <div v-if="!isEditing" class="message-content">
             <span>
                 {{ props.message.content.trim() }}
+            
+                <!-- <span v-if="props.message.pes.length > 0"
+                    v-for="(c, index) in props.message.pes" :key="index"
+                >
+                    <span v-if="c.type === 'prompt'">
+                        <el-tooltip :content="c.text">
+                            <span>
+                                <span class="iconfont icon-prompt"></span>
+                                <span>{{ c.name }}</span>
+                            </span>
+                        </el-tooltip>
+                    </span>
+                    <span v-else>
+                        <el-tooltip :content="c.text">
+                            <span>
+                                <span class="iconfont icon-resource"></span>
+                                <span>{{ c.name }}</span>
+                            </span>
+                        </el-tooltip>
+                    </span>
+                </span> -->
             </span>
         </div>
         

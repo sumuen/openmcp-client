@@ -759,6 +759,8 @@ export class TaskLoop {
                 break;
             }
         }
+        
+        this.feedback.reflux(tabStorage);
     }
 
     public async createStorage(settings?: Partial<ChatSetting>): Promise<ChatStorage> {

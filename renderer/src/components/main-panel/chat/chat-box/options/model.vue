@@ -10,30 +10,22 @@
     <!-- 模型选择对话框 -->
     <el-dialog v-model="showModelDialog" :title="t('choose-model')" width="400px">
         <!-- 搜索框 -->
-        <el-input 
-            v-model="searchText" 
-            :placeholder="t('search-model')" 
-            clearable
-            style="margin-bottom: 15px;"
-        >
+        <el-input v-model="searchText" :placeholder="t('search-model')" clearable style="margin-bottom: 15px;">
             <template #prefix>
                 <span class="iconfont icon-search"></span>
             </template>
         </el-input>
-        
+
         <!-- 模型列表 -->
-        <el-radio-group v-model="selectedModelIndex" @change="onRadioGroupChange">
-            <div class="model-list">
-                <el-radio 
-                    v-for="(model, index) in filteredModels" 
-                    :key="index" 
-                    :value="index"
-                    class="model-item"
-                >
-                    {{ model }}
-                </el-radio>
-            </div>
-        </el-radio-group>
+        <el-scrollbar class="model-list">
+            <el-radio-group v-model="selectedModelIndex" @change="onRadioGroupChange" style="width: 90%;">
+                <div class="model-list">
+                    <el-radio v-for="(model, index) in filteredModels" :key="index" :value="index" class="model-item">
+                        {{ model }}
+                    </el-radio>
+                </div>
+            </el-radio-group>
+        </el-scrollbar>
         <template #footer>
             <el-button @click="showModelDialog = false">{{ t("cancel") }}</el-button>
             <el-button type="primary" @click="confirmModelChange">{{ t("confirm") }}</el-button>
@@ -46,7 +38,14 @@ import { saveSetting } from '@/hook/setting';
 import { llmManager, llms } from '@/views/setting/llm';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import Fuse from 'fuse.js';
+
 const { t } = useI18n();
+
+const fuse = computed(() => new Fuse(availableModels.value, {
+    includeScore: true,
+    threshold: 0.4, // 越低越严格，越高越宽松
+}));
 
 const showModelDialog = ref(false);
 const searchText = ref('');
@@ -54,44 +53,40 @@ const currentModel = llms[llmManager.currentModelIndex].userModel;
 const selectedModelIndex = ref(llms[llmManager.currentModelIndex].models.indexOf(currentModel));
 
 const currentServerName = computed(() => {
-	const currentLlm = llms[llmManager.currentModelIndex];
-	if (currentLlm) {
-		return currentLlm.name;
-	}
-	return '';
+    const currentLlm = llms[llmManager.currentModelIndex];
+    if (currentLlm) {
+        return currentLlm.name;
+    }
+    return '';
 });
 
 const currentModelName = computed(() => {
-	const currentLlm = llms[llmManager.currentModelIndex];
-	if (currentLlm) {
-		return currentLlm.models[selectedModelIndex.value];
-	}
-	return '';
+    const currentLlm = llms[llmManager.currentModelIndex];
+    if (currentLlm) {
+        return currentLlm.userModel;
+    }
+    return '';
 });
 
 const availableModels = computed(() => {
-	return llms[llmManager.currentModelIndex].models;
+    return llms[llmManager.currentModelIndex].models;
 });
 
 const filteredModels = computed(() => {
-    if (!searchText.value) {
-        return availableModels.value;
-    }
-    
-    const searchTerm = searchText.value.toLowerCase().trim();
-    return availableModels.value.filter(model => 
-        model.toLowerCase().startsWith(searchTerm)
-    );
+    const term = searchText.value?.trim();
+    if (!term) return availableModels.value;
+
+    return fuse.value.search(term).map(result => result.item);
 });
 
 const confirmModelChange = () => {
-	showModelDialog.value = false;
+    showModelDialog.value = false;
 };
 
-const onRadioGroupChange = () => {
-	const currentModel = llms[llmManager.currentModelIndex].models[selectedModelIndex.value];
-	llms[llmManager.currentModelIndex].userModel = currentModel;
-	saveSetting();
+const onRadioGroupChange = (index: number) => {
+    const currentModel = filteredModels.value[index];
+    llms[llmManager.currentModelIndex].userModel = currentModel;
+    saveSetting();
 };
 
 </script>
@@ -99,7 +94,7 @@ const onRadioGroupChange = () => {
 <style>
 .setting-button:hover {
     background: var(--main-light-color, #f0f8ff);
-    box-shadow: 0 2px 8px 0 rgba(64,158,255,0.08);
+    box-shadow: 0 2px 8px 0 rgba(64, 158, 255, 0.08);
     border-color: var(--el-color-primary-light-7, #c6e2ff);
 }
 

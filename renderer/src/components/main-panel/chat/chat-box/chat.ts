@@ -87,11 +87,15 @@ export type ToolCall = OpenAI.Chat.Completions.ChatCompletionChunk.Choice.Delta.
 interface PromptTextItem {
     type: 'prompt'
     text: string
+    name: string
+    args?: Record<string, string>
 }
 
 interface ResourceTextItem {
     type: 'resource'
     text: string
+    name: string
+    args?: Record<string, string>
 }
 
 interface TextItem {
@@ -104,6 +108,7 @@ export type RichTextItem = PromptTextItem | ResourceTextItem | TextItem;
 export interface ICommonRenderMessage {
     role: 'user' | 'assistant/content';
     content: string;
+    pes: (PromptTextItem | ResourceTextItem)[];
     showJson?: any;
     extraInfo: IExtraInfo;
 }
@@ -111,6 +116,7 @@ export interface ICommonRenderMessage {
 export interface IToolRenderMessage {
     role: 'assistant/tool_calls';
     content: string;
+    pes: (PromptTextItem | ResourceTextItem)[];
     toolResults: ToolCallContent[][];
     tool_calls: ToolCall[];
     showJson?: any;

@@ -27,7 +27,7 @@ import { useI18n } from 'vue-i18n';
 
 import KRichTextarea from './rich-textarea.vue';
 import { tabs } from '../../panel';
-import type { ChatMessage, ChatStorage, ToolCall, RichTextItem } from './chat';
+import type { ChatMessage, ChatStorage, ToolCall } from './chat';
 import { MessageState } from './chat';
 
 import { TaskLoop } from '../core/task-loop';
