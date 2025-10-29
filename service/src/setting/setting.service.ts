@@ -19,7 +19,10 @@ function getDefaultConfig() {
         MODEL_INDEX: 0,
         LLM_INFO: llms,
         LANG: DEFAULT_LANG,
-        MCP_TIMEOUT_SEC: 60
+        MCP_TIMEOUT_SEC: 60,
+        PROXY_SERVER: '',
+        ENABLE_DATASET_REFLUX: false,
+        DATASET_NAME: ''
     }
 }
 

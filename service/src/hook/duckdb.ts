@@ -2,6 +2,7 @@ import duckdb from 'duckdb';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
+import { VSCODE_WORKSPACE } from './setting.js';
 
 export interface StorageRecord {
     id: string;
@@ -19,9 +20,10 @@ export class RefluxDB {
     private dbPath: string;
 
     constructor(tableName: string = 'storage') {
-        const homedir = os.homedir();
-        const dbDir = path.join(homedir, '.openmcp', 'duckdb');
-        if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
+        const dbDir = path.join(VSCODE_WORKSPACE, '.openmcp', 'data');
+        if (!fs.existsSync(dbDir)) {
+            fs.mkdirSync(dbDir, { recursive: true });
+        }
 
         this.dbPath = path.join(dbDir, `${tableName}.duckdb`);
         this.db = new duckdb.Database(this.dbPath);

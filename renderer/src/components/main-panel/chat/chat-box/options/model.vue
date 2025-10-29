@@ -49,8 +49,7 @@ const fuse = computed(() => new Fuse(availableModels.value, {
 
 const showModelDialog = ref(false);
 const searchText = ref('');
-const currentModel = llms[llmManager.currentModelIndex].userModel;
-const selectedModelIndex = ref(llms[llmManager.currentModelIndex].models.indexOf(currentModel));
+const selectedModelIndex = ref(llms[llmManager.currentModelIndex].models.indexOf(llms[llmManager.currentModelIndex].userModel));
 
 const currentServerName = computed(() => {
     const currentLlm = llms[llmManager.currentModelIndex];
@@ -76,7 +75,11 @@ const filteredModels = computed(() => {
     const term = searchText.value?.trim();
     if (!term) return availableModels.value;
 
-    return fuse.value.search(term).map(result => result.item);
+    const models = fuse.value.search(term).map(result => result.item);
+
+    // 更新 selectedModelIndex
+    selectedModelIndex.value = models.indexOf(llms[llmManager.currentModelIndex].userModel);
+    return models;
 });
 
 const confirmModelChange = () => {
@@ -84,8 +87,7 @@ const confirmModelChange = () => {
 };
 
 const onRadioGroupChange = (index: number) => {
-    const currentModel = filteredModels.value[index];
-    llms[llmManager.currentModelIndex].userModel = currentModel;
+    llms[llmManager.currentModelIndex].userModel = filteredModels.value[index];
     saveSetting();
 };
 
