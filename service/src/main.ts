@@ -37,7 +37,7 @@ async function refreshConnectionOption() {
         await fs.writeFile(envPath, JSON.stringify(defaultOption, null, 4), 'utf-8');
         return { items: [defaultOption] };
     } catch (error) {
-        logger.error('刷新连接配置失败:', error);
+        console.log('刷新连接配置失败:', error);
         throw error;
     }
 }
@@ -63,7 +63,7 @@ async function acquireConnectionOption() {
 
         return option;
     } catch (error) {
-        logger.error('读取 .env 配置文件失败:', error);
+        console.log('读取 .env 配置文件失败:', error);
         return await refreshConnectionOption();
     }
 }
@@ -72,7 +72,7 @@ async function updateConnectionOption(data: any) {
     try {
         await fs.writeFile(envPath, JSON.stringify({ items: data }, null, 4), 'utf-8');
     } catch (error) {
-        logger.error('更新连接配置失败:', error);
+        console.log('更新连接配置失败:', error);
         throw error;
     }
 }

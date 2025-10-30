@@ -1,6 +1,6 @@
 {
     "name": "openmcp-sdk",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "type": "module",
     "description": "openmcp-sdk",
     "scripts": {
@@ -35,6 +35,7 @@
         "pako": "^2.1.0",
         "tesseract.js": "^6.0.1",
         "uuid": "^11.1.0",
+        "duckdb": "^1.4.1",
 		"open": "^10.1.2",
         "ws": "^8.18.1",
 		"cli-table3": "^0.6.5",
