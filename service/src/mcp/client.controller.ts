@@ -104,7 +104,6 @@ export class ClientController {
         }
 
         const resource = await client.readResource(data.resourceUri);
-        console.log(resource);
         
         return {
             code: 200,

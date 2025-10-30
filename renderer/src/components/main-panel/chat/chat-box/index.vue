@@ -12,6 +12,9 @@
                 @press-enter="handleSend()"
             />
 
+
+            <button @click="testReflux">test</button>
+
             <el-button type="primary" @click="isLoading ? handleAbort() : handleSend()" class="send-button">
                 <span v-if="!isLoading" class="iconfont icon-send"></span>
                 <span v-else class="iconfont icon-stop"></span>
@@ -115,6 +118,13 @@ function handleSend(newMessage?: string) {
         handleSingleSend(userMessage);
     }
 }
+
+function testReflux() {    
+    loop = new TaskLoop();
+    loop.bindStreaming(streamingContent, streamingToolCalls);
+    loop.reflux(tabStorage);
+}
+
 
 function handleSingleSend(userMessage: string) {
     isLoading.value = true;

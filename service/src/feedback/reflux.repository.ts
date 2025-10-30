@@ -3,12 +3,15 @@ import duckdb from 'duckdb';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
+
+import chalk from 'chalk';
+
 import { VSCODE_WORKSPACE } from '../hook/setting.js';
 import { ChatStorage, TokenConsumption } from './reflux.dto.js';
+import { logTimeStampString } from '../hook/util.js';
 
 export class RefluxDB {
     private db: duckdb.Database;
-    private connection: duckdb.Connection;
     private dbPath: string;
 
     constructor(tableName: string = 'storage') {
@@ -19,14 +22,19 @@ export class RefluxDB {
 
         this.dbPath = path.join(dbDir, `${tableName}.duckdb`);
         this.db = new duckdb.Database(this.dbPath);
-        this.connection = this.db.connect();
+        console.log(
+            chalk.gray(`${logTimeStampString()} |`),
+            'connect ' + this.dbPath
+        );
 
         this.initTable();
     }
 
     private initTable() {
+        const connection = this.db.connect();
+        
         // 创建 chat_storage 表
-        this.connection.run(`
+        connection.run(`
             CREATE TABLE IF NOT EXISTS chat_storage (
                 id VARCHAR PRIMARY KEY,
                 messages JSON,
@@ -46,175 +54,167 @@ export class RefluxDB {
                 timestamp BIGINT
             )
         `);
-        
+
         // 创建 enable_tools 表
-        this.connection.run(`
+        connection.run(`
             CREATE TABLE IF NOT EXISTS enable_tools (
                 hash VARCHAR PRIMARY KEY,
                 tools JSON
             )
         `);
-        
+
         // 为 trace 字段创建索引
-        this.connection.run(`
+        connection.run(`
             CREATE INDEX IF NOT EXISTS idx_chat_storage_trace ON chat_storage(trace)
         `);
-        
+
         // 为 enableToolsHash 字段创建索引
-        this.connection.run(`
+        connection.run(`
             CREATE INDEX IF NOT EXISTS idx_chat_storage_enable_tools_hash ON chat_storage(enableToolsHash)
         `);
+        
+        connection.close();
+    }
+
+    private async runAsync(sql: string, ...params: any[]): Promise<duckdb.TableData> {
+        return new Promise((resolve, reject) => {
+            const connection = this.db.connect();
+
+            connection.all(sql, ...params, (err, data) => {
+                connection.close();
+                if (err) return reject(err);
+                resolve(data);
+            });
+        });
     }
 
     async insert(id: string, record: ChatStorage, trace: string, tokenConsumption: TokenConsumption): Promise<void> {
         const timestamp = Date.now();
         const settings = record.settings;
-        
+
         // 计算 enableTools 的 hash 值
         const enableToolsString = JSON.stringify(settings.enableTools);
         const enableToolsHash = crypto.createHash('md5').update(enableToolsString).digest('hex');
-        
-        return new Promise((resolve, reject) => {
-            // 开始一个事务
-            this.connection.exec('BEGIN TRANSACTION', (err) => {
-                if (err) return reject(err);
-                
-                // 首先插入或替换 enable_tools 表中的记录
-                this.connection.run(
-                    `INSERT OR REPLACE INTO enable_tools (hash, tools) VALUES (?, ?)`,
-                    [
-                        enableToolsHash,
-                        enableToolsString
-                    ],
-                    (err: duckdb.DuckDbError | null) => {
-                        if (err) {
-                            this.connection.exec('ROLLBACK', () => reject(err));
-                            return;
-                        }
-                        
-                        // 然后插入或替换 chat_storage 表中的记录
-                        this.connection.run(
-                            `INSERT OR REPLACE INTO chat_storage (
-                                id, messages, modelIndex, systemPrompt, enableToolsHash, temperature,
-                                enableWebSearch, contextLength, parallelToolCalls, enableXmlWrapper,
-                                trace, tokenTotal, tokenInput, tokenOutput, tokenCacheRatio, timestamp
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                            [
-                                id,
-                                JSON.stringify(record.messages),
-                                settings.modelIndex,
-                                settings.systemPrompt,
-                                enableToolsHash,
-                                settings.temperature,
-                                settings.enableWebSearch,
-                                settings.contextLength,
-                                settings.parallelToolCalls,
-                                settings.enableXmlWrapper,
-                                trace,
-                                tokenConsumption.total,
-                                tokenConsumption.input,
-                                tokenConsumption.output,
-                                tokenConsumption.cacheRatio,
-                                timestamp
-                            ],
-                            (err: duckdb.DuckDbError | null) => {
-                                if (err) {
-                                    this.connection.exec('ROLLBACK', () => reject(err));
-                                    return;
-                                }
-                                
-                                // 提交事务
-                                this.connection.exec('COMMIT', (err) => {
-                                    if (err) {
-                                        this.connection.exec('ROLLBACK', () => reject(err));
-                                        return;
-                                    }
-                                    resolve();
-                                });
-                            }
-                        );
-                    }
-                );
-            });
-        });
+
+        try {
+            await this.runAsync(
+                `INSERT OR REPLACE INTO enable_tools (hash, tools) VALUES (?, ?)`,
+                enableToolsHash,
+                enableToolsString
+            );
+
+            await this.runAsync(
+                `INSERT OR REPLACE INTO chat_storage (
+                id, messages, modelIndex, systemPrompt, enableToolsHash, temperature,
+                enableWebSearch, contextLength, parallelToolCalls, enableXmlWrapper,
+                trace, tokenTotal, tokenInput, tokenOutput, tokenCacheRatio, timestamp
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                id,                                     // 1
+                JSON.stringify(record.messages),        // 2
+                settings.modelIndex !== undefined ? settings.modelIndex : null,  // 3
+                settings.systemPrompt || '',            // 4
+                enableToolsHash,                        // 5
+                settings.temperature,                   // 6
+                settings.enableWebSearch ? 1 : 0,       // 7 (转换为数字)
+                settings.contextLength,                 // 8
+                settings.parallelToolCalls ? 1 : 0,     // 9 (转换为数字)
+                settings.enableXmlWrapper ? 1 : 0,      // 10 (转换为数字)
+                trace || '',                            // 11
+                tokenConsumption.total,                 // 12
+                tokenConsumption.input,                 // 13
+                tokenConsumption.output,                // 14
+                tokenConsumption.cacheRatio,            // 15
+                timestamp                               // 16
+            );
+
+            // 执行检查点确保数据写入磁盘
+            await this.runAsync('CHECKPOINT;');
+        } catch (error) {
+            console.error('Error inserting data into database:', error);
+            throw error;
+        }
     }
 
     async findById(id: string): Promise<ChatStorage | undefined> {
-        return new Promise((resolve, reject) => {
-            this.connection.all(
+        try {
+            const rows = await this.runAsync(
                 `SELECT cs.*, et.tools as enableTools FROM chat_storage cs 
                  LEFT JOIN enable_tools et ON cs.enableToolsHash = et.hash 
                  WHERE cs.id = ?`,
-                [id],
-                (err, rows) => {
-                    if (err) return reject(err);
-                    if (!rows || !rows.length) return resolve(undefined);
-                    const row = rows[0];
-                    resolve({
-                        id: id,
-                        messages: JSON.parse(row.messages),
-                        settings: {
-                            modelIndex: row.modelIndex,
-                            systemPrompt: row.systemPrompt,
-                            enableTools: row.enableTools ? JSON.parse(row.enableTools) : [],
-                            temperature: row.temperature,
-                            enableWebSearch: row.enableWebSearch,
-                            contextLength: row.contextLength,
-                            parallelToolCalls: row.parallelToolCalls,
-                            enableXmlWrapper: row.enableXmlWrapper
-                        },
-                        parallelMode: undefined,
-                        parallelChats: undefined,
-                        selectedModels: undefined
-                    });
-                }
+                id
             );
-        });
+            
+            if (!rows.length) return undefined;
+            
+            const row = rows[0];
+            return {
+                id: id,
+                messages: JSON.parse(row.messages),
+                settings: {
+                    modelIndex: row.modelIndex,
+                    systemPrompt: row.systemPrompt,
+                    enableTools: row.enableTools ? JSON.parse(row.enableTools) : [],
+                    temperature: row.temperature,
+                    enableWebSearch: row.enableWebSearch === 1,
+                    contextLength: row.contextLength,
+                    parallelToolCalls: row.parallelToolCalls === 1,
+                    enableXmlWrapper: row.enableXmlWrapper === 1
+                },
+                parallelMode: undefined,
+                parallelChats: undefined,
+                selectedModels: undefined
+            };
+        } catch (error) {
+            console.error('Error finding data by id:', error);
+            throw error;
+        }
     }
 
-    async findAll(): Promise<{id: string, data: ChatStorage, timestamp: number}[]> {
-        return new Promise((resolve, reject) => {
-            this.connection.all(
+    async findAll(): Promise<{ id: string, data: ChatStorage, timestamp: number }[]> {
+        try {
+            const rows = await this.runAsync(
                 `SELECT cs.*, et.tools as enableTools FROM chat_storage cs 
                  LEFT JOIN enable_tools et ON cs.enableToolsHash = et.hash 
-                 ORDER BY cs.timestamp DESC`,
-                [],
-                (err, rows) => {
-                    if (err) return reject(err);
-                    resolve((rows ?? []).map(row => ({
-                        id: row.id,
-                        data: {
-                            id: row.id,
-                            messages: JSON.parse(row.messages),
-                            settings: {
-                                modelIndex: row.modelIndex,
-                                systemPrompt: row.systemPrompt,
-                                enableTools: row.enableTools ? JSON.parse(row.enableTools) : [],
-                                temperature: row.temperature,
-                                enableWebSearch: row.enableWebSearch,
-                                contextLength: row.contextLength,
-                                parallelToolCalls: row.parallelToolCalls,
-                                enableXmlWrapper: row.enableXmlWrapper
-                            },
-                            parallelMode: undefined,
-                            parallelChats: undefined,
-                            selectedModels: undefined
-                        },
-                        timestamp: row.timestamp
-                    })));
-                }
+                 ORDER BY cs.timestamp DESC`
             );
-        });
+            
+            return (rows || []).map(row => ({
+                id: row.id,
+                data: {
+                    id: row.id,
+                    messages: JSON.parse(row.messages),
+                    settings: {
+                        modelIndex: row.modelIndex,
+                        systemPrompt: row.systemPrompt,
+                        enableTools: row.enableTools ? JSON.parse(row.enableTools) : [],
+                        temperature: row.temperature,
+                        enableWebSearch: row.enableWebSearch === 1,
+                        contextLength: row.contextLength,
+                        parallelToolCalls: row.parallelToolCalls === 1,
+                        enableXmlWrapper: row.enableXmlWrapper === 1
+                    },
+                    parallelMode: undefined,
+                    parallelChats: undefined,
+                    selectedModels: undefined
+                },
+                timestamp: row.timestamp
+            }));
+        } catch (error) {
+            console.error('Error finding all data:', error);
+            throw error;
+        }
     }
 
     async delete(id: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            this.connection.run(
+        try {
+            await this.runAsync(
                 `DELETE FROM chat_storage WHERE id = ?`,
-                [id],
-                (err) => (err ? reject(err) : resolve())
+                id
             );
-        });
+        } catch (error) {
+            console.error('Error deleting data by id:', error);
+            throw error;
+        }
     }
 
     async update(id: string, record: Partial<ChatStorage>, trace: string, tokenConsumption: TokenConsumption): Promise<void> {
@@ -236,17 +236,18 @@ export class RefluxDB {
             parallelChats: record.parallelChats || existing.parallelChats,
             selectedModels: record.selectedModels || existing.selectedModels
         };
-        
+
         // 使用 insert 方法更新记录
         return this.insert(id, updatedRecord, trace, tokenConsumption);
     }
 
     async close(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.connection.close((err) => {
-                if (err) reject(err);
-                else this.db.close((e) => (e ? reject(e) : resolve()));
-            });
+            if (this.db) {
+                this.db.close((e) => (e ? reject(e) : resolve()));
+            } else {
+                resolve();
+            }
         });
     }
 
@@ -257,7 +258,7 @@ export class RefluxDB {
 
 export class RefluxDBManagement {
     private refluxDbs = new Map<string, RefluxDB>;
-    constructor() {}
+    constructor() { }
 
     public get(name: string): RefluxDB {
         if (!this.refluxDbs.has(name)) {
@@ -270,6 +271,7 @@ export class RefluxDBManagement {
         await Promise.all(
             [...this.refluxDbs.values()].map(db => db.close())
         );
+        this.refluxDbs.clear();
     }
 }
 

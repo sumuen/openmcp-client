@@ -103,13 +103,13 @@ export class OmFeedback {
         if (this.verbose > 0) {
             if (toolCallResult.state === 'success') {
                 console.log(
-                    chalk.gray(`${logTimeStampString()} | `),
+                    chalk.gray(`${logTimeStampString()} |`),
                     chalk.green(`✅ ${toolCallResult.name}`),
                     chalk.green(toolCallResult.state)
                 );
             } else {
                 console.log(
-                    chalk.gray(`${logTimeStampString()} | `),
+                    chalk.gray(`${logTimeStampString()} |`),
                     chalk.red(`❌ ${toolCallResult.name}`),
                     chalk.red(toolCallResult.content.map(item => item.text).join(', '))
                 );
@@ -130,21 +130,32 @@ export class OmFeedback {
 
     }
     
-    async reflux(storage: ChatStorage) {
+    async reflux(storage: ChatStorage) {        
         if (!mcpSetting.enableDatasetReflux) {
             return;
         }
 
-        // TODO: 根据 storage 内容和预定义的 evaluator 判断是否需要执行更新
+        // TODO: 根据 storage 内容和预定义的 evaluator 判断是否需要执行更新        
         const bridge = useMessageBridge();
         const res = await bridge.commandRequest('feedback/reflux', {
             storage,
             name: mcpSetting.datasetName
         });
+
+        console.log(res);
+        
+
+        if (res.code !== 200) {
+            console.error(
+                chalk.gray(`${logTimeStampString()} |`),
+                chalk.red('reflux fail: '),
+                chalk.red(res.msg)
+            );
+        }
         
         if (this.verbose > 1) {
             console.log(
-                chalk.gray(`${logTimeStampString()} | `),
+                chalk.gray(`${logTimeStampString()} |`),
                 chalk.blue('reflux'),
                 chalk.blue(res.msg)
             );

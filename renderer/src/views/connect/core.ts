@@ -722,12 +722,12 @@ class McpClientAdapter {
 
             if (ok) {
                 console.log(
-                    wrapperChalk.gray(`${logTimeStampString()} | `),
+                    wrapperChalk.gray(`${logTimeStampString()} |`),
                     wrapperChalk.green(`🚀 [${client.name}] ${client.version} connected, type ${client.connectOption.connectionType}`)
                 );
             } else {
                 console.log(
-                    wrapperChalk.gray(`${logTimeStampString()} | `),
+                    wrapperChalk.gray(`${logTimeStampString()} |`),
                     wrapperChalk.red(`❌ fail to connect `),
                     wrapperChalk.red(JSON.stringify(client.connectionResult.logString, null, 2))
                 );

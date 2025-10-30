@@ -833,4 +833,8 @@ export class TaskLoop {
         const resource = await mcpClientAdapter.readResource(resourceUri);
         return resource;
     }
+
+    public reflux(storage: ChatStorage) {
+        this.feedback.reflux(storage);
+    }
 }
