@@ -9,6 +9,7 @@ import { mcpSetting } from "@/hook/mcp";
 import chalk from "chalk";
 import I18n from '@/i18n';
 import { logTimeStampString } from "@/hook/util";
+import { AsyncLock } from "@/hook/async-lock";
 
 const { t } = I18n.global;
 
@@ -563,6 +564,7 @@ class McpClientAdapter {
     private defaultClient: McpClient = new McpClient();
     public connectLogListenerCancel: (() => void) | null = null;
     public connectrefreshListener: (() => void) | null = null;
+    public lock: AsyncLock = new AsyncLock();
 
     constructor(
         public platform: string
@@ -600,6 +602,10 @@ class McpClientAdapter {
             return this.defaultClient;
         }
         return this.clients[0];
+    }
+
+    get datasetName() {
+        return this.masterNode.connectionArgs.datasetName || '';
     }
 
     public async saveLaunchSignature() {
@@ -690,6 +696,7 @@ class McpClientAdapter {
             }, { once: false });
         }
 
+        await this.lock.acquire();
         const launchSignature = await this.getLaunchSignature();
 
         let allOk = true;
@@ -754,6 +761,8 @@ class McpClientAdapter {
         if (allOk) {
             this.saveLaunchSignature();
         }
+
+        this.lock.releaseAll();
 
         // 释放信号
         if (platform === 'web') {

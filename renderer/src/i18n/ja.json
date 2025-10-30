@@ -271,5 +271,8 @@
     "table-setting": "テーブル設定",
     "content": "コンテンツ",
     "details": "詳細",
-    "trace-fsm-mode": "有限状態機械パターン"
+    "trace-fsm-mode": "有限状態機械パターン",
+    "lookup-reflux-data": "還流データを表示",
+    "mcp-base-module": "MCP基本機能",
+    "mcp-advance-module": "MCP 高度な機能"
 }

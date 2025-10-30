@@ -12,8 +12,7 @@
                 @press-enter="handleSend()"
             />
 
-
-            <button @click="testReflux">test</button>
+            <!-- <button @click="testReflux">test</button> -->
 
             <el-button type="primary" @click="isLoading ? handleAbort() : handleSend()" class="send-button">
                 <span v-if="!isLoading" class="iconfont icon-send"></span>

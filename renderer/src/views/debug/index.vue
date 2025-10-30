@@ -20,6 +20,7 @@
 import { defineComponent, computed } from 'vue';
 import Resource from '@/components/main-panel/resource/index.vue';
 import Chat from '@/components/main-panel/chat/index.vue';
+import Reflux from '@/components/main-panel/reflux/index.vue';
 import Prompt from '@/components/main-panel/prompt/index.vue';
 import Tool from '@/components/main-panel/tool/index.vue';
 
@@ -28,7 +29,7 @@ import { tabs } from '@/components/main-panel/panel';
 import { panelLoaded } from '@/hook/panel';
 
 const debugComponent = [
-	Resource, Prompt, Tool, Chat
+	Resource, Prompt, Tool, Chat, Reflux
 ]
 
 defineComponent({ name: 'debug' });

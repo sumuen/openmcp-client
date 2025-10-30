@@ -271,5 +271,8 @@
     "table-setting": "Настройки таблицы",
     "content": "Содержание",
     "details": "Детали",
-    "trace-fsm-mode": "Шаблон Конечного Автомата"
+    "trace-fsm-mode": "Шаблон Конечного Автомата",
+    "lookup-reflux-data": "Просмотреть данные рефлюкса",
+    "mcp-base-module": "Основные функции MCP",
+    "mcp-advance-module": "Расширенные функции MCP"
 }

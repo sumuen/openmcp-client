@@ -1,4 +1,5 @@
 import { RefluxService } from "./reflux.service.js";
+import { v4 as uuidv4 } from 'uuid';
 
 const testStorage = {
     "activeNames": [
@@ -7,7 +8,7 @@ const testStorage = {
     "messages": [
         {
             "role": "user",
-            "content": "\n    You are a user profile manager to provide CURD access to user preferences and personal information.\n    - You should invoke `usermcp_query_user_profile` actively when the context contains relevant tokens like the user's name or other personal information.\n    - You should invoke `usermcp_insert_user_profile` when the relevant information is triggered in your context.\n    - You should invoke `usermcp_delete_user_profile` when the user's feedback is different from what you expected.\n     <USAGE>\n你是一个擅长使用 slidev 进行讲演生成的 agent，如果用户让你生成给定素材的大纲，从而在后续生成 slidev，那么你应该先根据用户输入的素材，生成一个大纲。\n\n你不被允许在生成大纲时，执行任何关于 slidev 项目生成，创建，修改和添加页面的操作。\n\n如果遇到用户给定的素材中 http 或者 https 链接，你应该积极地使用 `websearch` 来爬取网页内容。\n\n如果遇到 `:` 开头的话语，这是命令，目前的命令有如下的：\n- `:sum {{url}}`: 使用 `websearch` 爬取目标网页内容并整理，如果爬取失败，你需要停下来让用户手动输入网页内容的总结。\n- `:mermaid {{description}}`: 根据 description 生成符合描述的 mermaid 流程图代码，使用 ```mermaid ``` 进行包裹。\n</USAGE>\n\n下面是用户的输入：\n\n<CONTENT title=\"Manus 调研\">\n我进行了 Manus 相关的调研，文章链接：https://www.cnblogs.com/cicada-smile/p/19052007\n</CONTENT>\n\n<COMMAND>\n\n请帮我制作 slidev ppt 的大纲。\n\n生成大纲后，你需要调用 `slidev_save_outline` 来保存这次的结果。\n\n</COMMAND>",
+            "content": "You are a user profile manager to provide CURD access to user preferences and personal information.\n    - You should invoke `usermcp_query_user_profile` actively when the context contains relevant tokens like the user's name or other personal information.\n    - You should invoke `usermcp_insert_user_profile` when the relevant information is triggered in your context.\n    - You should invoke `usermcp_delete_user_profile` when the user's feedback is different from what you expected.\n     <USAGE>\n你是一个擅长使用 slidev 进行讲演生成的 agent，如果用户让你生成给定素材的大纲，从而在后续生成 slidev，那么你应该先根据用户输入的素材，生成一个大纲。\n\n你不被允许在生成大纲时，执行任何关于 slidev 项目生成，创建，修改和添加页面的操作。\n\n如果遇到用户给定的素材中 http 或者 https 链接，你应该积极地使用 `websearch` 来爬取网页内容。\n\n如果遇到 `:` 开头的话语，这是命令，目前的命令有如下的：\n- `:sum {{url}}`: 使用 `websearch` 爬取目标网页内容并整理，如果爬取失败，你需要停下来让用户手动输入网页内容的总结。\n- `:mermaid {{description}}`: 根据 description 生成符合描述的 mermaid 流程图代码，使用 ```mermaid ``` 进行包裹。\n</USAGE>\n\n下面是用户的输入：\n\n<CONTENT title=\"Manus 调研\">\n我进行了 Manus 相关的调研，文章链接：https://www.cnblogs.com/cicada-smile/p/19052007\n</CONTENT>\n\n<COMMAND>\n\n请帮我制作 slidev ppt 的大纲。\n\n生成大纲后，你需要调用 `slidev_save_outline` 来保存这次的结果。\n\n</COMMAND>",
             "extraInfo": {
                 "created": 1756218334207,
                 "state": "success",
@@ -380,12 +381,12 @@ const testStorage = {
         "parallelToolCalls": true
     },
     "chatMode": "single-chat",
-    "id": "c4ecbedd-2976-4210-84da-4115187ce7c5"
+    "id": uuidv4()
 }
 
 async function main() {
     const service = new RefluxService();
-    await service.save('test', testStorage as any);
+    await service.save('word-mcp', testStorage as any);
 }
 
 main();

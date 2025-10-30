@@ -271,5 +271,8 @@
     "table-setting": "테이블 설정",
     "content": "콘텐츠",
     "details": "세부사항",
-    "trace-fsm-mode": "유한 상태 기계 패턴"
+    "trace-fsm-mode": "유한 상태 기계 패턴",
+    "lookup-reflux-data": "환류 데이터 보기",
+    "mcp-base-module": "MCP 기본 기능",
+    "mcp-advance-module": "MCP 고급 기능"
 }

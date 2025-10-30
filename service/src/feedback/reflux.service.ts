@@ -26,6 +26,38 @@ export class RefluxService {
         );
     }
 
+    async getCount(name: string) {
+        const refluxDb = this.db.get(name);
+        return refluxDb.count();
+    }
+
+    async findAll(name: string, page: number, pageSize: number) {
+        const refluxDb = this.db.get(name);
+        const record = await refluxDb.findAll(page, pageSize);
+        if (!record) {
+            return undefined;
+        }
+        return record.data;
+    }
+
+    async findTraceByHash(name: string, hash: string) {
+        const refluxDb = this.db.get(name);
+        const record = await refluxDb.findTraceByHash(hash);
+        if (!record) {
+            return undefined;
+        }
+        return record;
+    }
+
+    async findEnableToolsByHash(name: string, hash: string) {
+        const refluxDb = this.db.get(name);
+        const record = await refluxDb.findEnableToolsByHash(hash);
+        if (!record) {
+            return undefined;
+        }
+        return record;
+    }
+
     /**
      * 关闭数据库连接
      */

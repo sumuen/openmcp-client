@@ -271,5 +271,8 @@
     "table-setting": "إعدادات الجدول",
     "content": "المحتوى",
     "details": "التفاصيل",
-    "trace-fsm-mode": "نمط آلة الحالة المحدودة"
+    "trace-fsm-mode": "نمط آلة الحالة المحدودة",
+    "lookup-reflux-data": "عرض بيانات الارتداد",
+    "mcp-base-module": "الوظائف الأساسية لـ MCP",
+    "mcp-advance-module": "الميزات المتقدمة لـ MCP"
 }

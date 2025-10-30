@@ -271,5 +271,8 @@
     "table-setting": "Paramètres du tableau",
     "content": "Contenu",
     "details": "Détails",
-    "trace-fsm-mode": "Modèle de Machine à États Finis"
+    "trace-fsm-mode": "Modèle de Machine à États Finis",
+    "lookup-reflux-data": "Afficher les données de reflux",
+    "mcp-base-module": "Fonctions de base MCP",
+    "mcp-advance-module": "Fonctions avancées MCP"
 }

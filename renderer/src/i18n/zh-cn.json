@@ -271,5 +271,8 @@
     "table-setting": "表格设置",
     "content": "内容",
     "details": "细节",
-    "trace-fsm-mode": "有限状态机模式"
+    "trace-fsm-mode": "有限状态机模式",
+    "lookup-reflux-data": "查看回流数据",
+    "mcp-base-module": "MCP 基础功能",
+    "mcp-advance-module": "MCP 高级功能"
 }

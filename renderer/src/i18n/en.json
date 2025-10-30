@@ -271,5 +271,8 @@
     "table-setting": "Table Settings",
     "content": "Content",
     "details": "Details",
-    "trace-fsm-mode": "Finite State Machine Pattern"
+    "trace-fsm-mode": "Finite State Machine Pattern",
+    "lookup-reflux-data": "View reflux data",
+    "mcp-base-module": "MCP Basic Functions",
+    "mcp-advance-module": "MCP Advanced Features"
 }

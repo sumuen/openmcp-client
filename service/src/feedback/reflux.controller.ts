@@ -19,4 +19,50 @@ export class RefluxController {
             msg: ''
         };
     }
+    @Controller('feedback/reflux/get-count')
+    async getRefluxCount(data: RequestData, webview: PostMessageble) {
+        const name = data.name;
+        const count = await refluxService.getCount(name);
+        return {
+            code: 200,
+            msg: count,
+        };
+    }
+
+    @Controller('feedback/reflux/get-data')
+    async getRefluxData(data: RequestData, webview: PostMessageble) {
+        const name = data.name;
+        const page = data.page;
+        const pageSize = data.pageSize;
+
+        const result = await refluxService.findAll(name, page, pageSize);
+        return {
+            code: 200,
+            msg: result,
+        };
+    }
+
+    @Controller('feedback/reflux/findTraceByHash')
+    async findTraceByHash(data: RequestData, webview: PostMessageble) {
+        const name = data.name;
+        const hash = data.hash;
+
+        const result = await refluxService.findTraceByHash(name, hash);
+        return {
+            code: 200,
+            msg: result,
+        };
+    }
+
+    @Controller('feedback/reflux/findEnableToolsByHash')
+    async findEnableToolsByHash(data: RequestData, webview: PostMessageble) {
+        const name = data.name;
+        const hash = data.hash;
+
+        const result = await refluxService.findEnableToolsByHash(name, hash);
+        return {
+            code: 200,
+            msg: result,
+        };
+    }
 }

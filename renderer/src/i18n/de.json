@@ -271,5 +271,8 @@
     "table-setting": "Tabelleneinstellungen",
     "content": "Inhalt",
     "details": "Details",
-    "trace-fsm-mode": "Finite-State-Machine-Muster"
+    "trace-fsm-mode": "Finite-State-Machine-Muster",
+    "lookup-reflux-data": "Rückflussdaten anzeigen",
+    "mcp-base-module": "MCP-Grundfunktionen",
+    "mcp-advance-module": "MCP erweiterte Funktionen"
 }
