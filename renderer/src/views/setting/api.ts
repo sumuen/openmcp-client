@@ -34,6 +34,7 @@ export async function makeSimpleTalk() {
     const loop = new TaskLoop();
 
     const chatStorage: ChatStorage = {
+        id: '',
         messages: [],
         settings: {
             temperature: 0.6,

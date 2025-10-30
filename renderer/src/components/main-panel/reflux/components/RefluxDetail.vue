@@ -1,30 +1,51 @@
 <template>
     <div class="reflux-detail">
-        <div v-if="!selectedItem" class="no-selection">
-            <el-empty description="请选择一项以查看详情" />
-        </div>
-        <div v-else class="detail-content">
-            <!-- 详细信息展示区域，暂时留空 -->
-            <div class="header">
-                <div class="item-id">ID: {{ selectedItem.id }}</div>
+        <el-scrollbar>
+            <div v-if="!selectedItem" class="no-selection">
+                <el-empty description="请选择一项以查看详情" />
             </div>
-            <!-- 后续会在这里实现详细的信息展示 -->
-        </div>
+            <div v-else class="detail-content">
+                <div class="header">
+                    <div class="item-id">ID: {{ selectedItem.id }}</div>
+                </div>
+
+                <el-tabs v-model="activeTab" class="detail-tabs">
+                    <el-tab-pane label="性能" name="performance">
+                        <PerformanceDetail :data="selectedItem.data" />
+                    </el-tab-pane>
+                    <el-tab-pane label="设置" name="settings">
+                        <SettingsDetail :settings="selectedItem.data.settings" />
+                    </el-tab-pane>
+                    <el-tab-pane label="消息" name="messages">
+                        <MessagesList :messages="selectedItem.data.messages" />
+                    </el-tab-pane>
+                </el-tabs>
+            </div>
+        </el-scrollbar>
     </div>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import type { RefluxItem } from '../types';
+import SettingsDetail from './SettingsDetail.vue';
+import MessagesList from './MessagesList.vue';
+import PerformanceDetail from './PerformanceDetail.vue';
 
-defineProps<{
+const props = defineProps<{
     selectedItem: RefluxItem | null;
 }>();
+
+const activeTab = ref('settings');
+
+const formatTimestamp = (timestamp: number) => {
+    return new Date(timestamp).toLocaleString();
+};
 </script>
 
 <style scoped>
 .reflux-detail {
     height: 100%;
-    overflow-y: auto;
 }
 
 .no-selection {
@@ -39,12 +60,18 @@ defineProps<{
 }
 
 .header {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 
 .item-id {
+    color: var(--el-text-color-primary);
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.item-timestamp {
     color: var(--el-text-color-secondary);
     font-size: 14px;
-    margin-top: 8px;
 }
 </style>

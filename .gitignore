@@ -11,6 +11,8 @@ openmcp-sdk
 .idea
 resources/ocr/*.js
 resources/ocr/*.wasm
+resources/duckdb/*.cjs
+resources/duckdb/*.wasm
 resources/renderer
 resources/service
 *.traineddata

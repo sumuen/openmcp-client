@@ -182,6 +182,7 @@ export async function makeNodeTest(
         const loop = new TaskLoop({ maxEpochs: 1, verbose: 0 });
         const usePrompt = (prompt || 'please call the tool {tool} to make some test').replace('{tool}', dataView.tool.name);
         const chatStorage = {
+            id: '',
             messages: [],
             settings: {
                 temperature: 0.6,

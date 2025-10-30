@@ -193,6 +193,7 @@ const generateAIMockData = async (prompt?: string) => {
         const loop = new TaskLoop({ maxEpochs: 1 });
         const usePrompt = prompt || `please call the tool ${currentTool.value.name} to make some test`;
         const chatStorage = {
+            id: '',
             messages: [],
             settings: {
                 temperature: 0.6,

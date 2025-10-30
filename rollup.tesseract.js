@@ -8,7 +8,7 @@ import copy from 'rollup-plugin-copy';
 export default {
   input: './node_modules/tesseract.js/src/worker-script/node/index.js',
   output: {
-    file: path.resolve(__dirname, '..', 'resources', 'ocr', 'worker.js'),
+    file: path.resolve(__dirname, 'resources', 'ocr', 'worker.js'),
     format: 'cjs',
     exports: 'auto'
   },
