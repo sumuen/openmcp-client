@@ -1,5 +1,4 @@
 import { WebSocketServer } from 'ws';
-import pino from 'pino';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { routeMessage } from './common/router.js';
@@ -15,10 +14,6 @@ export interface VSCodeMessage {
     data?: unknown;
     callbackId?: string;
 }
-
-const logger = pino.default({
-   
-});
 
 export type MessageHandler = (message: VSCodeMessage) => void;
 
@@ -61,7 +56,7 @@ function acquireConnectionOption() {
         return option;
 
     } catch (error) {
-        logger.error('读取 .env 配置文件');
+        // logger.error('读取 .env 配置文件');
         return refreshConnectionOption(envPath);
     }
 }
@@ -123,7 +118,7 @@ wss.on('connection', (ws) => {
     const option = acquireConnectionOption();
 
     webview.onDidReceiveMessage(message => {
-        logger.info(`command: [${message.command || 'No Command'}]`);
+        console.log(`command: [${message.command || 'No Command'}]`);
         const { command, data } = message;
 
         switch (command) {
