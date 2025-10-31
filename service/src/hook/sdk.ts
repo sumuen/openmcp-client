@@ -336,4 +336,6 @@ export class OmAgent {
         const lastMessage = storage.messages.at(-1)?.content;
         return lastMessage;
     }
+
+    
 }

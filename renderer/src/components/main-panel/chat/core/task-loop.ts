@@ -43,6 +43,10 @@ export interface IDoConversationResult {
     stop: boolean;
 }
 
+interface CallbackHandler<T> {
+    id: string;
+    callback: T;
+}
 
 /**
  * @description 对任务循环进行的抽象封装
@@ -54,12 +58,12 @@ export class TaskLoop {
     private aborted = false;
 
     private currentChatId = '';
-    private onError: (error: IErrorMssage) => void = (msg) => { };
-    private onChunk: (chunk: ChatCompletionChunk) => void = (chunk) => { };
-    private onDone: () => void = () => { };
-    private onToolCall: (toolCall: ToolCall) => ToolCall = toolCall => toolCall;
-    private onToolCalled: (toolCallResult: ToolCallResult) => ToolCallResult = toolCallResult => toolCallResult;
-    private onEpoch: () => void = () => { };
+    private onError: CallbackHandler<(error: IErrorMssage) => void>[] = [];
+    private onChunk: CallbackHandler<(chunk: ChatCompletionChunk) => void>[] = [];
+    private onDone: CallbackHandler<() => void>[] = [];
+    private onToolCall: CallbackHandler<(toolCall: ToolCall) => ToolCall>[] = [];
+    private onToolCalled: CallbackHandler<(toolCallResult: ToolCallResult) => ToolCallResult>[] = [];
+    private onEpoch: CallbackHandler<() => void>[] = [];
     private completionUsage?: ChatCompletionChunk['usage'];
     private llmConfig?: BasicLlmDescription;
     private feedback;
@@ -361,75 +365,130 @@ export class TaskLoop {
     /**
      * @description 注册 error 发生时触发的回调函数
      * @param handler 
+     * @returns 取消注册的函数
      */
-    public registerOnError(handler: (msg: IErrorMssage) => void) {
-        this.onError = handler;
+    public registerOnError(handler: (msg: IErrorMssage) => void): () => void {
+        const id = Math.random().toString(36).substring(2, 15);
+        this.onError.push({ id, callback: handler });
+        return () => {
+            const index = this.onError.findIndex(h => h.id === id);
+            if (index !== -1) {
+                this.onError.splice(index, 1);
+            }
+        };
     }
 
-    public registerOnChunk(handler: (chunk: ChatCompletionChunk) => void) {
-        this.onChunk = handler;
+    public registerOnChunk(handler: (chunk: ChatCompletionChunk) => void): () => void {
+        const id = Math.random().toString(36).substring(2, 15);
+        this.onChunk.push({ id, callback: handler });
+        return () => {
+            const index = this.onChunk.findIndex(h => h.id === id);
+            if (index !== -1) {
+                this.onChunk.splice(index, 1);
+            }
+        };
     }
 
     /**
      * @description 注册 chat.completion 完成时触发的回调函数
      * @param handler 
+     * @returns 取消注册的函数
      */
-    public registerOnDone(handler: () => void) {
-        this.onDone = handler;
+    public registerOnDone(handler: () => void): () => void {
+        const id = Math.random().toString(36).substring(2, 15);
+        this.onDone.push({ id, callback: handler });
+        return () => {
+            const index = this.onDone.findIndex(h => h.id === id);
+            if (index !== -1) {
+                this.onDone.splice(index, 1);
+            }
+        };
     }
 
     /**
      * @description 注册每一个 epoch 开始时触发的回调函数
      * @param handler 
+     * @returns 取消注册的函数
      */
-    public registerOnEpoch(handler: () => void) {
-        this.onEpoch = handler;
+    public registerOnEpoch(handler: () => void): () => void {
+        const id = Math.random().toString(36).substring(2, 15);
+        this.onEpoch.push({ id, callback: handler });
+        return () => {
+            const index = this.onEpoch.findIndex(h => h.id === id);
+            if (index !== -1) {
+                this.onEpoch.splice(index, 1);
+            }
+        };
     }
 
     /**
      * @description 注册当工具调用前的回调函数，可以拦截并修改 toolcall 的输入
      * @param handler 
+     * @returns 取消注册的函数
      */
-    public registerOnToolCall(handler: (toolCall: ToolCall) => ToolCall) {
-        this.onToolCall = handler;
+    public registerOnToolCall(handler: (toolCall: ToolCall) => ToolCall): () => void {
+        const id = Math.random().toString(36).substring(2, 15);
+        this.onToolCall.push({ id, callback: handler });
+        return () => {
+            const index = this.onToolCall.findIndex(h => h.id === id);
+            if (index !== -1) {
+                this.onToolCall.splice(index, 1);
+            }
+        };
     }
 
     /**
      * @description 注册当工具调用完成时的回调函数，会调用这个方法，可以拦截并修改 toolcall 的输出
      * @param handler 
+     * @returns 取消注册的函数
      */
-    public registerOnToolCalled(handler: (toolCallResult: ToolCallResult) => ToolCallResult) {
-        this.onToolCalled = handler;
+    public registerOnToolCalled(handler: (toolCallResult: ToolCallResult) => ToolCallResult): () => void {
+        const id = Math.random().toString(36).substring(2, 15);
+        this.onToolCalled.push({ id, callback: handler });
+        return () => {
+            const index = this.onToolCalled.findIndex(h => h.id === id);
+            if (index !== -1) {
+                this.onToolCalled.splice(index, 1);
+            }
+        };
     }
 
     private consumeErrors(error: IErrorMssage) {
         this.feedback.consumeErrors(error);
-        return this.onError(error);
+        this.onError.forEach(handler => handler.callback(error));
     }
 
     private consumeChunks(chunk: ChatCompletionChunk) {
         this.feedback.consumeChunks(chunk);
-        return this.onChunk(chunk);
+        this.onChunk.forEach(handler => handler.callback(chunk));
     }
 
     private consumeToolCalls(toolCall: ToolCall) {
         this.feedback.consumeToolCalls(toolCall);
-        return this.onToolCall(toolCall);
+        let result = toolCall;
+        this.onToolCall.forEach(handler => {
+            result = handler.callback(result);
+        });
+        return result;
     }
 
     private consumeToolCalleds(result: ToolCallResult) {
         this.feedback.consumeToolCalleds(result);
-        return this.onToolCalled(result);
+        let finalResult = result;
+        this.onToolCalled.forEach(handler => {
+            finalResult = handler.callback(finalResult);
+        });
+        return finalResult;
     }
 
     private consumeEpochs() {
         this.feedback.consumeEpochs();
-        return this.onEpoch();
+        this.onEpoch.forEach(handler => handler.callback());
     }
 
     private consumeDones() {
         this.feedback.consumeDones();
-        return this.onDone();
+        this.onDone.forEach(handler => handler.callback());
     }
 
     public setMaxEpochs(maxEpochs: number) {
@@ -834,7 +893,11 @@ export class TaskLoop {
         return resource;
     }
 
+    // === sdk ===
+
     public reflux(storage: ChatStorage) {
         this.feedback.reflux(storage);
     }
+
+    
 }

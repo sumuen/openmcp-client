@@ -367,7 +367,7 @@ const reload = async () => {
 .user .message-content > span {
     max-width: calc(100% - 48px);
     border-radius: .9em;
-    background-color: var(--main-light-color);
+    background-color: var(--sidebar-item-selected);
     padding: 10px 15px;
     box-sizing: border-box;
     white-space: pre-wrap;

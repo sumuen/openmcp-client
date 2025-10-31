@@ -314,6 +314,7 @@ function parseArguments(args: string | undefined): object {
     display: flex;
     align-items: center;
     height: fit-content;
+    min-height: unset;
 }
 
 .message-text .el-collapse-item__content {

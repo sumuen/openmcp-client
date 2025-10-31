@@ -344,7 +344,7 @@ onUnmounted(() => {
 
 <style>
 .chat-footer {
-    padding: 16px;
+    padding-bottom: 16px;
     border-top: 1px solid var(--el-border-color);
     flex-shrink: 0;
     position: absolute;
