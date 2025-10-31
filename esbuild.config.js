@@ -8,7 +8,7 @@ build({
   format: 'cjs',
   outfile: 'dist/extension.cjs.js',
   sourcemap: true,
-  external: ['vscode'], 
+  external: ['vscode', 'duckdb'], 
   target: ['node22'],   
   loader: {
     '.json': 'json'

@@ -16,7 +16,7 @@ export interface VSCodeMessage {
     callbackId?: string;
 }
 
-const logger = pino.default({
+const logger = pino({
    
 });
 
