@@ -146,32 +146,29 @@ function chooseDebugMode(index: number) {
 }
 
 .welcome-container {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 30px; /* 减小间距 */
+	/* 统一使用 Grid 实现栅格与间距 */
+	--gap: 24px;
+	--card-min: 220px;
+	display: grid;
+	gap: var(--gap);
 	width: 100%;
-	justify-content: flex-start; /* 左对齐 */
 }
 
 .base-module {
-	/* MCP Base 模块容器 */
+	/* 上方 3 列，整体块居中 */
+	grid-template-columns: repeat(3, minmax(var(--card-min), 1fr));
+	max-width: calc(3 * var(--card-min) + 2 * var(--gap));
+	margin: 0 auto;
 }
 
 .advance-module {
-	/* MCP Advance 模块容器 */
+	/* 下方 2 列，整体块居中 */
+	grid-template-columns: repeat(2, minmax(var(--card-min), 1fr));
+	max-width: calc(2 * var(--card-min) + 1 * var(--gap));
+	margin: 0 auto;
 }
 
-.base-module > span {
-	flex: 1 1 calc(33.333% - 30px); /* 三个一行，调整宽度计算 */
-	max-width: calc(33.333% - 30px);
-	min-width: 200px; /* 设置最小宽度 */
-}
-
-.advance-module > span {
-	flex: 1 1 calc(50% - 30px); /* 两个一行，调整宽度计算 */
-	max-width: calc(50% - 30px);
-	min-width: 250px; /* 设置最小宽度 */
-}
+/* 去除基于 Flex 的宽度规则，改由 Grid 控制列与间距 */
 
 .welcome-container > span {
 	box-sizing: border-box;
@@ -220,16 +217,14 @@ function chooseDebugMode(index: number) {
 
 /* 响应式设计 */
 @media (max-width: 1200px) {
-	.base-module > span {
-		flex: 1 1 calc(50% - 20px); /* 屏幕较小时每行显示两个 */
-		max-width: calc(50% - 20px);
+	/* 窄屏时上方退化为 2 列并保持居中 */
+	.base-module {
+		grid-template-columns: repeat(2, minmax(var(--card-min), 1fr));
+		max-width: calc(2 * var(--card-min) + 1 * var(--gap));
 	}
-	
-	.advance-module > span {
-		flex: 1 1 calc(50% - 20px); /* 屏幕较小时每行显示两个 */
-		max-width: calc(50% - 20px);
-	}
-	
+
+	/* 下方依然 2 列，宽度保持不变 */
+
 	.debug-option {
 		font-size: 18px;
 		min-height: 150px;
@@ -241,13 +236,11 @@ function chooseDebugMode(index: number) {
 		padding: 0 20px; /* 移动端减小内边距 */
 	}
 	
-	.base-module > span,
-	.advance-module > span {
-		flex: 1 1 100%; /* 移动端每行显示一个 */
-		max-width: 100%;
-	}
-	
-	.welcome-container {
+	/* 移动端均退化为 1 列并居中 */
+	.base-module,
+	.advance-module {
+		grid-template-columns: 1fr;
+		max-width: var(--card-min);
 		gap: 20px;
 	}
 	

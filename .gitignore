@@ -21,3 +21,6 @@ stats.html
 .openmcp
 test-vsix
 resources/changelog/**
+ 
+# Ignore agent guidance files from VCS noise
+**/AGENTS.md

@@ -15,6 +15,13 @@ export interface VSCodeMessage {
     callbackId?: string;
 }
 
+<<<<<<< HEAD
+=======
+const logger = pino({
+   
+});
+
+>>>>>>> df956249f810f48553234f0d1a00b79ec74e506a
 export type MessageHandler = (message: VSCodeMessage) => void;
 
 function refreshConnectionOption(envPath: string) {

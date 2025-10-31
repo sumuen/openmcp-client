@@ -8,6 +8,7 @@ build({
   format: 'cjs',
   outfile: 'dist/extension.cjs.js',
   sourcemap: true,
+<<<<<<< HEAD
   external: [
     'vscode',
     'duckdb',
@@ -16,6 +17,9 @@ build({
     'aws-sdk',
     'nock'
   ], 
+=======
+  external: ['vscode', 'duckdb'], 
+>>>>>>> df956249f810f48553234f0d1a00b79ec74e506a
   target: ['node22'],   
   loader: {
     '.json': 'json',
