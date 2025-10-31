@@ -8,10 +8,18 @@ build({
   format: 'cjs',
   outfile: 'dist/extension.cjs.js',
   sourcemap: true,
-  external: ['vscode'], 
+  external: [
+    'vscode',
+    'duckdb',
+    '@mapbox/node-pre-gyp',
+    'mock-aws-s3',
+    'aws-sdk',
+    'nock'
+  ], 
   target: ['node22'],   
   loader: {
-    '.json': 'json'
+    '.json': 'json',
+    '.html': 'text'
   },
   define: { 'import.meta.url': '_importMetaUrl' },
   banner: {
