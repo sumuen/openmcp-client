@@ -24,7 +24,7 @@ export class RefluxDB {
         this.db = new duckdb.Database(this.dbPath);
         console.log(
             chalk.gray(`${logTimeStampString()} |`),
-            'connect ' + this.dbPath
+            'connect reflux db ' + this.dbPath
         );
 
         this.initTable();

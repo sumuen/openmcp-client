@@ -22,7 +22,7 @@ export async function getRefluxData(name: string, page: number, pageSize: number
     if (res.code === 200) {
         return res.msg;
     }
-    console.log(res);
+    // console.log(res);
     return undefined;
 }
 
@@ -33,7 +33,7 @@ export async function findTraceByHash(name: string, hash: string): Promise<strin
     if (res.code === 200) {
         return res.msg;
     }
-    console.log(res);
+    // console.log(res);
     return undefined;
 }
 
@@ -44,7 +44,6 @@ export async function findEnableToolsByHash(name: string, hash: string): Promise
     if (res.code === 200) {
         return res.msg;
     }
-
-    console.log(res);
+    // console.log(res);
     return undefined;
 }

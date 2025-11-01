@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./icons/openmcp-sdk.svg" height="200px"/>
+<img src="https://raw.githubusercontent.com/LSTM-Kirigaya/openmcp-client/refs/heads/main/resources/openmcp-sdk-release/icons/openmcp-sdk.svg" height="200px"/>
 
 <h3>openmcp-sdk: Deployment Framework for OpenMCP</h3>
 <h4>Lightning-fast deployment of your agent from lab to production</h4>
@@ -11,6 +11,21 @@
 <a href="https://qm.qq.com/cgi-bin/qm/qr?k=C6ZUTZvfqWoI12lWe7L93cWa1hUsuVT0&jump_from=webapi&authKey=McW6B1ogTPjPDrCyGttS890tMZGQ1KB3QLuG4aqVNRaYp4vlTSgf2c6dMcNjMuBD" target="_blank" style="display: inline-block; padding: 8px 16px; background-color: #CB81DA; color: white; border-radius: .5em; text-decoration: none;">QQ Discussion Group</a><a href="https://discord.gg/af5cfB9a" target="_blank" style="display: inline-block; padding: 8px 16px; background-color: rgb(84, 176, 84); color: white; border-radius: .5em; text-decoration: none; margin-left: 5px;">Discord Channel</a>
 
 </div>
+
+## Introduction
+
+OpenMCP-SDK is a framework designed for building autonomous agent systems with MCP (Model Context Protocol) server integration.
+
+- Create agents in just a few lines of code
+
+- Full MCP server compatibility
+- Built-in dataset collection system (OpenMCP Reflux)
+- Intuitive lifecycle control functions for precise agent management
+- Robust and efficient Agent Loop, proven reliable in numerous production deployments
+- Dual compatibility with both OpenAI and XML-Wrapper function calling standards
+- Straightforward logging that helps you quickly pinpoint agent issues
+
+---
 
 ## Installation
 
@@ -72,17 +87,13 @@ console.log('⚙️ Agent Response', res);
 Run your agent and get example output:
 
 ```
-[2025/6/20 20:47:31] 🚀 [crawl4ai-mcp] 1.9.1 connected
-[2025/6/20 20:47:35] 🤖 Agent wants to use these tools get_web_markdown
-[2025/6/20 20:47:35] 🔧 using tool get_web_markdown
-[2025/6/20 20:47:39] ✓  use tools success
-[2025/6/20 20:47:46] 🤖 Agent wants to use these tools get_web_markdown, get_web_markdown, get_web_markdown
-[2025/6/20 20:47:46] 🔧 using tool get_web_markdown
-[2025/6/20 20:47:48] ✓  use tools success
-[2025/6/20 20:47:48] 🔧 using tool get_web_markdown
-[2025/6/20 20:47:54] ✓  use tools success
-[2025/6/20 20:47:54] 🔧 using tool get_web_markdown
-[2025/6/20 20:47:57] ✓  use tools success
+2025/6/20 - 20:47:31 | 🚀 [crawl4ai-mcp] 1.9.1 connected, type STDIO
+2025/6/20 - 20:47:35 | 🤖 Agent wants to use these tools get_web_markdown
+2025/6/20 - 20:47:39 | ✅  get_web_markdown success
+2025/6/20 - 20:47:46 | 🤖 Agent wants to use tools(3) get_web_markdown, get_web_markdown, get_web_markdown
+2025/6/20 - 20:47:48 | ✅  get_web_markdown success
+2025/6/20 - 20:47:54 | ✅  get_web_markdown success
+2025/6/20 - 20:47:57 | ✅  get_web_markdown success
 
 ⚙️ Agent Response
 ⌨️ Today's Tech Article Roundup
