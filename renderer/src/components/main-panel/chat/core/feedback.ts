@@ -104,13 +104,13 @@ export class OmFeedback {
             if (toolCallResult.state === 'success') {
                 console.log(
                     chalk.gray(`${logTimeStampString()} |`),
-                    chalk.green(`✅ ${toolCallResult.name}`),
+                    chalk.green(`✅ ${toolCallResult.function?.name}`),
                     chalk.green(toolCallResult.state)
                 );
             } else {
                 console.log(
                     chalk.gray(`${logTimeStampString()} |`),
-                    chalk.red(`❌ ${toolCallResult.name}`),
+                    chalk.red(`❌ ${toolCallResult.function?.name}`),
                     chalk.red(toolCallResult.content.map(item => item.text).join(', '))
                 );
             }

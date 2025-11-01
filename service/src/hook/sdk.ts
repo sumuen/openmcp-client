@@ -366,7 +366,7 @@ export class OmAgent {
         if (needCall) {
             let returnToolCallResult: ToolCallResult | undefined;
             loop.registerOnToolCalled(toolCallResult => {
-                if (toolCallResult.name === toolName) {
+                if (toolCallResult.function?.name === toolName) {
                     returnToolCallResult = toolCallResult;
                     loop.abort();
                 }

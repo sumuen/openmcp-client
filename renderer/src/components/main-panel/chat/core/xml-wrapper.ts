@@ -284,7 +284,6 @@ export async function handleXmlWrapperToolcall(toolcall: XmlToolCall): Promise<T
         return {
             index: 0,
             id: '',
-            name,
             timecost: 0,
             content: [{
                 type: 'error',
@@ -301,7 +300,10 @@ export async function handleXmlWrapperToolcall(toolcall: XmlToolCall): Promise<T
     
     return {
         index: 0,
-        name,
+        function: {
+            name: toolcall.name,
+            arguments: JSON.stringify(toolcall.parameters)
+        },
         timecost,
         id: toolcall.callId,
         ...response

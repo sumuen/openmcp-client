@@ -92,7 +92,10 @@ export interface ToolCallContent {
 
 export interface ToolCallResult {
     id?: string;
-    name: string;
+    function?: {
+        name?: string;
+        arguments?: string;
+    };
     index: number;
     state: MessageState;
     timecost: number;
