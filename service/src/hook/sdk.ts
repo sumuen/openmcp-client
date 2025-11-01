@@ -119,13 +119,26 @@ export interface DefaultLLM {
     model: string;
 }
 
+export interface AinvokeConfig {
+    messages: ChatMessage[] | string;
+    settings?: Partial<ChatSetting & TaskLoopOptions>;
+    until?: {
+        toolName: string;
+        needCall?: boolean;
+        forceCall?: boolean;
+    }
+}
+
+
 import {
     MessageState,
     type TaskLoopOptions,
     type ChatMessage,
     type ChatSetting,
     type TaskLoop,
-    type TextMessage
+    type TextMessage,
+    type ToolCallResult,
+    type ToolCall
 } from '../../task-loop.js';
 import { IConnectionArgs, MessageHandler, WebSocketMessage } from './adapter.js';
 import { ConnectionType } from 'src/mcp/client.dto.js';
@@ -275,8 +288,8 @@ export class OmAgent {
      * @param settings Chat setting and task loop options
      * @returns 
      */
-    public async ainvoke(
-        { messages, settings }: { messages: ChatMessage[] | string; settings?: Partial<ChatSetting & TaskLoopOptions>; }
+    private async _ainvoke(
+        { messages, settings }: AinvokeConfig
     ) {
         if (messages.length === 0) {
             throw new Error('messages is empty');
@@ -337,5 +350,41 @@ export class OmAgent {
         return lastMessage;
     }
 
-    
+    public async ainvoke({ messages, settings, until }: AinvokeConfig) {
+        const {
+            toolName = '',
+            needCall = true,
+            // TODO: finish force
+        } = until || {};
+
+        if (toolName === '') {
+            return this._ainvoke({ messages, settings });
+        }
+
+        const loop = await this.getLoop();
+        
+        if (needCall) {
+            let returnToolCallResult: ToolCallResult | undefined;
+            loop.registerOnToolCalled(toolCallResult => {
+                if (toolCallResult.name === toolName) {
+                    returnToolCallResult = toolCallResult;
+                    loop.abort();
+                }
+                return toolCallResult;
+            });
+            return returnToolCallResult;
+
+        } else {
+            let returnToolCall: ToolCall | undefined;
+            loop.registerOnToolCall(toolCall => {
+                if (toolCall.function.name === toolName) {
+                    returnToolCall = toolCall;
+                    loop.abort();
+                }
+                return toolCall;
+            });
+            return returnToolCall;
+        }
+    }
+
 }
