@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import * as os from 'os';
 import { PostMessageble } from '../hook/adapter.js';
 import chalk from 'chalk';
+import { FORBIDDEN_MONITOR } from '../hook/setting.js';
 
 export const clientMap: Map<string, RequestClientType> = new Map();
 export function getClient(clientId?: string): RequestClientType | undefined {
@@ -309,8 +310,8 @@ export async function connectService(
         const client = await connect(option);
         clientMap.set(uuid, client);
         
-        // 只有 stdio 才需要监听
-        if (option.connectionType === 'STDIO') {
+        // 只有 stdio 才需要监听        
+        if (option.connectionType === 'STDIO' && !FORBIDDEN_MONITOR) {
             clientMonitorMap.set(uuid, new McpServerConnectMonitor(uuid, option, updateClientMap, webview));
         }
 

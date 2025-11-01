@@ -2,6 +2,23 @@ import { EventEmitter } from 'events';
 import { routeMessage } from '../common/router.js';
 import * as fs from 'fs';
 
+import {
+    MessageState,
+    type TaskLoopOptions,
+    type ChatMessage,
+    type ChatSetting,
+    type TaskLoop,
+    type TextMessage,
+    type ToolCallResult,
+    type ToolCall
+} from '../../task-loop.js';
+import { IConnectionArgs, MessageHandler, WebSocketMessage } from './adapter.js';
+import { ConnectionType } from 'src/mcp/client.dto.js';
+import { FORBIDDEN_MONITOR, setForbiddenMonitor, setRefluxHome } from './setting.js';
+
+// sdk 模式禁用 monitor
+setForbiddenMonitor(true);
+
 export class TaskLoopAdapter {
     public emitter: EventEmitter;
     private messageHandlers: Set<MessageHandler>;
@@ -126,22 +143,13 @@ export interface AinvokeConfig {
         toolName: string;
         needCall?: boolean;
         forceCall?: boolean;
+    };
+    reflux?: {
+        enabled?: boolean;
+        saveDir?: string;
     }
 }
 
-
-import {
-    MessageState,
-    type TaskLoopOptions,
-    type ChatMessage,
-    type ChatSetting,
-    type TaskLoop,
-    type TextMessage,
-    type ToolCallResult,
-    type ToolCall
-} from '../../task-loop.js';
-import { IConnectionArgs, MessageHandler, WebSocketMessage } from './adapter.js';
-import { ConnectionType } from 'src/mcp/client.dto.js';
 
 export function UserMessage(content: string): TextMessage {
     return {
@@ -289,7 +297,7 @@ export class OmAgent {
      * @returns 
      */
     private async _ainvoke(
-        { messages, settings }: AinvokeConfig
+        { messages, settings, reflux }: AinvokeConfig
     ) {
         if (messages.length === 0) {
             throw new Error('messages is empty');
@@ -343,14 +351,27 @@ export class OmAgent {
             throw new Error('default LLM is not set, please set it via omagent.setDefaultLLM() or write "defaultLLM" in mcpconfig.json');
         }
 
-        await loop.start(storage, userMessage);
+        // lookup reflux setting
+        const {
+            enabled = false,
+            saveDir = '',
+        } = reflux || {};
+
+        if (saveDir) {
+            setRefluxHome(saveDir);
+        }
+
+        const loopMode = enabled ? 'single-chat' : 'normal';
+        loop.setRefluxSetting(enabled);
+
+        await loop.start(storage, userMessage, { mode: loopMode });
 
         // get response from last message in message list
         const lastMessage = storage.messages.at(-1)?.content;
         return lastMessage;
     }
 
-    public async ainvoke({ messages, settings, until }: AinvokeConfig) {
+    public async ainvoke({ messages, settings, until, reflux }: AinvokeConfig) {
         const {
             toolName = '',
             needCall = true,
@@ -358,7 +379,7 @@ export class OmAgent {
         } = until || {};
 
         if (toolName === '') {
-            return this._ainvoke({ messages, settings });
+            return this._ainvoke({ messages, settings, reflux });
         }
 
         const loop = await this.getLoop();
@@ -372,6 +393,9 @@ export class OmAgent {
                 }
                 return toolCallResult;
             });
+
+            await this._ainvoke({ messages, settings, reflux });
+
             return returnToolCallResult;
 
         } else {
@@ -383,6 +407,9 @@ export class OmAgent {
                 }
                 return toolCall;
             });
+
+            await this._ainvoke({ messages, settings, reflux });
+
             return returnToolCall;
         }
     }

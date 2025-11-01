@@ -22,7 +22,7 @@ export class OmFeedback {
         if (this.verbose > 0) {
             const time = logTimeStampString();
             console.log(
-                chalk.gray(`${time} | `),
+                chalk.gray(`${time} |`),
                 chalk.yellow(`🤖 Agent wants to use tools(${toolCalls.length})`),
                 chalk.yellow(toolCalls.map(tool => tool.function!.name || '').join(', '))
             );

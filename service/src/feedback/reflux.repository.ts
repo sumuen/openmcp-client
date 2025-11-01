@@ -6,7 +6,7 @@ import * as crypto from 'crypto';
 
 import chalk from 'chalk';
 
-import { VSCODE_WORKSPACE } from '../hook/setting.js';
+import { REFLUX_HOME, VSCODE_WORKSPACE } from '../hook/setting.js';
 import { ChatStorage, TokenConsumption } from './reflux.dto.js';
 import { logTimeStampString } from '../hook/util.js';
 
@@ -15,7 +15,7 @@ export class RefluxDB {
     private dbPath: string;
 
     constructor(tableName: string = 'storage') {
-        const dbDir = path.join(VSCODE_WORKSPACE, '.openmcp', 'data');
+        const dbDir = REFLUX_HOME || path.join(VSCODE_WORKSPACE, '.openmcp', 'data');
         if (!fs.existsSync(dbDir)) {
             fs.mkdirSync(dbDir, { recursive: true });
         }

@@ -295,6 +295,12 @@ export class TaskLoop {
     setProxyServer(proxyServer: string): void;
 
     /**
+     * @description 启用数据集回流
+     * @param enableDatasetReflux 
+     */
+    setRefluxSetting(enableDatasetReflux: boolean): void;
+
+    /**
      * @description Get all available tool list
      */
     listTools(): Promise<ToolItem[]>;
@@ -302,7 +308,7 @@ export class TaskLoop {
     /**
      * @description Start the loop and asynchronously update the DOM
      */
-    start(tabStorage: ChatStorage, userMessage: string): Promise<void>;
+    start(tabStorage: ChatStorage, userMessage: string, config?: any): Promise<void>;
 
     /**
      * @description Create single conversation context
