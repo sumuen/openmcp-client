@@ -37,14 +37,6 @@ export class McpClient {
             }
         );
 
-        this.client.onclose = () => {
-            console.log('openmcp client close');
-        };
-
-        this.client.onerror = (error: Error) => {
-            console.error('❌ Client error:', error);
-        };
-
         this.oAuthClient = new OAuthClient();
     }
 
