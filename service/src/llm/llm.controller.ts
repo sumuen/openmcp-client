@@ -11,9 +11,7 @@ export class LlmController {
 
         try {
             await streamingChatCompletion(data, webview);
-        } catch (error) {
-            console.log('error' + error);
-            
+        } catch (error) {            
             webview.postMessage({
                 command: 'llm/chat/completions/error',
                 data: {

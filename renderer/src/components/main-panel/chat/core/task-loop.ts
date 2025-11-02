@@ -281,6 +281,10 @@ export class TaskLoop {
         mcpSetting.proxyServer = proxyServer;
     }
 
+    public setRefluxSetting(enableDatasetReflux: boolean) {
+        mcpSetting.enableDatasetReflux = enableDatasetReflux;
+    }
+
     public makeChatData(tabStorage: ChatStorage): ChatCompletionCreateParamsBase | undefined {
         const baseURL = this.getLlmConfig().baseUrl;
         const apiKey = this.getLlmConfig().userToken || '';
@@ -558,7 +562,7 @@ export class TaskLoop {
 
         const {
             mode = 'normal',
-        } = config || {};
+        } = config || {};        
 
         const platform = getPlatform();
         if (platform === 'nodejs') {

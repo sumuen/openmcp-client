@@ -13,7 +13,10 @@ export type ChatCompletionCreateParamsBase = OpenAI.Chat.Completions.ChatComplet
 
 export interface ToolCallResult {
     id?: string;
-    name: string;
+    function?: {
+        name?: string;
+        arguments?: string;
+    };
     index: number;
     state: MessageState;
     timecost: number;
@@ -23,13 +26,11 @@ export interface ToolCallResult {
 export type IToolCallIndex = number;
 
 export async function handleToolCalls(toolCall: ToolCall): Promise<ToolCallResult> {
-    const name = toolCall.function?.name || '';
-
     if (!toolCall.function) {
         return {
             index: toolCall.index,
             id: toolCall.id,
-            name,
+            function: toolCall.function,
             timecost: 0,
             content: [{
                 type: 'error',
@@ -48,7 +49,7 @@ export async function handleToolCalls(toolCall: ToolCall): Promise<ToolCallResul
         return {
             index: toolCall.index,
             id: toolCall.id,
-            name,
+            function: toolCall.function,
             timecost: 0,
             content: [{
                 type: 'error',
@@ -69,7 +70,7 @@ export async function handleToolCalls(toolCall: ToolCall): Promise<ToolCallResul
     return {
         index: toolCall.index,
         id: toolCall.id,
-        name,
+        function: toolCall.function,
         timecost,
         ...response
     };

@@ -22,7 +22,7 @@ export class OmFeedback {
         if (this.verbose > 0) {
             const time = logTimeStampString();
             console.log(
-                chalk.gray(`${time} | `),
+                chalk.gray(`${time} |`),
                 chalk.yellow(`🤖 Agent wants to use tools(${toolCalls.length})`),
                 chalk.yellow(toolCalls.map(tool => tool.function!.name || '').join(', '))
             );
@@ -44,7 +44,7 @@ export class OmFeedback {
     consumeEpochs() {
         if (this.verbose > 1) {
             console.log(
-                chalk.gray(`[${new Date().toLocaleString()}]`),
+                chalk.gray(`${logTimeStampString()} |`),
                 chalk.blue('task loop enters a new epoch')
             );
         }
@@ -58,7 +58,7 @@ export class OmFeedback {
     ) {
         if (this.verbose > 0) {
             console.log(
-                chalk.gray(`[${new Date().toLocaleString()}]`),
+                chalk.gray(`${logTimeStampString()} |`),
                 chalk.red('error happen in task loop '),
                 chalk.red(error.msg)
             );
@@ -70,20 +70,20 @@ export class OmFeedback {
     ) {
         if (this.verbose > 1) {
             console.log(
-                chalk.gray(`[${new Date().toLocaleString()}]`),
+                chalk.gray(`${logTimeStampString()} |`),
                 chalk.blue('receive chunk')
             );
         } else if (this.verbose > 2) {
             const delta = chunk.choices[0]?.delta;
             if (delta) {
                 console.log(
-                    chalk.gray(`[${new Date().toLocaleString()}]`),
+                    chalk.gray(`${logTimeStampString()} |`),
                     chalk.blue('receive chunk'),
                     chalk.bold(JSON.stringify(delta, null, 2))
                 );
             } else {
                 console.log(
-                    chalk.gray(`[${new Date().toLocaleString()}]`),
+                    chalk.gray(`${logTimeStampString()} |`),
                     chalk.blue('receive chunk'),
                     chalk.blue('delta is empty')
                 );
@@ -104,13 +104,13 @@ export class OmFeedback {
             if (toolCallResult.state === 'success') {
                 console.log(
                     chalk.gray(`${logTimeStampString()} |`),
-                    chalk.green(`✅ ${toolCallResult.name}`),
+                    chalk.green(`✅ ${toolCallResult.function?.name}`),
                     chalk.green(toolCallResult.state)
                 );
             } else {
                 console.log(
                     chalk.gray(`${logTimeStampString()} |`),
-                    chalk.red(`❌ ${toolCallResult.name}`),
+                    chalk.red(`❌ ${toolCallResult.function?.name}`),
                     chalk.red(toolCallResult.content.map(item => item.text).join(', '))
                 );
             }
@@ -120,7 +120,7 @@ export class OmFeedback {
     consumeDones() {
         if (this.verbose > 1) {
             console.log(
-                chalk.gray(`[${new Date().toLocaleString()}]`),
+                chalk.gray(`${logTimeStampString()} |`),
                 chalk.green('task loop finish a epoch')
             );
         }
@@ -141,9 +141,6 @@ export class OmFeedback {
             storage,
             name: mcpSetting.datasetName
         });
-
-        console.log(res);
-        
 
         if (res.code !== 200) {
             console.error(
