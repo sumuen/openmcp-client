@@ -8,9 +8,20 @@
                 <el-form-item v-for="[name, property] in Object.entries(currentTool.inputSchema.properties)" :key="name"
                     :label="property.title || name" :prop="name"
                     :required="currentTool.inputSchema.required?.includes(name)">
-                    <el-input v-if="property.type === 'string'" v-model="tabStorage.formData[name]" type="text"
-                        :placeholder="property.description || t('enter') + ' ' + (property.title || name)"
-                        @keydown.enter.prevent="handleExecute" />
+                    
+                        <el-input v-if="property.type === 'string'" v-model="tabStorage.formData[name]" type="text"
+                            :placeholder="property.description || t('enter') + ' ' + (property.title || name)"
+                            @keydown.enter.prevent="handleExecute">
+                            <template #append>
+                                <VariableSelector
+                                    button-text="插入变量"
+                                    :tool-name="currentTool?.name || ''"
+                                    :parameter-name="name"
+                                    expected-type="string"
+                                    @select="(variable, value) => onVariableSelected(name, variable, value)"
+                                />
+                            </template>
+                        </el-input>
 
                     <el-input-number v-else-if="property.type === 'number' || property.type === 'integer'"
                         v-model="tabStorage.formData[name]" controls-position="right"
@@ -89,6 +100,9 @@ import { mcpClientAdapter } from '@/views/connect/core';
 import { JSONSchemaFaker } from 'json-schema-faker';
 
 import { faker } from '@faker-js/faker';
+import VariableSelector from './variable-selector.vue';
+import { initVariableStore, getVariables } from '../../variable-management/store';
+import type { ToolVariable } from '../../variable-management/types';
 
 // 插件注入
 JSONSchemaFaker.extend('faker', () => faker);
@@ -136,6 +150,85 @@ const currentTool = computed(() => {
 });
 
 const aiMookPrompt = ref(`please call the tool ${currentTool.value?.name || ''} to make some test`);
+
+// 初始化变量存储（绑定到主客户端，确保变量可用）
+try {
+    initVariableStore(mcpClientAdapter.masterNode);
+} catch (e) {
+    // 已初始化或无主客户端时忽略
+}
+
+// 选择变量后，向指定输入插入占位符 ${变量名称}
+function onVariableSelected(fieldName: string, variable: ToolVariable, _value: any) {
+    const placeholder = `\${${variable.name}}`;
+    const cur = tabStorage.formData[fieldName];
+    if (typeof cur === 'string') {
+        tabStorage.formData[fieldName] = cur + placeholder;
+    } else if (cur === undefined || cur === null) {
+        tabStorage.formData[fieldName] = placeholder;
+    } else {
+        // 非字符串字段，强制转字符串附加
+        tabStorage.formData[fieldName] = String(cur) + placeholder;
+    }
+    // 清除该字段校验提示
+    formRef.value?.clearValidate?.([fieldName as any]);
+}
+
+// 提供一个类型完备的包装函数，避免模板中内联箭头函数导致隐式 any 报错
+function onVariableSelectedWrapper(fieldName: string) {
+    return (variable: ToolVariable, value: any) => onVariableSelected(fieldName, variable, value);
+}
+
+// 解析表单中的占位符，替换为变量值
+function resolveFormPlaceholders(data: any): any {
+    const variables = getVariables();
+    const map = new Map<string, any>();
+    for (const v of variables) {
+        try {
+            map.set(v.name, JSON.parse(v.value));
+        } catch {
+            map.set(v.name, v.value);
+        }
+    }
+
+    const isPlainObject = (val: any) => Object.prototype.toString.call(val) === '[object Object]';
+
+    const replaceInString = (s: string) => {
+        // 完全匹配单一占位符时，直接返回真实值（保持类型）
+        const exact = s.match(/^\$\{([^}]+)\}$/);
+        if (exact) {
+            const name = exact[1];
+            if (map.has(name)) return map.get(name);
+            return s;
+        }
+        // 含有多个占位符时，进行字符串级替换
+        return s.replace(/\$\{([^}]+)\}/g, (_m, g1) => {
+            const val = map.get(g1);
+            if (val === undefined) return _m; // 未找到则保留原样
+            if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
+                return String(val);
+            }
+            try {
+                return JSON.stringify(val);
+            } catch {
+                return String(val);
+            }
+        });
+    };
+
+    const deep = (val: any): any => {
+        if (typeof val === 'string') return replaceInString(val);
+        if (Array.isArray(val)) return val.map(deep);
+        if (isPlainObject(val)) {
+            const out: Record<string, any> = {};
+            for (const k of Object.keys(val)) out[k] = deep(val[k]);
+            return out;
+        }
+        return val;
+    };
+
+    return deep(data);
+}
 
 const formRules = computed<FormRules>(() => {
     const rules: FormRules = {};
@@ -305,7 +398,8 @@ async function handleExecute() {
     loading.value = true;
     try {
         tabStorage.lastToolCallResponse = undefined;
-        const toolResponse = await mcpClientAdapter.callTool(tabStorage.currentToolName, tabStorage.formData);
+        const resolvedForm = resolveFormPlaceholders(tabStorage.formData);
+        const toolResponse = await mcpClientAdapter.callTool(tabStorage.currentToolName, resolvedForm);
         tabStorage.lastToolCallResponse = toolResponse;
     } finally {
         loading.value = false;

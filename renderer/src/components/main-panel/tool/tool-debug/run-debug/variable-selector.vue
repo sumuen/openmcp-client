@@ -1,8 +1,3 @@
-/**
- * 变量选择器组件
- * 用于在工具调试界面快速选择和应用保存的变量
- */
-
 <template>
     <el-popover
         placement="bottom-start"
@@ -54,7 +49,7 @@
                     </div>
 
                     <div class="variable-item-preview">
-                        <pre>{{ formatValuePreview(variable.value) }}</pre>
+                        <pre>{{ formatValuePreview(variable) }}</pre>
                     </div>
 
                     <div class="variable-item-meta">
@@ -86,9 +81,10 @@
 </template>
 
 <script setup lang="ts">
-import { defineComponent, ref, computed, defineProps, defineEmits, watch } from 'vue';
-import type { ToolVariable, VariableValueType } from './types';
-import { getVariables, getVariableValue } from './store';
+import { defineComponent, ref, computed, defineProps, defineEmits, watch, onMounted } from 'vue';
+import type { ToolVariable, VariableValueType } from '../../variable-management/types';
+import { getVariables, getVariableValue, initVariableStore } from '../../variable-management/store';
+import { mcpClientAdapter } from '@/views/connect/core';
 import { ElMessage } from 'element-plus';
 
 defineComponent({ name: 'variable-selector' });
@@ -173,18 +169,19 @@ function handleApply() {
 function handleManageVariables() {
     // 触发打开变量管理页面
     // 这里可以通过路由或者事件总线来实现
-    ElMessage.info('请在工具面板中打开"变量管理"标签页');
+    window.dispatchEvent(new Event('open-variable-management'));
     visible.value = false;
 }
 
-function formatValuePreview(value: string): string {
+function formatValuePreview(variable: ToolVariable): string {
+    const raw = getVariableValue(variable.id);
     try {
-        const parsed = JSON.parse(value);
-        const str = JSON.stringify(parsed);
-        // 限制预览长度
-        return str.length > 50 ? str.substring(0, 50) + '...' : str;
+        // 保证对象/数组为紧凑预览
+        const str = typeof raw === 'string' ? raw : JSON.stringify(raw);
+        return str.length > 80 ? str.substring(0, 80) + '…' : str;
     } catch {
-        return value.length > 50 ? value.substring(0, 50) + '...' : value;
+        const s = String(raw);
+        return s.length > 80 ? s.substring(0, 80) + '…' : s;
     }
 }
 
@@ -205,6 +202,11 @@ watch(visible, (newVal) => {
     if (!newVal) {
         selectedVariableId.value = undefined;
     }
+});
+
+// 确保变量存储已绑定到主客户端，避免出现值为空或不同步
+onMounted(() => {
+    try { initVariableStore(mcpClientAdapter.masterNode); } catch {}
 });
 </script>
 
@@ -230,20 +232,22 @@ watch(visible, (newVal) => {
 .variable-item {
     padding: 10px;
     margin-bottom: 8px;
-    border: 1px solid #e4e7ed;
-    border-radius: 4px;
+    border: 1px solid var(--main-color, #409eff);
+    border-radius: 6px;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.2s ease;
+    background: var(--background, #1e1e1e);
+    color: var(--font-color, #e5e5e5);
 }
 
 .variable-item:hover {
-    background-color: #f5f7fa;
-    border-color: #409eff;
+    background-color: rgba(64, 158, 255, 0.12);
+    border-color: var(--main-color, #409eff);
 }
 
 .variable-item.selected {
-    background-color: #ecf5ff;
-    border-color: #409eff;
+    background-color: rgba(64, 158, 255, 0.2);
+    border-color: var(--main-color, #409eff);
 }
 
 .variable-item-header {
@@ -266,10 +270,11 @@ watch(visible, (newVal) => {
 }
 
 .variable-item-preview {
-    background: #f5f7fa;
-    padding: 5px;
-    border-radius: 3px;
-    margin-bottom: 5px;
+    background: var(--sidebar, #2a2a2a);
+    padding: 6px 8px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    color: var(--font-color, #e5e5e5);
 }
 
 .variable-item-preview pre {
@@ -289,6 +294,48 @@ watch(visible, (newVal) => {
     display: flex;
     align-items: center;
     padding-top: 10px;
-    border-top: 1px solid #e4e7ed;
+    border-top: 1px solid var(--main-color, #409eff);
+}
+
+/* 弹层整体暗色适配 */
+:deep(.el-popover) {
+    background: var(--background, #1e1e1e);
+    color: var(--font-color, #e5e5e5);
+    border-color: var(--main-color, #409eff);
+}
+
+:deep(.el-input__wrapper), :deep(.el-input__inner) {
+    background: var(--sidebar, #2a2a2a);
+    color: var(--font-color, #e5e5e5);
+}
+
+:deep(.el-button) {
+    color: var(--font-color, #e5e5e5);
+}
+
+/* Tag 可读性增强（暗色主题） */
+:deep(.el-tag) {
+    color: #ffffff !important;
+    border: none !important;
+}
+
+:deep(.el-tag.el-tag--primary) {
+    background-color: #409eff !important;
+}
+
+:deep(.el-tag.el-tag--success) {
+    background-color: #67c23a !important;
+}
+
+:deep(.el-tag.el-tag--warning) {
+    background-color: #e6a23c !important;
+}
+
+:deep(.el-tag.el-tag--danger) {
+    background-color: #f56c6c !important;
+}
+
+:deep(.el-tag.el-tag--info) {
+    background-color: #909399 !important;
 }
 </style>

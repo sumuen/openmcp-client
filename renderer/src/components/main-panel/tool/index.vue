@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, ref, computed } from 'vue';
+import { defineProps, ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ToolDebug from './tool-debug/index.vue';
 import Flow from './flow/index.vue';
@@ -47,6 +47,19 @@ const currentView = computed(() => {
         return ToolDebug;
     }
 
+});
+
+// Allow external triggers to open the "variable-management" tab via a custom event
+const handleOpenVariableManagement = () => {
+    activeView.value = 'variable-management';
+};
+
+onMounted(() => {
+    window.addEventListener('open-variable-management', handleOpenVariableManagement);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('open-variable-management', handleOpenVariableManagement);
 });
 </script>
 

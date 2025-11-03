@@ -13,7 +13,6 @@ import type {
     ApplyVariableConfig
 } from './types';
 import { ElMessage } from 'element-plus';
-import type { McpClient } from '@/views/connect/core';
 import { useMessageBridge } from '@/api/message-bridge';
 
 /**
