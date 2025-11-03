@@ -44,83 +44,84 @@
         <div class="variable-list">
             <el-empty v-if="filteredVariables.length === 0" description="暂无变量" />
 
-            <el-card
-                v-for="variable in filteredVariables"
-                :key="variable.id"
-                class="variable-card"
-                :class="{ selected: variable.id === selectedVariableId }"
-                @click="selectVariable(variable.id)"
+            <el-table
+                v-else
+                :data="filteredVariables"
+                style="width: 100%"
+                @row-click="selectVariable"
+                :row-class-name="getRowClassName"
+                max-height="calc(100vh - 250px)"
             >
-                <template #header>
-                    <div class="variable-card-header">
-                        <div class="variable-info">
-                            <el-tag :type="getTypeColor(variable.type)" size="small">
-                                {{ variable.type }}
-                            </el-tag>
-                            <span class="variable-name">{{ variable.name }}</span>
-                        </div>
-                        <div class="variable-actions">
-                            <el-button
-                                size="small"
-                                type="primary"
-                                text
-                                @click.stop="handleEdit(variable)"
-                            >
-                                编辑
-                            </el-button>
-                            <el-button
-                                size="small"
-                                type="primary"
-                                text
-                                @click.stop="handleCopy(variable)"
-                            >
-                                复制
-                            </el-button>
-                            <el-button
-                                size="small"
-                                type="danger"
-                                text
-                                @click.stop="handleDelete(variable.id)"
-                            >
-                                删除
-                            </el-button>
-                        </div>
-                    </div>
-                </template>
-
-                <div class="variable-content">
-                    <div v-if="variable.description" class="variable-description">
-                        {{ variable.description }}
-                    </div>
-
-                    <div class="variable-metadata">
-                        <el-tag v-if="variable.parameterName" size="small" type="info" style="margin-left: 5px;">
-                            参数: {{ variable.parameterName }}
+                <el-table-column label="类型" width="90">
+                    <template #default="{ row }">
+                        <el-tag :type="getTypeColor(row.type)" size="small">
+                            {{ row.type }}
                         </el-tag>
-                    </div>
+                    </template>
+                </el-table-column>
 
-                    <div class="variable-value">
-                        <strong>值:</strong>
-                        <pre>{{ formatValue(variable.value) }}</pre>
-                    </div>
+                <el-table-column prop="name" label="变量名称" show-overflow-tooltip />
 
-                    <div v-if="variable.tags && variable.tags.length > 0" class="variable-tags">
+                <el-table-column label="值" show-overflow-tooltip>
+                    <template #default="{ row }">
+                        <div class="value-preview">
+                            {{ formatValuePreview(row.value) }}
+                        </div>
+                    </template>
+                </el-table-column>
+
+                <el-table-column prop="description" label="描述" show-overflow-tooltip />
+
+                <el-table-column label="标签">
+                    <template #default="{ row }">
+                        <span v-if="!row.tags || row.tags.length === 0">-</span>
                         <el-tag
-                            v-for="tag in variable.tags"
+                            v-else
+                            v-for="tag in row.tags"
                             :key="tag"
                             size="small"
                             style="margin-right: 5px;"
                         >
                             {{ tag }}
                         </el-tag>
-                    </div>
+                    </template>
+                </el-table-column>
 
-                    <div class="variable-time">
-                        <span>创建: {{ formatTime(variable.createdAt) }}</span>
-                        <span style="margin-left: 15px;">更新: {{ formatTime(variable.updatedAt) }}</span>
-                    </div>
-                </div>
-            </el-card>
+                <el-table-column label="更新时间" width="170">
+                    <template #default="{ row }">
+                        {{ formatTime(row.updatedAt) }}
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="操作" width="210">
+                    <template #default="{ row }">
+                        <el-button
+                            size="small"
+                            type="primary"
+                            text
+                            @click.stop="handleEdit(row)"
+                        >
+                            编辑
+                        </el-button>
+                        <el-button
+                            size="small"
+                            type="primary"
+                            text
+                            @click.stop="handleCopy(row)"
+                        >
+                            复制
+                        </el-button>
+                        <el-button
+                            size="small"
+                            type="danger"
+                            text
+                            @click.stop="handleDelete(row.id)"
+                        >
+                            删除
+                        </el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
         </div>
 
         <!-- 创建/编辑变量对话框 -->
@@ -285,13 +286,26 @@ const filteredVariables = computed(() => {
 
 const totalCount = computed(() => getVariables().length);
 
-// 方法
 function handleSearch() {
     searchVariables(searchKeyword.value);
 }
 
-function selectVariable(id: string) {
-    variableUIState.value.selectedVariableId = id;
+function selectVariable(row: ToolVariable) {
+    variableUIState.value.selectedVariableId = row.id;
+}
+
+function getRowClassName({ row }: { row: ToolVariable }) {
+    return row.id === selectedVariableId.value ? 'selected-row' : '';
+}
+
+function formatValuePreview(value: string): string {
+    try {
+        const parsed = JSON.parse(value);
+        const str = JSON.stringify(parsed);
+        return str.length > 50 ? str.substring(0, 50) + '...' : str;
+    } catch {
+        return value.length > 50 ? value.substring(0, 50) + '...' : value;
+    }
 }
 
 function handleEdit(variable: ToolVariable) {
@@ -450,8 +464,6 @@ function getTypeColor(type: VariableValueType): '' | 'primary' | 'success' | 'in
     };
     return colorMap[type] || 'info';
 }
-
-// 生命周期已在前面处理（initVariableStore）
 </script>
 
 <style scoped>
@@ -479,84 +491,48 @@ function getTypeColor(type: VariableValueType): '' | 'primary' | 'success' | 'in
 }
 
 .variable-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-    gap: 15px;
+    width: 100%;
 }
 
-.variable-card {
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.variable-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
-}
-
-.variable-card.selected {
-    border-color: var(--el-color-primary);
-    box-shadow: 0 0 10px rgba(64, 158, 255, 0.3);
-}
-
-.variable-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.variable-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
-}
-
-.variable-name {
-    font-weight: bold;
-    font-size: 14px;
-}
-
-.variable-actions {
-    display: flex;
-    gap: 5px;
-}
-
-.variable-content {
-    font-size: 12px;
-}
-
-.variable-description {
-    color: #666;
-    margin-bottom: 10px;
-    line-height: 1.5;
-}
-
-.variable-metadata {
-    margin-bottom: 10px;
-}
-
-.variable-value {
-    background: #f5f7fa;
-    padding: 10px;
-    border-radius: 4px;
-    margin-bottom: 10px;
-}
-
-.variable-value pre {
-    margin: 5px 0 0;
-    white-space: pre-wrap;
-    word-break: break-all;
+.value-preview {
     font-family: 'Courier New', monospace;
-    font-size: 11px;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.variable-tags {
-    margin-bottom: 10px;
+:deep(.el-table__row) {
+    cursor: pointer;
 }
 
-.variable-time {
-    color: #999;
-    font-size: 11px;
+:deep(.el-table__row:hover) {
+    background-color: rgba(64, 158, 255, 0.1) !important;
+}
+
+/* 修复类型标签颜色 */
+:deep(.el-tag) {
+    color: #ffffff !important;
+    border: none;
+}
+
+:deep(.el-tag.el-tag--primary) {
+    background-color: #409eff !important;
+}
+
+:deep(.el-tag.el-tag--success) {
+    background-color: #67c23a !important;
+}
+
+:deep(.el-tag.el-tag--warning) {
+    background-color: #e6a23c !important;
+}
+
+:deep(.el-tag.el-tag--danger) {
+    background-color: #f56c6c !important;
+}
+
+:deep(.el-tag.el-tag--info) {
+    background-color: #909399 !important;
 }
 </style>

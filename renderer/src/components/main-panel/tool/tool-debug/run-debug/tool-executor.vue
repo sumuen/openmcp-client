@@ -63,6 +63,14 @@
                         </el-button>
                     </div>
                 </el-popover>
+                
+                <el-button 
+                    type="success" 
+                    @click="saveAsTestCase"
+                    :disabled="!tabStorage.lastToolCallResponse || loading"
+                >
+                    {{ t('save-as-test-case') }}
+                </el-button>
             </el-form-item>
         </el-form>
     </div>
@@ -302,6 +310,37 @@ async function handleExecute() {
     } finally {
         loading.value = false;
     }
+}
+
+import type { TestCase, ToolStorage as ToolStorageType } from '../../tools';
+
+function saveAsTestCase() {
+    if (!currentTool.value || !tabStorage.lastToolCallResponse) {
+        ElMessage.warning(t('no-execution-result'));
+        return;
+    }
+
+    const now = Date.now();
+    const newTestCase: TestCase = {
+        id: `test_${now}_${Math.random().toString(36).substr(2, 9)}`,
+        name: `${currentTool.value.name}_test_${new Date().toLocaleString()}`,
+        toolName: currentTool.value.name,
+        description: t('auto-generated-from-executor'),
+        input: { ...tabStorage.formData },
+        actualOutput: typeof tabStorage.lastToolCallResponse === 'string' 
+            ? { content: [{ type: 'text', text: tabStorage.lastToolCallResponse }], isError: false }
+            : tabStorage.lastToolCallResponse,
+        status: 'passed',
+        createdAt: now,
+        updatedAt: now
+    };
+
+    if (!tabStorage.testCases) {
+        tabStorage.testCases = [];
+    }
+
+    tabStorage.testCases.push(newTestCase);
+    ElMessage.success(t('test-case-saved-successfully'));
 }
 
 watch(currentTool, (tool) => {
