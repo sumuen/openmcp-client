@@ -323,5 +323,6 @@
     "save-as-test-case": "Сохранить как тест-кейс",
     "no-execution-result": "Нет результата выполнения",
     "auto-generated-from-executor": "Автоматически создано из исполнителя",
-    "test-case-saved-successfully": "Тест-кейс успешно сохранён"
+    "test-case-saved-successfully": "Тест-кейс успешно сохранён",
+    "passed": "Через"
 }

@@ -323,5 +323,6 @@
     "save-as-test-case": "Save as Test Case",
     "no-execution-result": "No execution result to save",
     "auto-generated-from-executor": "Auto-generated from executor",
-    "test-case-saved-successfully": "Test case saved successfully"
+    "test-case-saved-successfully": "Test case saved successfully",
+    "passed": "Through"
 }

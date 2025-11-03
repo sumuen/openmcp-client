@@ -323,5 +323,6 @@
     "save-as-test-case": "حفظ كحالة اختبار",
     "no-execution-result": "لا توجد نتيجة تنفيذ",
     "auto-generated-from-executor": "تم توليده تلقائيًا من المنفذ",
-    "test-case-saved-successfully": "تم حفظ حالة الاختبار بنجاح"
+    "test-case-saved-successfully": "تم حفظ حالة الاختبار بنجاح",
+    "passed": "عبر"
 }

@@ -322,5 +322,6 @@
     "save-as-test-case": "保存为测试用例",
     "no-execution-result": "没有执行结果可保存",
     "auto-generated-from-executor": "从执行器自动生成",
-    "test-case-saved-successfully": "测试用例保存成功"
+    "test-case-saved-successfully": "测试用例保存成功",
+    "passed": "通过"
 }

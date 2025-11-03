@@ -323,5 +323,6 @@
     "save-as-test-case": "另存為測試用例",
     "no-execution-result": "無執行結果",
     "auto-generated-from-executor": "由執行器自動產生",
-    "test-case-saved-successfully": "測試用例已成功保存"
+    "test-case-saved-successfully": "測試用例已成功保存",
+    "passed": "通過"
 }

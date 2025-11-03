@@ -323,5 +323,6 @@
     "save-as-test-case": "Enregistrer comme cas de test",
     "no-execution-result": "Aucun résultat d'exécution",
     "auto-generated-from-executor": "Généré automatiquement depuis l'exécuteur",
-    "test-case-saved-successfully": "Cas de test enregistré avec succès"
+    "test-case-saved-successfully": "Cas de test enregistré avec succès",
+    "passed": "Par"
 }

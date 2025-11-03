@@ -323,5 +323,6 @@
     "save-as-test-case": "テストケースとして保存",
     "no-execution-result": "保存する実行結果がありません",
     "auto-generated-from-executor": "実行器から自動生成",
-    "test-case-saved-successfully": "テストケースが保存されました"
+    "test-case-saved-successfully": "テストケースが保存されました",
+    "passed": "通過"
 }

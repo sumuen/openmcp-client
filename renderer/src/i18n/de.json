@@ -323,5 +323,6 @@
     "save-as-test-case": "Als Testfall speichern",
     "no-execution-result": "Kein Ausführungsergebnis",
     "auto-generated-from-executor": "Automatisch vom Executor erzeugt",
-    "test-case-saved-successfully": "Testfall erfolgreich gespeichert"
+    "test-case-saved-successfully": "Testfall erfolgreich gespeichert",
+    "passed": "Durch"
 }

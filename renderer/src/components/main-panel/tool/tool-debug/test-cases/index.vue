@@ -21,54 +21,28 @@
             <el-scrollbar height="100%">
                 <el-empty v-if="testCases.length === 0" :description="t('no-test-cases')" />
                 <div v-else class="test-case-items">
-                    <div 
-                        v-for="testCase in testCases" 
-                        :key="testCase.id" 
-                        class="test-case-item"
-                        :class="{ 'active': selectedTestCase?.id === testCase.id }"
-                        @click="selectTestCase(testCase)"
-                    >
+                    <div v-for="testCase in testCases" :key="testCase.id" class="test-case-item"
+                        :class="{ 'active': selectedTestCase?.id === testCase.id }" @click="selectTestCase(testCase)">
                         <div class="test-case-header">
                             <div class="test-case-info">
-                                <el-tag 
-                                    :type="getStatusTagType(testCase.status)" 
-                                    size="small"
-                                    class="status-tag"
-                                >
+                                <el-tag :type="getStatusTagType(testCase.status)" size="small" class="status-tag">
                                     {{ getStatusText(testCase.status) }}
                                 </el-tag>
                                 <span class="test-case-name">{{ testCase.name }}</span>
                                 <span class="test-case-tool">{{ testCase.toolName }}</span>
                             </div>
                             <div class="test-case-actions">
-                                <el-button 
-                                    type="primary" 
-                                    size="small" 
-                                    circle
-                                    @click.stop="handleRunTest(testCase)"
-                                    :loading="testCase.status === 'running'"
-                                >
+                                <el-button type="primary" size="small" circle @click.stop="handleRunTest(testCase)"
+                                    :loading="testCase.status === 'running'">
                                     <span class="iconfont icon-play"></span>
                                 </el-button>
-                                <el-button 
-                                    type="info" 
-                                    size="small" 
-                                    circle
-                                    @click.stop="handleEditTestCase(testCase)"
-                                >
+                                <el-button type="info" size="small" circle @click.stop="handleEditTestCase(testCase)">
                                     <span class="iconfont icon-edit"></span>
                                 </el-button>
-                                <el-popconfirm
-                                    :title="t('confirm-delete-test-case')"
-                                    @confirm="handleDeleteTestCase(testCase.id)"
-                                >
+                                <el-popconfirm :title="t('confirm-delete-test-case')"
+                                    @confirm="handleDeleteTestCase(testCase.id)">
                                     <template #reference>
-                                        <el-button 
-                                            type="danger" 
-                                            size="small" 
-                                            circle
-                                            @click.stop
-                                        >
+                                        <el-button type="danger" size="small" circle @click.stop>
                                             <span class="iconfont icon-delete"></span>
                                         </el-button>
                                     </template>
@@ -87,79 +61,39 @@
         </div>
 
         <!-- 测试用例详情/编辑对话框 -->
-        <el-dialog 
-            v-model="dialogVisible" 
-            :title="isEditing ? t('edit-test-case') : t('create-test-case')"
-            width="60%"
-            :close-on-click-modal="false"
-        >
+        <el-dialog v-model="dialogVisible" :title="isEditing ? t('edit-test-case') : t('create-test-case')" width="60%"
+            :close-on-click-modal="false">
             <el-form :model="currentTestCaseForm" label-position="top" ref="formRef">
                 <el-form-item :label="t('test-case-name')" required>
                     <el-input v-model="currentTestCaseForm.name" :placeholder="t('enter-test-case-name')" />
                 </el-form-item>
                 <el-form-item :label="t('tool-name')" required>
-                    <el-select 
-                        v-model="currentTestCaseForm.toolName" 
-                        :placeholder="t('select-tool')"
-                        @change="handleToolChange"
-                        style="width: 100%"
-                    >
-                        <el-option 
-                            v-for="tool in availableTools" 
-                            :key="tool.name" 
-                            :label="tool.name" 
-                            :value="tool.name"
-                        />
+                    <el-select v-model="currentTestCaseForm.toolName" :placeholder="t('select-tool')"
+                        @change="handleToolChange" style="width: 100%">
+                        <el-option v-for="tool in availableTools" :key="tool.name" :label="tool.name"
+                            :value="tool.name" />
                     </el-select>
                 </el-form-item>
                 <el-form-item :label="t('description')">
-                    <el-input 
-                        v-model="currentTestCaseForm.description" 
-                        type="textarea" 
-                        :rows="2"
-                        :placeholder="t('enter-description')" 
-                    />
+                    <el-input v-model="currentTestCaseForm.description" type="textarea" :rows="2"
+                        :placeholder="t('enter-description')" />
                 </el-form-item>
                 <el-form-item :label="t('input-parameters')" required>
                     <div class="json-editor">
-                        <el-input 
-                            v-model="inputJson" 
-                            type="textarea" 
-                            :rows="8"
-                            :placeholder="t('enter-json-input')"
-                        />
-                        <el-button 
-                            type="info" 
-                            size="small" 
-                            @click="formatInputJson"
-                            style="margin-top: 8px;"
-                        >
+                        <el-input v-model="inputJson" type="textarea" :rows="8" :placeholder="t('enter-json-input')" />
+                        <el-button type="info" size="small" @click="formatInputJson" style="margin-top: 8px;">
                             {{ t('format-json') }}
                         </el-button>
-                        <el-button 
-                            type="success" 
-                            size="small" 
-                            @click="copyFromCurrentForm"
-                            style="margin-top: 8px;"
-                        >
+                        <el-button type="success" size="small" @click="copyFromCurrentForm" style="margin-top: 8px;">
                             {{ t('copy-from-executor') }}
                         </el-button>
                     </div>
                 </el-form-item>
                 <el-form-item :label="t('expected-output')">
                     <div class="json-editor">
-                        <el-input 
-                            v-model="expectedJson" 
-                            type="textarea" 
-                            :rows="8"
-                            :placeholder="t('enter-json-input')"
-                        />
-                        <el-button 
-                            type="info" 
-                            size="small" 
-                            @click="formatExpectedJson"
-                            style="margin-top: 8px;"
-                        >
+                        <el-input v-model="expectedJson" type="textarea" :rows="8"
+                            :placeholder="t('enter-json-input')" />
+                        <el-button type="info" size="small" @click="formatExpectedJson" style="margin-top: 8px;">
                             {{ t('format-json') }}
                         </el-button>
                     </div>
@@ -172,11 +106,7 @@
         </el-dialog>
 
         <!-- 测试结果详情对话框 -->
-        <el-dialog 
-            v-model="resultDialogVisible" 
-            :title="t('test-result-details')"
-            width="70%"
-        >
+        <el-dialog v-model="resultDialogVisible" :title="t('test-result-details')" width="70%">
             <div v-if="selectedTestCase" class="test-result-container">
                 <div class="result-section">
                     <h4>{{ t('input-parameters') }}</h4>
@@ -184,10 +114,9 @@
                 </div>
                 <div class="result-section">
                     <h4>{{ t('actual-output') }}</h4>
-                    <pre class="json-display" v-if="selectedTestCase.actualOutput">{{ JSON.stringify(selectedTestCase.actualOutput, null, 2) }}</pre>
-                    <el-empty v-else :description="t('no-output-yet')" />
+                    <pre class="json-display">{{ JSON.stringify(selectedTestCase.actualOutput, null, 2) }}</pre>
                 </div>
-                <div class="result-section" v-if="selectedTestCase.expectedOutput">
+                <div class="result-section">
                     <h4>{{ t('expected-output') }}</h4>
                     <pre class="json-display">{{ JSON.stringify(selectedTestCase.expectedOutput, null, 2) }}</pre>
                 </div>
@@ -417,15 +346,12 @@ async function handleRunTest(testCase: TestCase) {
     try {
         const response = await mcpClientAdapter.callTool(testCase.toolName, testCase.input);
         testCase.actualOutput = response;
-        
+
         // 简单的对比逻辑，可以后续扩展
-        if (testCase.expectedOutput) {
-            const isMatch = JSON.stringify(response) === JSON.stringify(testCase.expectedOutput);
-            testCase.status = isMatch ? 'passed' : 'failed';
-        } else {
-            testCase.status = 'passed';
-        }
-        
+        const isMatch = JSON.stringify(response) === JSON.stringify(testCase.expectedOutput);
+        testCase.status = isMatch ? 'passed' : 'failed';
+
+
         testCase.updatedAt = Date.now();
         ElMessage.success(t('test-executed-successfully'));
 
@@ -497,6 +423,7 @@ function formatTime(timestamp: number): string {
     height: 100%;
     display: flex;
     flex-direction: column;
+    margin-top: 2 0px;
 }
 
 .test-cases-header {
@@ -579,6 +506,7 @@ function formatTime(timestamp: number): string {
 }
 
 .test-case-actions {
+    margin-left: 5px;
     display: flex;
     gap: 5px;
 }

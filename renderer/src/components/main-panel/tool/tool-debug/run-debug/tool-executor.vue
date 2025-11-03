@@ -327,7 +327,7 @@ function saveAsTestCase() {
         toolName: currentTool.value.name,
         description: t('auto-generated-from-executor'),
         input: { ...tabStorage.formData },
-        actualOutput: typeof tabStorage.lastToolCallResponse === 'string' 
+        expectedOutput: typeof tabStorage.lastToolCallResponse === 'string' 
             ? { content: [{ type: 'text', text: tabStorage.lastToolCallResponse }], isError: false }
             : tabStorage.lastToolCallResponse,
         status: 'passed',
