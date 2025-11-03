@@ -4,6 +4,7 @@
         :width="400"
         trigger="click"
         v-model:visible="visible"
+        @hide="onPopoverHide"
     >
         <template #reference>
             <el-button size="small" :disabled="disabled">
@@ -124,6 +125,8 @@ const emits = defineEmits<{
 
 // 状态
 const visible = ref(false);
+// 当点击“管理变量”时标记，待弹层完全关闭后再导航，避免闪烁
+const pendingOpenVariableManagement = ref(false);
 const searchKeyword = ref('');
 const selectedVariableId = ref<string>();
 
@@ -167,10 +170,17 @@ function handleApply() {
 }
 
 function handleManageVariables() {
-    // 触发打开变量管理页面
-    // 这里可以通过路由或者事件总线来实现
-    window.dispatchEvent(new Event('open-variable-management'));
+    // 先关闭弹层，等待关闭过渡结束再切换标签，避免背景内容切换造成的闪烁
+    pendingOpenVariableManagement.value = true;
     visible.value = false;
+}
+
+function onPopoverHide() {
+    // el-popover 完全隐藏后触发
+    if (pendingOpenVariableManagement.value) {
+        pendingOpenVariableManagement.value = false;
+        window.dispatchEvent(new Event('open-variable-management'));
+    }
 }
 
 function formatValuePreview(variable: ToolVariable): string {
