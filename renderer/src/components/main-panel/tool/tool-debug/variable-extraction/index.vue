@@ -42,6 +42,7 @@ import { JSONPath } from 'jsonpath-plus';
 import { initVariableStore, getVariables, createVariable, updateVariable } from '../../variable-management/store';
 import type { ToolVariable } from '../../variable-management/types';
 import { mcpClientAdapter } from '@/views/connect/core';
+import { initExtractionRulesStore, getRulesForTool, setRulesForTool, type RuleItem } from './store';
 
 defineComponent({ name: 'variable-extraction' });
 
@@ -52,37 +53,29 @@ const props = defineProps({
 const tab = tabs.content[props.tabId];
 const tabStorage = tab.storage as ToolStorage;
 
-// 确保变量存储初始化
+// 确保变量/提取规则存储初始化
 try { initVariableStore(mcpClientAdapter.masterNode); } catch { /* 已初始化忽略 */ }
+try { initExtractionRulesStore(mcpClientAdapter.masterNode); } catch { /* 已初始化忽略 */ }
 
 const currentToolName = computed(() => tabStorage.currentToolName);
 
-// 每个工具独立的提取规则列表
-type RuleItem = { path: string; name: string };
+// 每个工具独立的提取规则列表（从 server 级存储读取/写入）
 const rows = ref<RuleItem[]>([]);
 
-function getStorageList(): RuleItem[] {
-    const key = currentToolName.value || '__unknown__';
-    tabStorage.variableExtractionList = tabStorage.variableExtractionList || {};
-    return tabStorage.variableExtractionList[key] || (tabStorage.variableExtractionList[key] = []);
-}
-
-function loadRowsFromStorage() {
-    const list = getStorageList();
+function loadRowsFromServerStore() {
+    const list = getRulesForTool(currentToolName.value);
     rows.value = list.map(r => ({ ...r }));
 }
 
 // 切换工具时加载对应规则
-watch(currentToolName, () => loadRowsFromStorage(), { immediate: true });
+watch(currentToolName, () => loadRowsFromServerStore(), { immediate: true });
 
-// 双向同步：编辑行时写回存储（过滤空白）
+// 双向同步：编辑行时写回 server 存储（过滤空白）
 watch(rows, (v) => {
     const cleaned = v
         .filter(r => (r.path?.trim() || '') && (r.name?.trim() || ''))
         .map(r => ({ path: r.path.trim(), name: r.name.trim() }));
-    const key = currentToolName.value || '__unknown__';
-    tabStorage.variableExtractionList = tabStorage.variableExtractionList || {};
-    tabStorage.variableExtractionList[key] = cleaned;
+    setRulesForTool(currentToolName.value, cleaned);
 }, { deep: true });
 
 const lastResult = computed(() => tabStorage.lastToolCallResponse);

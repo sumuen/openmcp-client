@@ -3,7 +3,7 @@ import { PostMessageble } from "../hook/adapter.js";
 import { RequestData } from "../common/index.dto.js";
 import { getClient } from "../mcp/connect.service.js";
 import { systemPromptDB } from "../hook/db.js";
-import { loadTabSaveConfig, saveTabSaveConfig, saveVariableConfig, loadVariableConfig } from "./panel.service.js";
+import { loadTabSaveConfig, saveTabSaveConfig, saveVariableConfig, loadVariableConfig, saveExtractionRulesConfig, loadExtractionRulesConfig, saveTestCasesConfig, loadTestCasesConfig } from "./panel.service.js";
 
 export class PanelController {
     @Controller('panel/save')
@@ -120,6 +120,60 @@ export class PanelController {
         return {
             code: 200,
             msg: config || { variables: [] }
+        };
+    }
+
+    @Controller('extraction-rules/save')
+    async saveExtractionRules(data: RequestData, webview: PostMessageble) {
+        const client = getClient(data.clientId);
+        const serverInfo = client?.getServerVersion();
+        const { extractionRules } = data as any;
+
+        saveExtractionRulesConfig(serverInfo, { extractionRules });
+
+        return {
+            code: 200,
+            msg: 'Extraction rules saved successfully'
+        };
+    }
+
+    @Controller('extraction-rules/load')
+    async loadExtractionRules(data: RequestData, webview: PostMessageble) {
+        const client = getClient(data.clientId);
+        const serverInfo = client?.getServerVersion();
+
+        const config = loadExtractionRulesConfig(serverInfo);
+
+        return {
+            code: 200,
+            msg: config || { extractionRules: {} }
+        };
+    }
+
+    @Controller('test-cases/save')
+    async saveTestCases(data: RequestData, webview: PostMessageble) {
+        const client = getClient(data.clientId);
+        const serverInfo = client?.getServerVersion();
+        const { testCases } = data as any;
+
+        saveTestCasesConfig(serverInfo, { testCases });
+
+        return {
+            code: 200,
+            msg: 'Test cases saved successfully'
+        };
+    }
+
+    @Controller('test-cases/load')
+    async loadTestCases(data: RequestData, webview: PostMessageble) {
+        const client = getClient(data.clientId);
+        const serverInfo = client?.getServerVersion();
+
+        const config = loadTestCasesConfig(serverInfo);
+
+        return {
+            code: 200,
+            msg: config || { testCases: [] }
         };
     }
 }

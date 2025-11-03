@@ -11,6 +11,8 @@ import { IConfig } from '../setting/setting.dto.js';
 interface ServerData {
     tabs: SaveTab;
     variables: any[];
+    extractionRules: Record<string, Array<{ path: string; name: string }>>;
+    testCases: any[];
     // 未来可以添加更多字段
     // testCases?: any[];
     // settings?: any;
@@ -21,7 +23,9 @@ const DEFAULT_SERVER_DATA: ServerData = {
         tabs: [],
         currentIndex: -1
     },
-    variables: []
+    variables: [],
+    extractionRules: {},
+    testCases: []
 }
 
 /**
@@ -83,7 +87,9 @@ function loadServerData(serverInfo: IServerVersion): ServerData {
         // 确保数据结构完整（向后兼容）
         return {
             tabs: data.tabs || DEFAULT_SERVER_DATA.tabs,
-            variables: data.variables || DEFAULT_SERVER_DATA.variables
+            variables: data.variables || DEFAULT_SERVER_DATA.variables,
+            extractionRules: data.extractionRules || DEFAULT_SERVER_DATA.extractionRules,
+            testCases: data.testCases || DEFAULT_SERVER_DATA.testCases
         };
     } catch (error) {
         console.error('Error loading server data file, creating new one:', error);
@@ -142,4 +148,39 @@ export function saveVariableConfig(serverInfo: IServerVersion, data: { variables
 export function loadVariableConfig(serverInfo: IServerVersion): { variables: any[] } {
     const serverData = loadServerData(serverInfo);
     return { variables: serverData.variables };
+}
+
+/**
+ * 保存变量提取规则配置
+ */
+export function saveExtractionRulesConfig(
+    serverInfo: IServerVersion,
+    data: { extractionRules: Record<string, Array<{ path: string; name: string }>> }
+): void {
+    saveServerData(serverInfo, { extractionRules: data.extractionRules });
+}
+
+/**
+ * 加载变量提取规则配置
+ */
+export function loadExtractionRulesConfig(
+    serverInfo: IServerVersion
+): { extractionRules: Record<string, Array<{ path: string; name: string }>> } {
+    const serverData = loadServerData(serverInfo);
+    return { extractionRules: serverData.extractionRules };
+}
+
+/**
+ * 保存测试用例配置
+ */
+export function saveTestCasesConfig(serverInfo: IServerVersion, data: { testCases: any[] }): void {
+    saveServerData(serverInfo, { testCases: data.testCases });
+}
+
+/**
+ * 加载测试用例配置
+ */
+export function loadTestCasesConfig(serverInfo: IServerVersion): { testCases: any[] } {
+    const serverData = loadServerData(serverInfo);
+    return { testCases: serverData.testCases };
 }

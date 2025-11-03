@@ -140,6 +140,7 @@ import { ElMessage, type FormInstance } from 'element-plus';
 import { tabs } from '../../../panel';
 import type { ToolStorage, TestCase } from '../../tools';
 import { mcpClientAdapter } from '@/views/connect/core';
+import { initTestCasesStore, testCasesState, saveTestCases } from './store';
 
 const { t } = useI18n();
 
@@ -153,13 +154,11 @@ const props = defineProps({
 const tab = tabs.content[props.tabId];
 const tabStorage = tab.storage as ToolStorage;
 
-// 初始化测试用例数组
-if (!tabStorage.testCases) {
-    tabStorage.testCases = [];
-}
+// 初始化 server 级测试用例存储
+try { initTestCasesStore(mcpClientAdapter.masterNode); } catch { /* 已初始化忽略 */ }
 
 const testCases = computed(() => {
-    const list = tabStorage.testCases || [];
+    const list = testCasesState.value || [];
     const onlyCurrent = !!tabStorage.showOnlyCurrentToolTestCases;
     const current = tabStorage.currentToolName;
     if (onlyCurrent && current) {
@@ -313,10 +312,10 @@ function handleSaveTestCase() {
 
     if (isEditing.value && selectedTestCase.value) {
         // 编辑现有测试用例
-        const index = tabStorage.testCases.findIndex(tc => tc.id === selectedTestCase.value!.id);
+        const index = testCasesState.value.findIndex(tc => tc.id === selectedTestCase.value!.id);
         if (index !== -1) {
-            tabStorage.testCases[index] = {
-                ...tabStorage.testCases[index],
+            testCasesState.value[index] = {
+                ...testCasesState.value[index],
                 name: currentTestCaseForm.value.name,
                 toolName: currentTestCaseForm.value.toolName,
                 description: currentTestCaseForm.value.description,
@@ -325,6 +324,7 @@ function handleSaveTestCase() {
                 updatedAt: now
             };
         }
+        saveTestCases();
         ElMessage.success(t('test-case-updated'));
     } else {
         // 创建新测试用例
@@ -339,7 +339,8 @@ function handleSaveTestCase() {
             updatedAt: now,
             ...(parsedExpected !== undefined ? { expectedOutput: parsedExpected } : {})
         };
-        tabStorage.testCases.push(newTestCase);
+        testCasesState.value.push(newTestCase);
+        saveTestCases();
         ElMessage.success(t('test-case-created'));
     }
 
@@ -347,9 +348,10 @@ function handleSaveTestCase() {
 }
 
 function handleDeleteTestCase(id: string) {
-    const index = tabStorage.testCases.findIndex(tc => tc.id === id);
+    const index = testCasesState.value.findIndex(tc => tc.id === id);
     if (index !== -1) {
-        tabStorage.testCases.splice(index, 1);
+        testCasesState.value.splice(index, 1);
+        saveTestCases();
         ElMessage.success(t('test-case-deleted'));
     }
 }
@@ -366,6 +368,8 @@ async function handleRunTest(testCase: TestCase) {
 
 
         testCase.updatedAt = Date.now();
+    // 持久化单次执行结果
+    saveTestCases();
         ElMessage.success(t('test-executed-successfully'));
 
         // 单个执行时自动展示结果详情
@@ -393,7 +397,7 @@ async function handleRunAllTests() {
     let passed = 0;
     let failed = 0;
 
-    for (const testCase of tabStorage.testCases) {
+    for (const testCase of testCasesState.value) {
         await handleRunTest(testCase);
         if (testCase.status === 'passed') {
             passed++;
@@ -403,6 +407,8 @@ async function handleRunAllTests() {
     }
 
     runningAll.value = false;
+    // 批量执行后统一保存
+    saveTestCases();
     ElMessage.success(`${t('all-tests-completed')}: ${passed} ${t('passed')}, ${failed} ${t('failed')}`);
 }
 
