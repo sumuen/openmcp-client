@@ -325,5 +325,6 @@
     "auto-generated-from-executor": "실행기에서 자동 생성",
     "test-case-saved-successfully": "테스트 케이스가 성공적으로 저장되었습니다",
     "passed": "통과",
-    "show-only-current-tool": "현재 도구만 표시"
+    "show-only-current-tool": "현재 도구만 표시",
+    "variable-extraction": "변수 추출"
 }

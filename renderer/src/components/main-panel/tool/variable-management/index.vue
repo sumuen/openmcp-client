@@ -310,10 +310,22 @@ function formatValuePreview(value: string): string {
 
 function handleEdit(variable: ToolVariable) {
     editingVariable.value = variable;
+    // 解析存储值，并根据类型准备表单展示值
+    let parsed: any;
+    try {
+        parsed = JSON.parse(variable.value);
+    } catch {
+        // 如果解析失败，回退为原始字符串
+        parsed = variable.value;
+    }
+
+    const isComplex = variable.type === 'object' || variable.type === 'array' || variable.type === 'null';
+    const displayValue = isComplex ? JSON.stringify(parsed, null, 2) : parsed;
+
     formData.value = {
         name: variable.name,
         type: variable.type,
-        value: JSON.parse(variable.value),
+        value: displayValue,
         description: variable.description || '',
         parameterName: variable.parameterName || '',
         tags: variable.tags || [],
@@ -346,18 +358,29 @@ function handleSaveVariable() {
         return;
     }
 
-    let value = formData.value.value;
-    
-    // 对于非基本类型，验证 JSON 格式
-    if (['object', 'array'].includes(formData.value.type)) {
+    const type = formData.value.type;
+    const raw = formData.value.value as any;
+
+    // 计算：
+    // - valueForCreate: 传给 createVariable（它内部会 JSON.stringify）
+    // - valueForUpdate: 传给 updateVariable（需要预先是字符串）
+    let valueForCreate: any = raw;
+    let valueForUpdate: string;
+
+    if (['object', 'array', 'null'].includes(type)) {
+        // 复杂类型：表单里使用字符串展示，保存时需校验并规范化
         try {
-            if (typeof value === 'string') {
-                JSON.parse(value);
-            }
+            const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+            valueForCreate = parsed;
+            valueForUpdate = JSON.stringify(parsed);
         } catch {
             ElMessage.error('请输入有效的 JSON 格式');
             return;
         }
+    } else {
+        // 基础类型：直接用，更新时转成字符串
+        valueForCreate = raw;
+        valueForUpdate = JSON.stringify(raw);
     }
 
     if (editingVariable.value) {
@@ -365,7 +388,7 @@ function handleSaveVariable() {
         updateVariable(editingVariable.value.id, {
             name: formData.value.name,
             type: formData.value.type,
-            value: JSON.stringify(value),
+            value: valueForUpdate,
             description: formData.value.description,
             parameterName: formData.value.parameterName || undefined,
             tags: formData.value.tags,
@@ -376,7 +399,7 @@ function handleSaveVariable() {
         createVariable(
             formData.value.name,
             formData.value.type,
-            value,
+            valueForCreate,
             {
                 description: formData.value.description,
                 parameterName: formData.value.parameterName || undefined,

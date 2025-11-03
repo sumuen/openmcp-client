@@ -325,5 +325,6 @@
     "auto-generated-from-executor": "由執行器自動產生",
     "test-case-saved-successfully": "測試用例已成功保存",
     "passed": "通過",
-    "show-only-current-tool": "僅顯示當前工具"
+    "show-only-current-tool": "僅顯示當前工具",
+    "variable-extraction": "變數提取"
 }

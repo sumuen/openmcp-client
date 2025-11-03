@@ -325,5 +325,6 @@
     "auto-generated-from-executor": "Автоматически создано из исполнителя",
     "test-case-saved-successfully": "Тест-кейс успешно сохранён",
     "passed": "Пройден",
-    "show-only-current-tool": "Показывать только текущий инструмент"
+    "show-only-current-tool": "Показывать только текущий инструмент",
+    "variable-extraction": "Извлечение Переменных"
 }

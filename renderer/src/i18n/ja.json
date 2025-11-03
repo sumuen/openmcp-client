@@ -325,5 +325,6 @@
     "auto-generated-from-executor": "実行器から自動生成",
     "test-case-saved-successfully": "テストケースが保存されました",
     "passed": "通過",
-    "show-only-current-tool": "現在のツールのみ表示"
+    "show-only-current-tool": "現在のツールのみ表示",
+    "variable-extraction": "変数抽出"
 }

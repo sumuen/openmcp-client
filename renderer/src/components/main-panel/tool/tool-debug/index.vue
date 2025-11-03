@@ -27,7 +27,7 @@ import { defineProps, ref, computed } from 'vue';
 import ToolList from './tool-list.vue';
 import { useI18n } from 'vue-i18n';
 import RunDebug from './run-debug/index.vue';
-import PostProcessing from './post-processing/index.vue';
+import VariableExtraction from './variable-extraction/index.vue';
 import TestCases from './test-cases/index.vue';
 const { t } = useI18n();
 
@@ -43,7 +43,7 @@ const activeView = ref('run-debug');
 const menuOptions = [
     { label: t('run-debug'), value: 'run-debug' },
     { label: t('test-cases'), value: 'test-cases' },
-    { label: t('post-processing'), value: 'post-processing' },
+    { label: t('variable-extraction'), value: 'variable-extraction' },
 ];
 
 const currentView = computed(() => {
@@ -52,7 +52,7 @@ const currentView = computed(() => {
     } else if (activeView.value === 'test-cases') {
         return TestCases;
     } else {
-        return PostProcessing;
+        return VariableExtraction;
     }
 
 });

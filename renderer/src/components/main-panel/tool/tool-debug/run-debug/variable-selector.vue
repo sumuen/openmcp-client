@@ -1,11 +1,5 @@
 <template>
-    <el-popover
-        placement="bottom-start"
-        :width="400"
-        trigger="click"
-        v-model:visible="visible"
-        @hide="onPopoverHide"
-    >
+    <el-popover placement="bottom-start" :width="400" trigger="click" v-model:visible="visible" @hide="onPopoverHide">
         <template #reference>
             <el-button size="small" :disabled="disabled">
                 <span class="iconfont icon-variable"></span>
@@ -15,13 +9,7 @@
 
         <div class="variable-selector">
             <!-- 搜索框 -->
-            <el-input
-                v-model="searchKeyword"
-                placeholder="搜索变量..."
-                clearable
-                size="small"
-                style="margin-bottom: 10px;"
-            >
+            <el-input v-model="searchKeyword" placeholder="搜索变量..." clearable size="small" style="margin-bottom: 10px;">
                 <template #prefix>
                     <span class="iconfont icon-search"></span>
                 </template>
@@ -31,19 +19,14 @@
             <div class="variable-list-container">
                 <el-empty v-if="filteredVariables.length === 0" description="暂无变量" :image-size="60" />
 
-                <div
-                    v-for="variable in filteredVariables"
-                    :key="variable.id"
-                    class="variable-item"
-                    :class="{ selected: selectedVariableId === variable.id }"
-                    @click="selectVariable(variable)"
-                >
+                <div v-for="variable in filteredVariables" :key="variable.id" class="variable-item"
+                    :class="{ selected: selectedVariableId === variable.id }" @click="selectVariable(variable)">
                     <div class="variable-item-header">
                         <el-tag :type="getTypeColor(variable.type)" size="small">
                             {{ variable.type }}
                         </el-tag>
-                        <span class="variable-item-name">{{ variable.name }}</span>     
-                   </div>
+                        <span class="variable-item-name">{{ variable.name }}</span>
+                    </div>
 
                     <div v-if="variable.description" class="variable-item-description">
                         {{ variable.description }}
@@ -60,7 +43,9 @@
                     </div>
                 </div>
             </div>
-
+            <p>
+                您也可以通过直接输入 ${变量名称} 在文本中引用变量。
+            </p>
             <!-- 底部操作 -->
             <div class="variable-selector-footer">
                 <el-button size="small" @click="handleManageVariables">
@@ -68,12 +53,7 @@
                 </el-button>
                 <div style="flex: 1;"></div>
                 <el-button size="small" @click="visible = false">取消</el-button>
-                <el-button
-                    size="small"
-                    type="primary"
-                    :disabled="!selectedVariableId"
-                    @click="handleApply"
-                >
+                <el-button size="small" type="primary" :disabled="!selectedVariableId" @click="handleApply">
                     应用
                 </el-button>
             </div>
@@ -159,7 +139,7 @@ function handleApply() {
 
     const variables = getVariables();
     const variable = variables.find(v => v.id === selectedVariableId.value);
-    
+
     if (variable) {
         const value = getVariableValue(variable.id);
         emits('select', variable, value);
@@ -216,7 +196,7 @@ watch(visible, (newVal) => {
 
 // 确保变量存储已绑定到主客户端，避免出现值为空或不同步
 onMounted(() => {
-    try { initVariableStore(mcpClientAdapter.masterNode); } catch {}
+    try { initVariableStore(mcpClientAdapter.masterNode); } catch { }
 });
 </script>
 
@@ -314,7 +294,8 @@ onMounted(() => {
     border-color: var(--main-color, #409eff);
 }
 
-:deep(.el-input__wrapper), :deep(.el-input__inner) {
+:deep(.el-input__wrapper),
+:deep(.el-input__inner) {
     background: var(--sidebar, #2a2a2a);
     color: var(--font-color, #e5e5e5);
 }

@@ -325,5 +325,6 @@
     "auto-generated-from-executor": "Automatisch vom Executor erzeugt",
     "test-case-saved-successfully": "Testfall erfolgreich gespeichert",
     "passed": "Durch",
-    "show-only-current-tool": "Nur aktuelles Tool anzeigen"
+    "show-only-current-tool": "Nur aktuelles Tool anzeigen",
+    "variable-extraction": "Variablenextraktion"
 }

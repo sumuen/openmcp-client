@@ -22,6 +22,10 @@ export interface ToolStorage {
     testCases: TestCase[];
     // 控制测试用例面板是否仅展示当前工具的用例
     showOnlyCurrentToolTestCases?: boolean;
+    // 变量提取规则，按工具名进行存储：toolName -> 规则文本（每行一个：JSONPath 变量名）
+    variableExtractionRules?: Record<string, string>;
+    // 变量提取规则（结构化），按工具名进行存储：toolName -> [{ path, name }]
+    variableExtractionList?: Record<string, Array<{ path: string; name: string }>>;
     autoDetectDiagram?: {
         edges?: Edge[];
         views?: NodeDataView[];
