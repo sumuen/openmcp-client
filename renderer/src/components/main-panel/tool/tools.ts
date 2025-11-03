@@ -10,5 +10,5 @@ export interface ToolStorage {
         edges?: Edge[];
         views?: NodeDataView[];
         [key: string]: any;
-    }
+    };
 }

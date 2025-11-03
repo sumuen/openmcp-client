@@ -117,6 +117,9 @@ export class McpClient {
     public promptTemplates: Map<string, PromptTemplate> | null = null;
     public resources: Map<string, Resources> | null = null;
     public resourceTemplates: Map<string, ResourceTemplate> | null = null;
+    
+    // 变量管理数据（server 级别）
+    public variables: Map<string, any> = new Map();
 
     constructor(
         public clientVersion: string = '0.0.1',

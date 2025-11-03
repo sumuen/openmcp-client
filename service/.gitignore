@@ -28,3 +28,4 @@ setting.json
 .env
 tabs.*
 update.sh
+openmcp.*.json

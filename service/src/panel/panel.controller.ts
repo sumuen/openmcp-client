@@ -3,7 +3,7 @@ import { PostMessageble } from "../hook/adapter.js";
 import { RequestData } from "../common/index.dto.js";
 import { getClient } from "../mcp/connect.service.js";
 import { systemPromptDB } from "../hook/db.js";
-import { loadTabSaveConfig, saveTabSaveConfig } from "./panel.service.js";
+import { loadTabSaveConfig, saveTabSaveConfig, saveVariableConfig, loadVariableConfig } from "./panel.service.js";
 
 export class PanelController {
     @Controller('panel/save')
@@ -92,5 +92,34 @@ export class PanelController {
             code: 200,
             msg: prompts
         }
+    }
+
+    @Controller('variables/save')
+    async saveVariables(data: RequestData, webview: PostMessageble) {
+        const client = getClient(data.clientId);
+        const serverInfo = client?.getServerVersion();
+        const { variables } = data;
+        
+        // 保存到 .openmcp/variables.{serverName}.json
+        saveVariableConfig(serverInfo, { variables });
+
+        return {
+            code: 200,
+            msg: 'Variables saved successfully'
+        };
+    }
+
+    @Controller('variables/load')
+    async loadVariables(data: RequestData, webview: PostMessageble) {
+        const client = getClient(data.clientId);
+        const serverInfo = client?.getServerVersion();
+        
+        // 从 .openmcp/variables.{serverName}.json 加载
+        const config = loadVariableConfig(serverInfo);
+
+        return {
+            code: 200,
+            msg: config || { variables: [] }
+        };
     }
 }
