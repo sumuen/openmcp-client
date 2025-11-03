@@ -324,5 +324,6 @@
     "no-execution-result": "لا توجد نتيجة تنفيذ",
     "auto-generated-from-executor": "تم توليده تلقائيًا من المنفذ",
     "test-case-saved-successfully": "تم حفظ حالة الاختبار بنجاح",
-    "passed": "عبر"
+    "passed": "تم الاجتياز",
+    "show-only-current-tool": "عرض الأداة الحالية فقط"
 }

@@ -37,7 +37,8 @@ export function createTest(call: ToolCall) {
 	const storage: ToolStorage = {
 		activeNames: [0],
 		currentToolName: call.function!.name!,
-		formData: JSON.parse(call.function!.arguments!)
+		formData: JSON.parse(call.function!.arguments!),
+		testCases: [],
 	};
 
 	tab.storage = storage;

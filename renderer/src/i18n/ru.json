@@ -324,5 +324,6 @@
     "no-execution-result": "Нет результата выполнения",
     "auto-generated-from-executor": "Автоматически создано из исполнителя",
     "test-case-saved-successfully": "Тест-кейс успешно сохранён",
-    "passed": "Через"
+    "passed": "Пройден",
+    "show-only-current-tool": "Показывать только текущий инструмент"
 }

@@ -6,6 +6,11 @@
                 {{ t('test-cases-management') }}
             </h3>
             <div class="header-actions">
+                <el-switch
+                    v-model="tabStorage.showOnlyCurrentToolTestCases"
+                    :active-text="t('show-only-current-tool')"
+                    style="margin-right: 10px;"
+                />
                 <el-button type="primary" size="default" @click="handleCreateTestCase">
                     <span class="iconfont icon-add"></span>
                     {{ t('create-test-case') }}
@@ -153,7 +158,15 @@ if (!tabStorage.testCases) {
     tabStorage.testCases = [];
 }
 
-const testCases = computed(() => tabStorage.testCases);
+const testCases = computed(() => {
+    const list = tabStorage.testCases || [];
+    const onlyCurrent = !!tabStorage.showOnlyCurrentToolTestCases;
+    const current = tabStorage.currentToolName;
+    if (onlyCurrent && current) {
+        return list.filter(tc => tc.toolName === current);
+    }
+    return list;
+});
 const selectedTestCase = ref<TestCase | null>(null);
 const dialogVisible = ref(false);
 const resultDialogVisible = ref(false);
@@ -423,7 +436,7 @@ function formatTime(timestamp: number): string {
     height: 100%;
     display: flex;
     flex-direction: column;
-    margin-top: 2 0px;
+    margin-top: 20px;
 }
 
 .test-cases-header {

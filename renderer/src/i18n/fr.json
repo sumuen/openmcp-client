@@ -324,5 +324,6 @@
     "no-execution-result": "Aucun résultat d'exécution",
     "auto-generated-from-executor": "Généré automatiquement depuis l'exécuteur",
     "test-case-saved-successfully": "Cas de test enregistré avec succès",
-    "passed": "Par"
+    "passed": "Par",
+    "show-only-current-tool": "N'afficher que l'outil courant"
 }

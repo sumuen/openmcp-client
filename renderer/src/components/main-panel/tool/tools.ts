@@ -20,6 +20,8 @@ export interface ToolStorage {
     lastToolCallResponse?: ToolCallResponse | string;
     formData: Record<string, any>;
     testCases: TestCase[];
+    // 控制测试用例面板是否仅展示当前工具的用例
+    showOnlyCurrentToolTestCases?: boolean;
     autoDetectDiagram?: {
         edges?: Edge[];
         views?: NodeDataView[];

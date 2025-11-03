@@ -324,5 +324,6 @@
     "no-execution-result": "無執行結果",
     "auto-generated-from-executor": "由執行器自動產生",
     "test-case-saved-successfully": "測試用例已成功保存",
-    "passed": "通過"
+    "passed": "通過",
+    "show-only-current-tool": "僅顯示當前工具"
 }
