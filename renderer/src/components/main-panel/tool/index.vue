@@ -1,40 +1,25 @@
 <template>
     <el-scrollbar height="100%">
-        <AutoDetector :tab-id="props.tabId" />
         <div class="tool-module">
-            <div class="left">
-                <h2>
-                    <span class="iconfont icon-tool"></span>
-                    {{ t('tool-module') }}
-                    <el-button
-                        style="font-size: 12px;"
-                        @click="showAutoDetector = true"
-                    >
-                        {{ t('tool-self-detect') }}
-                    </el-button>
-                </h2>
-                <ToolList :tab-id="props.tabId"></ToolList>
+            <div class="menu-bar">
+                <el-segmented v-model="activeView" :options="menuOptions" size="default" />
             </div>
-            <div class="right">
-                <ToolExecutor :tab-id="props.tabId"></ToolExecutor>
-                <ToolLogger :tab-id="props.tabId"></ToolLogger>
+            <div class="content-area">
+                <keep-alive>
+                    <component :is="currentView" :tab-id="props.tabId" />
+                </keep-alive>
             </div>
         </div>
-        <AutoDetector 
-            v-model="showAutoDetector"
-            :tab-id="props.tabId"
-        />
+
     </el-scrollbar>
 </template>
 
 <script setup lang="ts">
-import { defineProps, ref } from 'vue';
-import ToolList from './tool-list.vue';
-import ToolExecutor from './tool-executor.vue';
-import ToolLogger from './tool-logger.vue';
-import AutoDetector from './auto-detector/index.vue';
+import { defineProps, ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-
+import ToolDebug from './tool-debug/index.vue';
+import Flow from './flow/index.vue';
+import VariableManagement from './variable-management/index.vue';
 const { t } = useI18n();
 
 const props = defineProps({
@@ -44,7 +29,25 @@ const props = defineProps({
     }
 });
 
-const showAutoDetector = ref(false);
+
+const activeView = ref('cases');
+
+const menuOptions = [
+    { label: t('tool-debug'), value: 'cases' },
+    { label: t('variable-management'), value: 'variable-management' },
+    { label: t('test-flow'), value: 'flow' },
+];
+
+const currentView = computed(() => {
+    if (activeView.value === 'variable-management') {
+        return VariableManagement;
+    } else if (activeView.value === 'flow') {
+        return Flow;
+    } else {
+        return ToolDebug;
+    }
+
+});
 </script>
 
 <style scoped>
@@ -52,7 +55,16 @@ const showAutoDetector = ref(false);
     padding: 20px;
     height: 100%;
     display: flex;
-    justify-content: space-around;
+    flex-direction: column;
+}
+
+.menu-bar {
+    margin-bottom: 20px;
+}
+
+.content-area {
+    flex: 1;
+    overflow: hidden;
 }
 
 .tool-module .left {

@@ -1,5 +1,5 @@
 import type { ToolCallResponse } from '@/hook/type';
-import type { Edge, Node, NodeDataView } from './auto-detector/diagram';
+import type { Edge, Node, NodeDataView } from './flow/diagram';
 
 export interface ToolStorage {
     activeNames: any[];

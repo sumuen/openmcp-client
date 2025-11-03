@@ -47,8 +47,8 @@
 <script setup lang="ts">
 import { onMounted, defineProps, type Reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { ToolStorage } from './tools';
-import { tabs } from '../panel';
+import type { ToolStorage } from '../tools';
+import { tabs } from '../../panel';
 import { ElMessage } from 'element-plus';
 import { McpClient, mcpClientAdapter } from '@/views/connect/core';
 

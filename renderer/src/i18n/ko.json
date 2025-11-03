@@ -274,5 +274,12 @@
     "trace-fsm-mode": "유한 상태 기계 패턴",
     "lookup-reflux-data": "환류 데이터 보기",
     "mcp-base-module": "MCP 기본 기능",
-    "mcp-advance-module": "MCP 고급 기능"
+    "mcp-advance-module": "MCP 고급 기능",
+    "test-flow": "테스트 프로세스",
+    "tool-test": "도구 테스트",
+    "tool-debug": "도구 디버깅",
+    "variable-management": "변수 관리",
+    "run-debug": "디버그 실행",
+    "test-cases": "테스트 케이스",
+    "post-processing": "후처리"
 }

@@ -274,5 +274,12 @@
     "trace-fsm-mode": "Finite State Machine Pattern",
     "lookup-reflux-data": "View reflux data",
     "mcp-base-module": "MCP Basic Functions",
-    "mcp-advance-module": "MCP Advanced Features"
+    "mcp-advance-module": "MCP Advanced Features",
+    "test-flow": "Test Process",
+    "tool-test": "Tool Test",
+    "tool-debug": "Tool Debugging",
+    "variable-management": "Variable Management",
+    "run-debug": "Run Debug",
+    "test-cases": "Test Case",
+    "post-processing": "Post-processing"
 }

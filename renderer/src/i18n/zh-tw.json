@@ -274,5 +274,12 @@
     "trace-fsm-mode": "有限狀態機模式",
     "lookup-reflux-data": "檢視回流數據",
     "mcp-base-module": "MCP 基礎功能",
-    "mcp-advance-module": "MCP 進階功能"
+    "mcp-advance-module": "MCP 進階功能",
+    "test-flow": "測試流程",
+    "tool-test": "工具測試",
+    "tool-debug": "工具除錯",
+    "variable-management": "變數管理",
+    "run-debug": "執行偵錯",
+    "test-cases": "測試用例",
+    "post-processing": "後置操作"
 }

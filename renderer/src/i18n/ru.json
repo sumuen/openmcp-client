@@ -274,5 +274,12 @@
     "trace-fsm-mode": "Шаблон Конечного Автомата",
     "lookup-reflux-data": "Просмотреть данные рефлюкса",
     "mcp-base-module": "Основные функции MCP",
-    "mcp-advance-module": "Расширенные функции MCP"
+    "mcp-advance-module": "Расширенные функции MCP",
+    "test-flow": "Тестовый процесс",
+    "tool-test": "Тест инструмента",
+    "tool-debug": "Отладка инструментов",
+    "variable-management": "Управление Переменными",
+    "run-debug": "Запустить отладку",
+    "test-cases": "Тестовый случай",
+    "post-processing": "Постобработка"
 }

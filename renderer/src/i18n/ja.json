@@ -274,5 +274,12 @@
     "trace-fsm-mode": "有限状態機械パターン",
     "lookup-reflux-data": "還流データを表示",
     "mcp-base-module": "MCP基本機能",
-    "mcp-advance-module": "MCP 高度な機能"
+    "mcp-advance-module": "MCP 高度な機能",
+    "test-flow": "テストプロセス",
+    "tool-test": "ツールテスト",
+    "tool-debug": "ツールデバッグ",
+    "variable-management": "変数管理",
+    "run-debug": "デバッグ実行",
+    "test-cases": "テストケース",
+    "post-processing": "後処理"
 }

@@ -51,10 +51,10 @@
 <script setup lang="ts">
 import { defineComponent, defineProps, computed, ref, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { tabs } from '../panel';
-import type { ToolStorage } from './tools';
+import { tabs } from '../../../panel';
+import type { ToolStorage } from '../../tools';
 import JsonRender from '@/components/json-render/index.vue';
-import { markdownToHtml } from '../chat/markdown/markdown';
+import { markdownToHtml } from '../../../chat/markdown/markdown';
 
 defineComponent({ name: 'tool-logger' });
 const { t } = useI18n();

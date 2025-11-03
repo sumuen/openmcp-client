@@ -72,8 +72,8 @@
 import { defineComponent, defineProps, watch, ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
-import { tabs } from '../panel';
-import type { ToolStorage } from './tools';
+import { tabs } from '../../../panel';
+import type { ToolStorage } from '../../tools';
 import { getDefaultValue, normaliseJavascriptType } from '@/hook/mcp';
 
 import KInputObject from '@/components/k-input-object/index.vue';
@@ -179,7 +179,7 @@ const resetForm = () => {
 };
 
 import { TaskLoop } from '@/components/main-panel/chat/core/task-loop';
-import type { ChatStorage } from '../chat/chat-box/chat';
+import type { ChatStorage } from '../../../chat/chat-box/chat';
 
 const onAIMookConfirm = async () => {
     aiPromptVisible.value = false;

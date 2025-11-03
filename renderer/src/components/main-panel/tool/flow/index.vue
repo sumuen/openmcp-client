@@ -1,73 +1,69 @@
 <template>
-    <el-dialog v-model="showDialog" width="800px" class="no-padding-dialog">
-        <template #header>
-            <div style="display: flex; align-items: center;">
-                <span>Tool Diagram</span>
-                &ensp;
-                <!-- 重置按钮弹出下拉列表 -->
-                <el-popover placement="bottom" width="180" trigger="click" v-model:visible="resetPopoverVisible">
-                    <template #reference>
-                        <el-button size="small" type="primary">
-                            {{ t("preset") }}
-                        </el-button>
-                    </template>
-                    <div style="display: flex; gap: 8px;">
-                        <el-button size="small" @click="tomoPreset('serial')">
-                            <span class="iconfont icon-serial"></span>
-                        </el-button>
-                        <el-button size="small" @click="tomoPreset('parallel')">
-                            <span class="iconfont icon-parallel"></span>
-                        </el-button>
-                    </div>
-                </el-popover>
-                <!-- 原有自检程序弹出表单 -->
-                <el-popover placement="top" width="350" trigger="click" v-model:visible="testFormVisible">
-                    <template #reference>
-                        <el-button size="small" type="primary">
-                            {{ t('start-auto-detect') }}
-                        </el-button>
-                    </template>
-                    <!-- ...原有自检表单内容... -->
-                    <el-input type="textarea" v-model="testPrompt" :rows="2" style="margin-bottom: 8px;"
-                        placeholder="请输入 prompt" />
-                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                        <el-switch v-model="enableXmlWrapper" style="margin-right: 8px;" />
-                        <span :style="{
-                            opacity: enableXmlWrapper ? 1 : 0.7,
-                            color: enableXmlWrapper ? 'var(--main-color)' : undefined
-                        }">XML</span>
-                    </div>
-                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                        <el-switch v-model="enableParallelTest" style="margin-right: 8px;" />
-                        <span :style="{
-                            opacity: enableParallelTest ? 1 : 0.7,
-                            color: enableParallelTest ? 'var(--main-color)' : undefined
-                        }">{{ t('parallel-test') }}</span>
-                    </div>
-                    <div style="text-align: right;">
-                        <el-button size="small" @click="testFormVisible = false">{{ t("cancel") }}</el-button>
-                        <el-button size="small" type="primary" @click="onTestConfirm">
-                            {{ t("confirm") }}
-                        </el-button>
-                    </div>
-                </el-popover>
+    <div style="display: flex; align-items: center;">
+        <span>Tool Diagram</span>
+        &ensp;
+        <!-- 重置按钮弹出下拉列表 -->
+        <el-popover placement="bottom" width="180" trigger="click" v-model:visible="resetPopoverVisible">
+            <template #reference>
+                <el-button size="small" type="primary">
+                    {{ t("preset") }}
+                </el-button>
+            </template>
+            <div style="display: flex; gap: 8px;">
+                <el-button size="small" @click="tomoPreset('serial')">
+                    <span class="iconfont icon-serial"></span>
+                </el-button>
+                <el-button size="small" @click="tomoPreset('parallel')">
+                    <span class="iconfont icon-parallel"></span>
+                </el-button>
             </div>
-        </template>
-        <el-scrollbar height="80vh">
-            <Diagram :tab-id="props.tabId" />
-        </el-scrollbar>
+        </el-popover>
+        <!-- 原有自检程序弹出表单 -->
+        <el-popover placement="top" width="350" trigger="click" v-model:visible="testFormVisible">
+            <template #reference>
+                <el-button size="small" type="primary">
+                    {{ t('start-auto-detect') }}
+                </el-button>
+            </template>
+            <!-- ...原有自检表单内容... -->
+            <el-input type="textarea" v-model="testPrompt" :rows="2" style="margin-bottom: 8px;"
+                placeholder="请输入 prompt" />
+            <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                <el-switch v-model="enableXmlWrapper" style="margin-right: 8px;" />
+                <span :style="{
+                    opacity: enableXmlWrapper ? 1 : 0.7,
+                    color: enableXmlWrapper ? 'var(--main-color)' : undefined
+                }">XML</span>
+            </div>
+            <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                <el-switch v-model="enableParallelTest" style="margin-right: 8px;" />
+                <span :style="{
+                    opacity: enableParallelTest ? 1 : 0.7,
+                    color: enableParallelTest ? 'var(--main-color)' : undefined
+                }">{{ t('parallel-test') }}</span>
+            </div>
+            <div style="text-align: right;">
+                <el-button size="small" @click="testFormVisible = false">{{ t("cancel") }}</el-button>
+                <el-button size="small" type="primary" @click="onTestConfirm">
+                    {{ t("confirm") }}
+                </el-button>
+            </div>
+        </el-popover>
+    </div>
+    <el-scrollbar height="80vh">
+        <Diagram :tab-id="props.tabId" />
+    </el-scrollbar>
 
-        <div class="caption" v-if="showCaption">
-            {{ caption }}
-        </div>
-        <div v-else>
-            <span class="caption">
-                <el-tooltip placement="top" effect="light" :content="t('self-detect-caption')">
-                    <span class="iconfont icon-about"></span>
-                </el-tooltip>
-            </span>
-        </div>
-    </el-dialog>
+    <div class="caption" v-if="showCaption">
+        {{ caption }}
+    </div>
+    <div v-else>
+        <span class="caption">
+            <el-tooltip placement="top" effect="light" :content="t('self-detect-caption')">
+                <span class="iconfont icon-about"></span>
+            </el-tooltip>
+        </span>
+    </div>
 </template>
 
 <script setup lang="ts">
