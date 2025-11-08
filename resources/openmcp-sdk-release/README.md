@@ -94,6 +94,7 @@ Run your agent and get example output:
 2025/6/20 - 20:47:48 | ✅  get_web_markdown success
 2025/6/20 - 20:47:54 | ✅  get_web_markdown success
 2025/6/20 - 20:47:57 | ✅  get_web_markdown success
+                        └─ ⬇️145434 ⬆️1554 🎯96.1% 💰0.0439 rmb
 
 ⚙️ Agent Response
 ⌨️ Today's Tech Article Roundup

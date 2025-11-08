@@ -1,12 +1,13 @@
 import chalk from 'chalk';
 
-import type { ChatStorage, IExtraInfo, MessageState, ToolCall } from "../chat-box/chat";
+import type { ChatMessage, ChatStorage, IExtraInfo, MessageState, ToolCall } from "../chat-box/chat";
 import type { ToolCallResult } from './handle-tool-calls';
 import type { ChatCompletionChunk } from 'openai/resources/index.mjs';
-import { makeUsageStatistic } from './usage';
+import { makeUsageStatistic, type TokenConsumptionResult } from './usage';
 import { useMessageBridge } from '@/api/message-bridge';
 import { mcpSetting } from '@/hook/mcp';
 import { logTimeStampString } from '@/hook/util';
+import type { BasicLlmDescription } from '@/views/setting/llm';
 
 export class OmFeedback {
     constructor(
@@ -27,17 +28,17 @@ export class OmFeedback {
                 chalk.yellow(toolCalls.map(tool => tool.function!.name || '').join(', '))
             );
 
-            const usage = makeUsageStatistic(extraInfo);
-            if (usage) {
-                console.log(
-                    chalk.gray(' '.repeat(time.length + 3) + '└─'),
-                    chalk.gray(
-                        `input: ${usage.input}  output: ${usage.output}  total: ${usage.total}  cache: ${(
-                            usage.cacheHitRatio * 100
-                        ).toFixed(1)}%`
-                    )
-                );
-            }
+            // const usage = makeUsageStatistic(extraInfo);
+            // if (usage) {
+            //     console.log(
+            //         chalk.gray(' '.repeat(time.length + 3) + '└─'),
+            //         chalk.gray(
+            //             `input: ${usage.input}  output: ${usage.output}  total: ${usage.total}  cache: ${(
+            //                 usage.cacheHitRatio * 100
+            //             ).toFixed(1)}%`
+            //         )
+            //     );
+            // }
         }
     }
 
@@ -104,8 +105,7 @@ export class OmFeedback {
             if (toolCallResult.state === 'success') {
                 console.log(
                     chalk.gray(`${logTimeStampString()} |`),
-                    chalk.green(`✅ ${toolCallResult.function?.name}`),
-                    chalk.green(toolCallResult.state)
+                    chalk.green(`✅ ${toolCallResult.function?.name}`)
                 );
             } else {
                 console.log(
@@ -126,11 +126,77 @@ export class OmFeedback {
         }
     }
 
+    consumeTokenConsumption(storage: ChatStorage, llmConfig?: BasicLlmDescription): TokenConsumptionResult {
+        const messages = storage.messages;
+        const displayLog = Boolean(this.verbose > 0 && messages);
+
+        // 展示 token 消耗量
+        let totalInput = 0;
+        let totalOutput = 0;
+        let totalTokens = 0;
+        let totalHitInput = 0;
+
+        for (const message of messages ?? []) {
+            const usage = makeUsageStatistic(message.extraInfo);
+            if (usage) {
+                totalInput += usage.input;
+                totalOutput += usage.output;
+                totalTokens += usage.total;
+                totalHitInput += usage.cachedInput;
+            }
+        }
+
+        const avgCacheHitRatio = totalHitInput / totalInput;
+        const pricing = llmConfig?.pricing;
+        const time = logTimeStampString();
+        if (pricing) {
+            const cost = (pricing.inputPerMilleHitCache * totalHitInput +
+                pricing.inputPerMille * (totalInput - totalHitInput) +
+                pricing.outputPerMille * totalOutput) / 1000000;
+
+            if (displayLog) {
+                console.log(
+                    chalk.gray(' '.repeat(time.length + 3) + '└─'),
+                    chalk.gray(`⬇ ${totalInput}`),
+                    chalk.gray(`⬆ ${totalOutput}`),
+                    chalk.gray(`🎯${(avgCacheHitRatio * 100).toFixed(1)}%`),
+                    // 账单保留5位小数
+                    chalk.gray(`💰${(cost.toFixed(4))}${pricing.unit}`)
+                );
+            }
+
+
+            return {
+                totalInput,
+                totalOutput,
+                totalHitInput,
+                cost,
+                pricing,
+                avgCacheHitRatio,
+            };
+        } else {
+            if (displayLog) {
+                console.log(
+                    chalk.gray(' '.repeat(time.length + 3) + '└─'),
+                    chalk.gray(`⬇ ${totalInput}`),
+                    chalk.gray(`⬆ ${totalOutput}`),
+                    chalk.gray(`🎯${(avgCacheHitRatio * 100).toFixed(1)}%`)
+                );
+            }
+            return {
+                totalInput,
+                totalOutput,
+                totalHitInput,
+                avgCacheHitRatio,
+            };
+        }
+    }
+
     async makeTraceSchema() {
 
     }
-    
-    async reflux(storage: ChatStorage) {        
+
+    async reflux(storage: ChatStorage) {
         if (!mcpSetting.enableDatasetReflux) {
             return;
         }
@@ -149,7 +215,7 @@ export class OmFeedback {
                 chalk.red(res.msg)
             );
         }
-        
+
         if (this.verbose > 1) {
             console.log(
                 chalk.gray(`${logTimeStampString()} |`),

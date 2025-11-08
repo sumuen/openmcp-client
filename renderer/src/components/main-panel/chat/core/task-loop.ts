@@ -16,6 +16,7 @@ import type { ToolItem } from "@/hook/type";
 import { getXmlWrapperPrompt, getToolCallFromXmlString, getXmlsFromString, handleXmlWrapperToolcall, toNormaliseToolcall, getXmlResultPrompt } from "./xml-wrapper";
 import { OmFeedback } from "./feedback";
 import { v4 as uuidv4 } from 'uuid';
+import type { TokenConsumptionResult } from "./usage";
 
 export type ChatCompletionChunk = OpenAI.Chat.Completions.ChatCompletionChunk;
 export interface TaskLoopChatOption {
@@ -64,6 +65,7 @@ export class TaskLoop {
     private onToolCall: CallbackHandler<(toolCall: ToolCall) => ToolCall>[] = [];
     private onToolCalled: CallbackHandler<(toolCallResult: ToolCallResult) => ToolCallResult>[] = [];
     private onEpoch: CallbackHandler<() => void>[] = [];
+    private onTokenConsumption: CallbackHandler<(consumption: TokenConsumptionResult) => void>[] = [];
     private completionUsage?: ChatCompletionChunk['usage'];
     private llmConfig?: BasicLlmDescription;
     private feedback;
@@ -372,7 +374,7 @@ export class TaskLoop {
      * @returns 取消注册的函数
      */
     public registerOnError(handler: (msg: IErrorMssage) => void): () => void {
-        const id = Math.random().toString(36).substring(2, 15);
+        const id = uuidv4();
         this.onError.push({ id, callback: handler });
         return () => {
             const index = this.onError.findIndex(h => h.id === id);
@@ -383,7 +385,7 @@ export class TaskLoop {
     }
 
     public registerOnChunk(handler: (chunk: ChatCompletionChunk) => void): () => void {
-        const id = Math.random().toString(36).substring(2, 15);
+        const id = uuidv4();
         this.onChunk.push({ id, callback: handler });
         return () => {
             const index = this.onChunk.findIndex(h => h.id === id);
@@ -399,7 +401,7 @@ export class TaskLoop {
      * @returns 取消注册的函数
      */
     public registerOnDone(handler: () => void): () => void {
-        const id = Math.random().toString(36).substring(2, 15);
+        const id = uuidv4();
         this.onDone.push({ id, callback: handler });
         return () => {
             const index = this.onDone.findIndex(h => h.id === id);
@@ -415,7 +417,7 @@ export class TaskLoop {
      * @returns 取消注册的函数
      */
     public registerOnEpoch(handler: () => void): () => void {
-        const id = Math.random().toString(36).substring(2, 15);
+        const id = uuidv4();
         this.onEpoch.push({ id, callback: handler });
         return () => {
             const index = this.onEpoch.findIndex(h => h.id === id);
@@ -431,7 +433,7 @@ export class TaskLoop {
      * @returns 取消注册的函数
      */
     public registerOnToolCall(handler: (toolCall: ToolCall) => ToolCall): () => void {
-        const id = Math.random().toString(36).substring(2, 15);
+        const id = uuidv4();
         this.onToolCall.push({ id, callback: handler });
         return () => {
             const index = this.onToolCall.findIndex(h => h.id === id);
@@ -447,12 +449,23 @@ export class TaskLoop {
      * @returns 取消注册的函数
      */
     public registerOnToolCalled(handler: (toolCallResult: ToolCallResult) => ToolCallResult): () => void {
-        const id = Math.random().toString(36).substring(2, 15);
+        const id = uuidv4();
         this.onToolCalled.push({ id, callback: handler });
         return () => {
             const index = this.onToolCalled.findIndex(h => h.id === id);
             if (index !== -1) {
                 this.onToolCalled.splice(index, 1);
+            }
+        };
+    }
+
+    public registerOnTokenConsumption(handler: (consumption: TokenConsumptionResult) => void) {
+        const id = uuidv4();
+        this.onTokenConsumption.push({ id, callback: handler });
+        return () => {
+            const index = this.onTokenConsumption.findIndex(h => h.id === id);
+            if (index !== -1) {
+                this.onTokenConsumption.splice(index, 1);
             }
         };
     }
@@ -495,23 +508,36 @@ export class TaskLoop {
         this.onDone.forEach(handler => handler.callback());
     }
 
+    private consumeTokenConsumption(storage: ChatStorage, llmConfig?: BasicLlmDescription) {
+        const result = this.feedback.consumeTokenConsumption(storage, llmConfig);
+        this.onTokenConsumption.forEach(handler => handler.callback(result));
+    }
+
     public setMaxEpochs(maxEpochs: number) {
         this.taskOptions.maxEpochs = maxEpochs;
     }
 
     /**
      * @description 设置当前的 LLM 配置，用于 nodejs 环境运行
-     * @param config 
-     * @example
-     * setLlmConfig({
-     *     id: 'openai',
-     *     baseUrl: 'https://api.openai.com/v1',
-     *     userToken: 'sk-xxx',
-     *     userModel: 'gpt-3.5-turbo',
-     * })
+     * @param config 配置
      */
-    public setLlmConfig(config: any) {
-        this.llmConfig = config;
+    public setLlmConfig(config: Partial<BasicLlmDescription>) {
+        this.llmConfig = {
+            name: config.name || 'sdk',
+            pricing: config.pricing,
+            baseUrl: config.baseUrl || 'https://api.openai.com/v1',
+            userToken: config.userToken || '',
+            userModel: config.userModel || 'gpt-3.5-turbo',
+            id: config.id || 'openai',
+            models: config.models || ['gpt-3.5-turbo'],
+            isOpenAICompatible: config.isOpenAICompatible || true,
+            description: config.description || '',
+            website: config.website || '',
+            supportsPricing: config.supportsPricing || false,
+            isDynamic: config.isDynamic || false,
+            modelsEndpoint: config.modelsEndpoint || '/models',
+            ...config,
+        }
     }
 
     public bindStreaming(content: Ref<string>, toolCalls: Ref<ToolCall[]>) {
@@ -842,6 +868,8 @@ export class TaskLoop {
                 break;
             }
         }
+
+        this.consumeTokenConsumption(tabStorage, this.llmConfig);
 
         if (mode === 'single-chat') {
             this.feedback.reflux(tabStorage);

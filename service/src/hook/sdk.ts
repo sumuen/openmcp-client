@@ -345,6 +345,7 @@ export class OmAgent {
                 baseUrl: this._defaultLLM.baseURL,
                 userToken: this._defaultLLM.apiToken,
                 userModel: this._defaultLLM.model,
+                ...this._defaultLLM,
             });
         } else {
             // throw error to user and give the suggestion

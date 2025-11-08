@@ -102,6 +102,46 @@ export interface ToolCallResult {
     content: ToolCallContent[];
 }
 
+export interface TokenConsumptionResult {
+    totalInput?: number,
+    totalOutput?: number,
+    totalHitInput?: number,
+    cost?: number,
+    pricing?: {
+        inputPerMilleHitCache: number,
+        inputPerMille: number,
+        outputPerMille: number,
+        unit: string,
+    },
+    avgCacheHitRatio: number,
+}
+
+export interface BasicLlmDescription {
+	id: string,
+	name: string,
+	baseUrl: string,
+	models: string[],
+	isOpenAICompatible: boolean,
+	description: string,
+	website: string,
+	userToken: string,
+	userModel: string,
+	isDynamic?: boolean,
+	modelsEndpoint?: string,
+	supportsPricing?: boolean,
+    pricing?: {
+        // 百万tokens输入（缓存命中）
+        inputPerMilleHitCache: number,
+        // 百万tokens输出（缓存未命中）
+        inputPerMille: number,
+        // 百万tokens输出
+        outputPerMille: number,
+        // 单位：比如「人民币」
+        unit: string,
+    }
+	[key: string]: any
+}
+
 export enum MessageState {
     ServerError = 'server internal error',
     ReceiveChunkError = 'receive chunk error',
@@ -255,6 +295,12 @@ export class TaskLoop {
     registerOnToolCall(handler: (toolCall: ToolCall) => ToolCall): void;
 
     /**
+     * @description Register a callback triggered after each token consumption.
+     * @param handler 
+     */
+    registerOnTokenConsumption(handler: (consumption: TokenConsumptionResult) => void): void;
+
+    /**
      * @description Get current LLM configuration
      */
     getLlmConfig(): any;
@@ -262,15 +308,8 @@ export class TaskLoop {
     /**
      * @description Set the current LLM configuration, for Node.js environment
      * @param config 
-     * @example
-     * setLlmConfig({
-     *     id: 'openai',
-     *     baseUrl: 'https://api.openai.com/v1',
-     *     userToken: 'sk-xxx',
-     *     userModel: 'gpt-3.5-turbo',
-     * })
      */
-    setLlmConfig(config: any): void;
+    setLlmConfig(config: Partial<BasicLlmDescription>): void;
 
     /**
      * @description Set proxy server

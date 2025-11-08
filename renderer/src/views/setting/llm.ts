@@ -25,6 +25,16 @@ export interface BasicLlmDescription {
 	isDynamic?: boolean,
 	modelsEndpoint?: string,
 	supportsPricing?: boolean,
+    pricing?: {
+        // 百万tokens输入（缓存命中）
+        inputPerMilleHitCache: number,
+        // 百万tokens输出（缓存未命中）
+        inputPerMille: number,
+        // 百万tokens输出
+        outputPerMille: number,
+        // 单位：比如「人民币」
+        unit: string,
+    }
 	[key: string]: any
 }
 
