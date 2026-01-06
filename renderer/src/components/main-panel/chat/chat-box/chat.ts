@@ -53,8 +53,9 @@ export type ChatMessage = ToolMessage | TextMessage;
 export interface EnableToolItem {
     name: string;
     description: string;
-    enabled: boolean;
     inputSchema: InputSchema;
+    enabled: boolean;
+    deferLoading?: boolean;
 }
 
 export interface ChatSetting {

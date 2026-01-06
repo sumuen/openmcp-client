@@ -150,6 +150,9 @@ export interface AinvokeConfig {
     }
 }
 
+export interface LoadMcpConfigParam {
+    deferLoading?: boolean;
+}
 
 export function UserMessage(content: string): TextMessage {
     return {
@@ -214,7 +217,7 @@ export class OmAgent {
      *
      * @param configPath - Path to the configuration file
      */
-    public loadMcpConfig(configPath: string) {
+    public loadMcpConfig(configPath: string, params?: LoadMcpConfigParam) {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as OmAgentConfiguration;
         const { mcpServers, defaultLLM } = config;
 
