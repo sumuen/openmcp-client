@@ -1,5 +1,5 @@
-import { OmAgent } from '../../../openmcp-sdk/service/sdk';
-import { useMcpConfig } from './global';
+import { OmAgent } from '../../../openmcp-sdk/service/sdk.js';
+import { useMcpConfig } from './global.js';
 
 async function downloadImageToBase64(url: string): Promise<string> {
     const https = await import('https');
@@ -50,5 +50,26 @@ async function test() {
     });
 }
 
+async function testDoc(userInput: string) {
+    const agent = new OmAgent();
+    agent.loadMcpConfig(useMcpConfig('word-mcp'));
+    const prompt = await agent.getPrompt('word_operations_prompt', {});
+    const query = prompt + '\n' + userInput;
+
+    const result = await agent.ainvoke({
+        messages: query,
+        until: { toolName: 'word_save_document' },
+        reflux: {
+            enabled: true,
+            saveDir: './dataset'
+        }
+    });
+}
+
 // 运行新的测试（下载图片并转换为 base64）
-test();
+async function main() {
+    await test();
+    await testDoc('请帮我生成一份基础的介绍 java 的学习路径的文档');
+}
+
+main();

@@ -125,11 +125,13 @@ export interface IToolRenderMessage {
 export type IRenderMessage = ICommonRenderMessage | IToolRenderMessage;
 
 export function getToolSchema(enableTools: EnableToolItem[]): any[] {
+    const visitedTools = new Set<string>();
     const toolsSchema = [];
+
     for (let i = 0; i < enableTools.length; i++) {
         const enableTool = enableTools[i];
 
-        if (enableTool.enabled) {
+        if (enableTool.enabled && !visitedTools.has(enableTool.name)) {
             toolsSchema.push({
                 type: 'function',
                 function: {
@@ -138,8 +140,12 @@ export function getToolSchema(enableTools: EnableToolItem[]): any[] {
                     parameters: enableTool.inputSchema
                 }
             });
+
+            // 记录已添加的工具名称
+            visitedTools.add(enableTool.name);
         }
     }
+
     return toolsSchema;
 }
 

@@ -60,7 +60,7 @@ export class OmFeedback {
         if (this.verbose > 0) {
             console.log(
                 chalk.gray(`${logTimeStampString()} |`),
-                chalk.red('❌ error happen in task loop '),
+                chalk.red('❌ error happen in task loop -> '),
                 chalk.red(error.msg)
             );
         }

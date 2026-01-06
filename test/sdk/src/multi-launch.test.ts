@@ -15,8 +15,15 @@ async function test(userInput: string) {
             saveDir: './dataset'
         }
     });
-
-    console.log('test result: ', result);
 }
 
-test('请帮我生成一份基础的介绍 python 学习路径的文档');
+async function main() {
+    await test('请帮我生成一份基础的介绍 python 学习路径的文档');
+    await test('请帮我生成一份基础的介绍 java 的学习路径的文档');
+    await test('请帮我生成一份基础的介绍 java 的学习路径的文档');
+    await test('请帮我生成一份基础的介绍 java 的学习路径的文档');
+    await test('请帮我生成一份基础的介绍 java 的学习路径的文档');
+    await test('请帮我生成一份基础的介绍 java 的学习路径的文档');
+}
+
+main();

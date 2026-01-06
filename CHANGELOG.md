@@ -4,6 +4,9 @@
 - 添加数据回流系统
 - 更新 tool trace 中的工具耗时算法
 - 解决选择模型时的 bug，优化模型搜索算法
+- [] 支持自定义准确率和自治率相关的输入
+- [] 支持 Tool Search Tool
+- [] 支持 Programmatic Tool Calling
 
 ## [main] 0.1.13
 - 增加工具调用链的可视化

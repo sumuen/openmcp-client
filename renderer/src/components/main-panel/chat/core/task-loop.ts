@@ -588,7 +588,7 @@ export class TaskLoop {
 
         const {
             mode = 'normal',
-        } = config || {};        
+        } = config || {};
 
         const platform = getPlatform();
         if (platform === 'nodejs') {
