@@ -132,7 +132,12 @@ export function getToolSchema(enableTools: EnableToolItem[]): any[] {
     for (let i = 0; i < enableTools.length; i++) {
         const enableTool = enableTools[i];
 
-        if (enableTool.enabled && !visitedTools.has(enableTool.name)) {
+        const {
+            enabled = false,
+            deferLoading = false,
+        } = enableTool;
+
+        if (enabled && !deferLoading && !visitedTools.has(enableTool.name)) {
             toolsSchema.push({
                 type: 'function',
                 function: {

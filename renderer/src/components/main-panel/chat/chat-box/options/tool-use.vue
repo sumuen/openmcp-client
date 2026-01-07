@@ -27,7 +27,14 @@
             <el-scrollbar height="400px" class="tools-list">
                 <div v-for="(tool, index) in tabStorage.settings.enableTools" :key="index" class="tool-item">
                     <div class="tool-info">
-                        <div class="tool-name">{{ tool.name }}</div>
+                        <div class="tool-name">
+                            {{ tool.name }}
+                            <div v-if="tool.enabled">
+                                <span class="xml-tag" :class="{
+                                    'active': tool.deferLoading
+                                }" @click="tool.deferLoading = !tool.deferLoading">defer</span>
+                            </div>
+                        </div>
                         <div v-if="tool.description" class="tool-description">{{ tool.description }}</div>
                     </div>
                     <el-switch v-model="tool.enabled" />
@@ -82,7 +89,7 @@ const activeToolsSchemaHTML = computed(() => {
     );
 });
 
-const activeToolsXmlPrompt = computed(() => {    
+const activeToolsXmlPrompt = computed(() => {
     const prompt = toolSchemaToPromptDescription(tabStorage.settings.enableTools);
     return markdownToHtml(
         "```markdown\n" + prompt + "\n```"
