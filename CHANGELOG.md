@@ -1,6 +1,7 @@
 # Change Log
 
 ## [main] 0.1.14
+- 支持 DeepSeek thinking 模式：当模型返回 `reasoning_content` 时，将其保存并回传到上下文中，修复 tool calls 场景下「Missing reasoning_content field in the assistant message」的 400 报错
 - 添加数据回流系统
 - 更新 tool trace 中的工具耗时算法
 - 解决选择模型时的 bug，优化模型搜索算法

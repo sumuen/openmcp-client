@@ -6,8 +6,8 @@
 	"types": "dist/index.d.ts",
 	"type": "module",
 	"scripts": {
-		"serve": "tsx watch src/main.ts",
-		"dev": "tsx watch src/main.ts",
+		"serve": "nodemon --watch src --ext ts --exec \"tsx src/main.ts\"",
+		"dev": "nodemon --watch src --ext ts --exec \"tsx src/main.ts\"",
 		"build": "tsc",
 		"build:watch": "tsc --watch",
 		"postbuild": "node ./scripts/post-build.mjs",

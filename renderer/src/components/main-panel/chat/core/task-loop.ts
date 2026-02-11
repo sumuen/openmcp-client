@@ -56,6 +56,8 @@ export class TaskLoop {
     private bridge: MessageBridge;
     private streamingContent: Ref<string>;
     private streamingToolCalls: Ref<ToolCall[]>;
+    /** DeepSeek thinking 模式的推理内容流，多轮 tool calls 时需回传 */
+    private streamingReasoningContent: Ref<string>;
     private aborted = false;
 
     private currentChatId = '';
@@ -85,6 +87,7 @@ export class TaskLoop {
     ) {
         this.streamingContent = ref('');
         this.streamingToolCalls = ref([]);
+        this.streamingReasoningContent = ref('');
 
         // 根据当前环境决定是否要开启 messageBridge
         const platform = getPlatform();
@@ -133,14 +136,21 @@ export class TaskLoop {
     }
 
     /**
-     * @description 处理 streaming 输出的每一个分块的 content 部分 
+     * @description 处理 streaming 输出的每一个分块的 content 和 reasoning_content 部分
+     * reasoning_content 为 DeepSeek thinking 模式字段，多轮 tool calls 时必须回传
      * @param chunk 
      * @param chatData 
      */
     private handleChunkDeltaContent(chunk: ChatCompletionChunk, chatData: ChatCompletionCreateParamsBase) {
-        const content = chunk.choices[0]?.delta?.content || '';
+        const delta = chunk.choices[0]?.delta;
+        const content = delta?.content || '';
         if (content) {
             this.streamingContent.value += content;
+        }
+        // DeepSeek thinking 模式：累积 reasoning_content
+        const reasoningContent = (delta as { reasoning_content?: string })?.reasoning_content || '';
+        if (reasoningContent) {
+            this.streamingReasoningContent.value += reasoningContent;
         }
     }
 
@@ -365,6 +375,7 @@ export class TaskLoop {
         });
         this.streamingContent.value = '';
         this.streamingToolCalls.value = [];
+        this.streamingReasoningContent.value = '';
         this.aborted = true;
     }
 
@@ -625,6 +636,7 @@ export class TaskLoop {
             // 初始累计清空
             this.streamingContent.value = '';
             this.streamingToolCalls.value = [];
+            this.streamingReasoningContent.value = '';
             this.completionUsage = undefined;
 
             // 构造 chatData
@@ -660,12 +672,16 @@ export class TaskLoop {
                     usage
                 };
 
-                tabStorage.messages.push({
+                const assistantMsg: any = {
                     role: 'assistant',
                     content: this.streamingContent.value || '',
                     tool_calls: this.streamingToolCalls.value,
                     extraInfo
-                });
+                };
+                if (this.streamingReasoningContent.value) {
+                    assistantMsg.reasoning_content = this.streamingReasoningContent.value;
+                }
+                tabStorage.messages.push(assistantMsg);
 
                 this.feedback.consumeLlmResponse(this.streamingToolCalls.value, extraInfo);
 
@@ -760,7 +776,7 @@ export class TaskLoop {
                 }
 
             } else if (this.streamingContent.value) {
-                tabStorage.messages.push({
+                const assistantMsg: any = {
                     role: 'assistant',
                     content: this.streamingContent.value,
                     extraInfo: {
@@ -770,7 +786,11 @@ export class TaskLoop {
                         usage: this.completionUsage,
                         enableXmlWrapper
                     }
-                });
+                };
+                if (this.streamingReasoningContent.value) {
+                    assistantMsg.reasoning_content = this.streamingReasoningContent.value;
+                }
+                tabStorage.messages.push(assistantMsg);
 
                 // 如果 xml 模型，需要检查内部是否含有有效的 xml 进行调用
                 if (tabStorage.settings.enableXmlWrapper) {

@@ -41,6 +41,8 @@ export interface ToolMessage {
 export interface TextMessage {
     role: 'user' | 'assistant' | 'system';
     content: string;
+    /** DeepSeek thinking 模式的推理内容，多轮 tool calls 时必须回传 */
+    reasoning_content?: string;
     tool_call_id?: string
     name?: string // 工具名称，当 role 为 tool
     tool_calls?: ToolCall[],
