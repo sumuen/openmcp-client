@@ -42,9 +42,10 @@ console.log(llms[llmManager.currentModelIndex]);
 <style scoped>
 .connect-test {
     margin-top: 20px;
-    padding: 12px;
-    border-radius: 4px;
-    background-color: var(--el-bg-color);
+    padding: 16px;
+    border-radius: 16px;
+    background-color: var(--sidebar);
+    border: 1px solid var(--sidebar-border);
 }
 
 .test-result {
@@ -57,17 +58,17 @@ console.log(llms[llmManager.currentModelIndex]);
     display: flex;
     align-items: center;
     gap: 8px;
-    color: var(--el-color-success);
-    padding: 6px 12px;
-    border-radius: 4px;
+    color: var(--main-color);
+    padding: 8px 14px;
+    border-radius: 12px;
 }
 
 .connect-test .tps {
     margin-left: 5px;
     color: var(--foreground);
-    background-color: var(--el-fill-color-light);
-    padding: 2px 6px;
-    border-radius: 4px;
+    background-color: var(--sidebar-item-selected);
+    padding: 2px 8px;
+    border-radius: 8px;
 }
 
 .result-item.error {
@@ -79,18 +80,19 @@ console.log(llms[llmManager.currentModelIndex]);
 }
 
 .extra-info.warning {
-    background-color: rgba(230, 162, 60, 0.5);
-    padding: 10px;
-    border-radius: 4px;
+    background-color: var(--main-light-color);
+    padding: 12px 16px;
+    border-radius: 12px;
     margin-top: 15px;
     margin-bottom: 10px;
+    border: 1px solid var(--sidebar-border);
 }
 
 .queue-time {
     margin-left: 8px;
     color: var(--foreground);
-    background-color: var(--el-fill-color-light);
-    padding: 2px 6px;
-    border-radius: 4px;
+    background-color: var(--sidebar-item-selected);
+    padding: 2px 8px;
+    border-radius: 8px;
 }
 </style>

@@ -9,20 +9,20 @@
     <div class="message-text tool_calls" :class="[currentMessageLevel]">
         
         <!-- 工具的消息 -->
-        <div v-if="props.message.content" v-html="markdownToHtml(props.message.content)"></div>
+        <div v-if="props.message.content" class="tool-call-message" v-html="markdownToHtml(props.message.content)"></div>
 
         <!-- 工具的调用 -->
-        <el-collapse v-model="activeNames" v-if="props.message.tool_calls">
+        <el-collapse v-model="activeNames" v-if="props.message.tool_calls" class="tool-calls-collapse">
             <el-collapse-item name="tool">
                 <template #title>
                     <div class="tool-calls">
-                        <div class="tool-call-header">
+                        <div class="tool-call-header tool-call-header--main">
+                            <span class="tool-call-badge" v-if="(props.message.tool_calls?.length ?? 0) > 1">#1</span>
                             <span class="tool-name">
                                 <span class="iconfont icon-tool"></span>
-
                                 {{ props.message.tool_calls[0].function!.name }}
                             </span>
-                            <el-button size="small" @click="createTest(props.message.tool_calls[0])">
+                            <el-button size="small" class="tool-debug-btn" @click="createTest(props.message.tool_calls[0])" :title="t('create-test-case')">
                                 <span class="iconfont icon-send"></span>
                             </el-button>
                         </div>
@@ -33,86 +33,89 @@
                     class="toolcall-item">
 
                     <div class="tool-calls" v-if="toolIndex > 0">
-                        <div class="tool-call-header">
+                        <div class="tool-call-header tool-call-header--main">
+                            <span class="tool-call-badge" v-if="(props.message.tool_calls?.length ?? 0) > 1">#{{ toolIndex + 1 }}</span>
                             <span class="tool-name">
                                 <span class="iconfont icon-tool"></span>
-
                                 {{ props.message.tool_calls[toolIndex].function!.name }}
                             </span>
-                            <el-button size="small" @click="createTest(props.message.tool_calls[toolIndex])">
+                            <el-button size="small" class="tool-debug-btn" @click="createTest(props.message.tool_calls[toolIndex])" :title="t('create-test-case')">
                                 <span class="iconfont icon-send"></span>
                             </el-button>
                         </div>
                     </div>
 
-                    <div class="tool-arguments">
-                        <json-render :json="parseArguments(props.message.tool_calls[toolIndex].function!.arguments)"/>
+                    <!-- Arguments 区块：带标题 + 复制 -->
+                    <div class="tool-section">
+                        <div class="tool-section-label">
+                            <span class="iconfont icon-variable"></span>
+                            {{ t('arguments') }}
+                        </div>
+                        <div class="tool-arguments">
+                            <json-render
+                                :json="parseArguments(props.message.tool_calls[toolIndex].function!.arguments)"
+                                :show-copy="true"
+                                label="arguments"
+                            />
+                        </div>
                     </div>
 
                     <!-- 工具调用结果 -->
-                    <div v-if="toolResult.length > 0">
-                        <div class="tool-call-header result">
-
-                            <span class="tool-name" v-if="isValid(toolResult)">
-                                <span :class="`iconfont icon-info`"></span>
-                                {{ t("response") }}
-                            </span>
-                            <span class="tool-name" v-else>
-                                <span :class="`iconfont icon-${currentMessageLevel}`"></span>
-                                {{ isValid(toolResult) ? t("response") : t('error') }}
-                                <el-button size="small" @click="gotoIssue()">
-                                    {{ t('feedback') }}
-                                </el-button>
-                            </span>
-
-
-                            <span v-if="currentMessageLevel === 'info'"
-                                style="width: 200px;" class="tools-dialog-container"
-                            >
-                                <el-switch v-model="showJsons[toolIndex]" inline-prompt active-text="JSON"
-                                    inactive-text="Text" style="margin-left: 10px; width: 200px;"
-                                    :inactive-action-style="'backgroundColor: var(--sidebar)'" />
-                            </span>
+                    <div v-if="toolResult.length > 0" class="tool-section">
+                        <div class="tool-section-label tool-section-label--result" :class="{ 'tool-section-label--error': !isValid(toolResult) }">
+                            <span v-if="isValid(toolResult)" class="iconfont icon-dui"></span>
+                            <span v-else :class="`iconfont icon-${currentMessageLevel}`"></span>
+                            {{ isValid(toolResult) ? t('response') : t('error') }}
+                            <el-button v-if="!isValid(toolResult)" size="small" class="tool-feedback-btn" @click="gotoIssue()">
+                                {{ t('feedback') }}
+                            </el-button>
+                            <el-switch
+                                v-else-if="currentMessageLevel === 'info'"
+                                v-model="showJsons[toolIndex]"
+                                inline-prompt
+                                active-text="JSON"
+                                inactive-text="Text"
+                                class="tool-view-switch"
+                            />
                         </div>
 
                         <div class="tool-result" v-if="isValid(toolResult)">
-                            <!-- 展示 JSON -->
                             <div v-if="showJsons[toolIndex]" class="tool-result-content">
-                                <json-render :json="props.message.toolResults[toolIndex]"/>
+                                <json-render
+                                    :json="props.message.toolResults[toolIndex]"
+                                    :show-copy="true"
+                                    label="response"
+                                />
                             </div>
-
-                            <!-- 展示富文本 -->
-                            <span v-else>
-                                <div v-for="(item, index) in props.message.toolResults[toolIndex]" :key="index"
-                                    class="response-item">
+                            <div v-else class="tool-result-items">
+                                <div v-for="(item, index) in props.message.toolResults[toolIndex]" :key="index" class="response-item">
                                     <ToolcallResultItem :item="item"
                                         @update:item="value => updateToolCallResultItem(value, toolIndex, index)"
                                         @update:ocr-done="value => collposePanel()" />
                                 </div>
-                            </span>
-                        </div>
-                        <div v-else class="tool-result">
-                            <div class="tool-result-content" v-for="(error, index) of collectErrors(toolResult)"
-                                :key="index">
-                                {{ error }}
                             </div>
                         </div>
-                    </div>
-                    <div v-else style="width: 90%">
-                        <div class="tool-call-header result">
-                            <span class="tool-name">
-                                <span :class="`iconfont icon-waiting`"></span>
-                                {{ t('waiting-mcp-server') }}
-                            </span>
-                        </div>
-                        <div class="tool-result-content">
-                            <div class="progress">
-                                <el-progress :percentage="100" :format="() => ''" :indeterminate="true" text-inside />
-                            </div>
+                        <div v-else class="tool-result tool-result--error">
+                            <el-scrollbar class="tool-error-scrollbar" max-height="200px">
+                                <div class="tool-error-item" v-for="(error, index) of collectErrors(toolResult)" :key="index">
+                                    <pre class="tool-error-content">{{ error }}</pre>
+                                </div>
+                            </el-scrollbar>
                         </div>
                     </div>
 
-                    <MessageMeta v-if="toolIndex === props.message.toolResults.length - 1" :message="message" />
+                    <!-- 等待 MCP 响应 -->
+                    <div v-else class="tool-section">
+                        <div class="tool-section-label tool-section-label--waiting">
+                            <span class="iconfont icon-waiting"></span>
+                            {{ t('waiting-mcp-server') }}
+                        </div>
+                        <div class="tool-result-content tool-result-content--waiting">
+                            <el-progress :percentage="100" :format="() => ''" :indeterminate="true" text-inside />
+                        </div>
+                    </div>
+
+                    <MessageMeta v-if="toolIndex === props.message.toolResults.length - 1" :message="props.message" />
 
                 </div>
             </el-collapse-item>
@@ -122,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, ref, watch, type PropType, computed, defineEmits } from 'vue';
+import { ref, watch, type PropType, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import MessageMeta from './message-meta.vue';
@@ -244,7 +247,6 @@ function collectErrors(toolResult: ToolCallContent[]) {
     const errorMessages = [];
     try {
         const errorResults = toolResult.filter(item => item.type === 'error');
-        console.log(errorResults);
 
         for (const errorResult of errorResults) {
             errorMessages.push(errorResult.text);
@@ -272,57 +274,206 @@ function parseArguments(args: string | undefined): object {
 </script>
 
 <style>
+/* message-text tool_calls 基础样式 - 与用户消息、测试用例卡片等保持一致 */
 .message-text.tool_calls {
-    border: 1px solid var(--main-color);
-    border-radius: .5em;
-    padding: 3px 10px;
+    border: 1px solid var(--sidebar-item-border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    background-color: var(--sidebar-item-selected);
+    transition: var(--animation-3s);
 }
 
+.tool-call-message {
+    margin-bottom: 12px;
+    line-height: 1.6;
+}
+
+/* info 成功/就绪状态 - 使用中性灰背景，降低刺眼感，利于调试 */
+.message-text.tool_calls.info {
+    border-color: var(--sidebar-item-border);
+    background-color: var(--sidebar-item-selected);
+    box-shadow: none;
+}
+
+.message-text.tool_calls.info .tool-name {
+    color: var(--foreground);
+}
+
+/* 展开区域：仅最外层容器设背景，内层透明继承 */
+.message-text.tool_calls.info .el-collapse-item__content {
+    background-color: transparent;
+}
+
+.message-text.tool_calls.info .tool-arguments,
+.message-text.tool_calls.info .tool-result {
+    border: 1px solid var(--sidebar-item-border);
+}
+
+/* tool-result 内部不重复设背景，透明继承父级 */
+.message-text.tool_calls.info .tool-result-content,
+.message-text.tool_calls.info .response-item,
+.message-text.tool_calls.info .tool-result-items {
+    background-color: transparent !important;
+    border: none;
+}
+
+.message-text.tool_calls.info .tool-arguments .openmcp-code-block,
+.message-text.tool_calls.info .tool-result-content .openmcp-code-block,
+.message-text.tool_calls.info .json-render--with-copy {
+    background-color: transparent;
+    border-color: var(--sidebar-item-border);
+}
+
+.message-text.tool_calls.info .tool-arguments :deep(pre) code,
+.message-text.tool_calls.info .tool-result-content :deep(pre) code {
+    background-color: transparent !important;
+}
+
+.tool-result-content--waiting,
 .tool-result-content .progress {
-    border-radius: .5em;
-    background-color: var(--el-fill-color-light) !important;
+    border-radius: 8px;
+    background-color: transparent !important;
     padding: 20px 10px;
     width: 50%;
+    border: 1px solid var(--sidebar-item-border);
+}
+
+.message-text.tool_calls.info :deep(.el-scrollbar__view) {
+    background-color: transparent !important;
 }
 
 .message-text.tool_calls.warning {
-    border: 1px solid var(--el-color-warning);
+    border-color: var(--el-color-warning);
+    background-color: rgba(230, 162, 60, 0.08);
 }
 
 .message-text.tool_calls.warning .tool-name {
     color: var(--el-color-warning);
 }
 
+.message-text.tool_calls.warning .tool-arguments,
 .message-text.tool_calls.warning .tool-result {
-    background-color: rgba(230, 162, 60, 0.5);
+    background-color: rgba(230, 162, 60, 0.12);
+    border: 1px solid rgba(230, 162, 60, 0.3);
 }
 
 .message-text.tool_calls.error {
-    border: 1px solid var(--el-color-error);
+    border-color: var(--el-color-error);
+    background-color: rgba(245, 108, 108, 0.08);
 }
 
 .message-text.tool_calls.error .tool-name {
     color: var(--el-color-error);
 }
 
+.message-text.tool_calls.error .tool-arguments,
 .message-text.tool_calls.error .tool-result {
-    background-color: rgba(245, 108, 108, 0.5);
+    background-color: rgba(245, 108, 108, 0.12);
+    border: 1px solid rgba(245, 108, 108, 0.3);
 }
-
 
 .message-text .el-collapse-item__header {
     display: flex;
     align-items: center;
     height: fit-content;
     min-height: unset;
+    padding: 6px 0;
+    border: none;
+    background: transparent !important;
 }
 
 .message-text .el-collapse-item__content {
-    padding-bottom: 5px;
+    padding: 12px 0 16px;
+}
+
+/* 工具调用主标题 - 开发者可读性优化 */
+.tool-call-header--main {
+    gap: 10px;
+}
+
+.tool-call-badge {
+    font-family: var(--font-monospace-family, var(--code-font-family, monospace));
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--sidebar-item-background);
+    color: var(--el-text-color-secondary);
+    border: 1px solid var(--sidebar-item-border);
+    letter-spacing: 0.02em;
+}
+
+.tool-debug-btn,
+.message-text.tool_calls .el-button {
+    border-radius: 8px !important;
+    background-color: var(--foreground) !important;
+    color: var(--background) !important;
+    border-color: var(--foreground) !important;
+    transition: var(--animation-3s);
+}
+
+.tool-debug-btn:hover,
+.message-text.tool_calls .el-button:hover {
+    background-color: var(--foreground) !important;
+    color: var(--background) !important;
+    border-color: var(--foreground) !important;
+    opacity: 0.9;
+}
+
+.tool-feedback-btn {
+    margin-left: auto;
+}
+
+/* 区块标签 - Arguments / Response 等 */
+.tool-section {
+    margin-top: 14px;
+}
+
+.tool-section:first-of-type {
+    margin-top: 0;
+}
+
+.tool-section-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--el-text-color-secondary);
+    margin-bottom: 6px;
+    font-family: var(--font-monospace-family, var(--code-font-family, monospace));
+    letter-spacing: 0.02em;
+}
+
+.tool-section-label .iconfont {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.tool-section-label--result {
+    color: var(--signal-default-color, #4CAF50);
+}
+
+.tool-section-label--error {
+    color: var(--el-color-error);
+}
+
+.tool-section-label--waiting {
+    color: var(--el-text-color-secondary);
+}
+
+.tool-view-switch {
+    margin-left: auto;
+}
+
+.tool-view-switch :deep(.el-switch__label) {
+    font-size: 11px;
 }
 
 .toolcall-item .tool-calls {
-    margin-top: 22px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--sidebar-item-border);
 }
 
 .tool-call-item {
@@ -335,67 +486,120 @@ function parseArguments(args: string | undefined): object {
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
-}
-
-.tool-call-header.result {
-    margin-top: 10px;
+    gap: 8px;
 }
 
 .tool-name {
-    font-weight: bold;
-    color: var(--el-color-primary);
+    font-weight: 600;
+    color: var(--foreground);
     margin-right: 8px;
     margin-bottom: 0;
     display: flex;
     align-items: center;
     height: 26px;
-    display: flex;
-    align-items: center;
+    font-size: 14px;
 }
 
 .tool-name .iconfont {
     margin-right: 5px;
+    opacity: 0.9;
 }
 
 .tool-type {
     font-size: 0.8em;
     color: var(--el-text-color-secondary);
-    background-color: var(--el-fill-color-light);
-    padding: 2px 6px;
+    background-color: var(--main-light-color-10);
+    padding: 2px 8px;
     display: flex;
     align-items: center;
-    border-radius: 4px;
+    border-radius: 6px;
     margin-right: 10px;
     height: 22px;
+    border: 1px solid var(--main-light-color-20);
 }
 
 .response-item {
     margin-bottom: 10px;
 }
 
+.tool-result-items {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Arguments 与 Result 区块 - 中性灰背景，利于调试 */
 .tool-arguments {
     margin: 0;
-    padding: 8px;
-    background-color: var(--el-fill-color-light);
-    border-radius: 4px;
-    font-family: monospace;
-    font-size: 0.9em;
+    padding: 0;
+    border-radius: 8px;
+    font-family: var(--font-monospace-family, var(--code-font-family, monospace));
+    font-size: 13px;
+    line-height: 1.65;
+    overflow: hidden;
+}
+
+.tool-arguments :deep(.json-render-body) {
+    padding: 12px 14px;
 }
 
 .tool-result {
-    padding: 8px;
-    background-color: var(--el-fill-color-light);
-    border-radius: 4px;
+    padding: 0;
+    border-radius: 8px;
+    border: 1px solid var(--sidebar-item-border);
+    overflow: hidden;
+}
+
+.tool-result :deep(.json-render-body) {
+    padding: 12px 14px;
+}
+
+.tool-result-content {
+    padding: 12px 14px;
+}
+
+/* 错误展示 - 开发者可读 */
+.tool-result--error {
+    background-color: rgba(245, 108, 108, 0.08);
+    border-color: rgba(245, 108, 108, 0.3);
+}
+
+.tool-error-scrollbar {
+    --el-scrollbar-opacity: 0.3;
+}
+
+.tool-error-item {
+    margin-bottom: 8px;
+}
+
+.tool-error-item:last-child {
+    margin-bottom: 0;
+}
+
+.tool-error-content {
+    margin: 0;
+    padding: 12px 14px;
+    font-family: var(--font-monospace-family, var(--code-font-family, monospace));
+    font-size: 13px;
+    line-height: 1.65;
+    white-space: pre;
+    display: inline-block;
+    min-width: 100%;
+    color: var(--el-color-error);
+    background: transparent;
+    border: none;
 }
 
 .tool-text {
     white-space: pre-wrap;
     line-height: 1.6;
+    font-family: var(--font-monospace-family, var(--code-font-family, monospace));
+    font-size: 13px;
 }
 
 .tool-other {
-    font-family: monospace;
-    font-size: 0.9em;
+    font-family: var(--font-monospace-family, monospace);
+    font-size: 12px;
     color: var(--el-text-color-secondary);
     margin-top: 4px;
 }

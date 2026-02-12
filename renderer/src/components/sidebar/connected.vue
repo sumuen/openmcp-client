@@ -96,12 +96,13 @@ function toggleConnectionPanel() {
 
 <style>
 .connected .status-circle {
-	background-color: var(--el-color-success) !important;
+	background-color: var(--main-color) !important;
+	opacity: 1;
 }
 
 .connected .connect-status {
-	border: 1px solid var(--el-color-success) !important;
-	color: var(--el-color-success) !important;
+	border-color: var(--main-color) !important;
+	color: var(--main-color) !important;
 }
 
 .disconnected-color {
@@ -109,11 +110,11 @@ function toggleConnectionPanel() {
 }
 
 .status-circle {
-	height: 12px;
-	width: 12px;
-	border-radius: 99%;
+	height: 10px;
+	width: 10px;
+	border-radius: 50%;
 	background-color: var(--main-color);
-	box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+	opacity: 0.6;
 }
 
 .extra-connect-container {
@@ -124,21 +125,22 @@ function toggleConnectionPanel() {
 	user-select: none;
 	display: flex;
 	align-items: center;
-	width: auto;
-	padding: 8px 0;
+	width: 100%;
+	padding: 6px 0;
 	flex-direction: column;
 	border-radius: 6px;
 	transition: background-color 0.3s ease;
+	box-sizing: border-box;
 }
 
 .connected-status-container .connect-status {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	margin-top: 10px;
-	border-radius: .5em;
-	padding: 5px 10px;
-	width: 30px;
+	justify-content: center;
+	margin-top: 8px;
+	border-radius: 4px;
+	padding: 4px;
+	width: 36px;
 	border: 1px solid var(--main-color);
 	color: var(--main-color);
 }
@@ -163,19 +165,19 @@ function toggleConnectionPanel() {
 }
 
 .mcp-server-info .name {
-	font-size: 14px;
+	font-size: var(--vscode-font-size, 11px);
 	font-weight: 600;
-	width: 30px;
+	width: 36px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	background-color: #f39a6d;
-	padding: 5px 12px;
-	border-radius: .5em;
-	color: #1e1e1e;
+	background-color: var(--vscode-badge-background);
+	padding: 4px 6px;
+	border-radius: 4px;
+	color: var(--vscode-badge-foreground);
 }
 
 .mcp-server-info .version {

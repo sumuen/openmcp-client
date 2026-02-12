@@ -36,7 +36,7 @@
     <div v-else class="chat-openmcp-icon">
         <div>
             <span>{{ t('press-and-run') }}
-                <span style="padding: 5px 15px; border-radius: .5em; background-color: var(--background);">
+                <span style="padding: 6px 14px; border-radius: 4px; background-color: var(--sidebar-item-selected); border: 1px solid var(--border);">
                     <span class="iconfont icon-send"></span>
                 </span>
             </span>
@@ -128,15 +128,16 @@ defineExpose({
     display: flex;
     flex-direction: column;
     align-items: left;
-    font-size: 28px;
+    font-size: var(--vscode-font-size, 14px);
+    color: var(--foreground);
 }
 
 .chat-openmcp-icon>div>span {
-    margin-bottom: 23px;
+    margin-bottom: 16px;
 }
 
 .chat-openmcp-icon .iconfont {
-    font-size: 22px;
+    font-size: 18px;
 }
 
 .message-list {
@@ -178,9 +179,10 @@ defineExpose({
 }
 
 .user .message-text>span {
-    border-radius: .9em;
-    background-color: var(--main-light-color);
-    padding: 10px 15px;
+    border-radius: 6px;
+    background-color: var(--sidebar-item-selected);
+    padding: 10px 16px;
+    border: 1px solid var(--sidebar-item-border);
 }
 
 .user {
@@ -227,7 +229,7 @@ defineExpose({
     margin-left: 8px;
     animation: spin 1s linear infinite;
     color: var(--main-color);
-    font-size: 20px;
+    font-size: 18px;
 }
 
 @keyframes spin {

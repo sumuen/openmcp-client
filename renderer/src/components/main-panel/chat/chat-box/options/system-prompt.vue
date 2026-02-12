@@ -6,7 +6,7 @@
         </div>
     </el-tooltip>
 
-    <el-dialog v-model="showSystemPromptDialog" :title="t('system-prompt')" width="600px">
+    <el-dialog v-model="showSystemPromptDialog" :title="t('system-prompt')" width="600px" class="chat-option-dialog">
 
         <div v-if="!showAdd">
             <el-select v-model="tabStorage.settings.systemPrompt"

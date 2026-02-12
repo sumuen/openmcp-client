@@ -90,7 +90,7 @@ function clearLogs() {
 }
 
 .output-content .info {
-	background-color: rgba(103, 194, 58, 0.5);
+	background-color: var(--main-light-color-30);
 }
 
 .output-content .error {
@@ -111,7 +111,7 @@ function clearLogs() {
 }
 
 .log-icon.info {
-	background-color: rgba(103, 194, 58, 0.3);
+	background-color: var(--main-light-color-50);
 }
 
 .log-icon.error {

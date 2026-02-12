@@ -139,7 +139,7 @@ onMounted(async () => {
 }
 
 .tool-list-container>.item.active {
-    background-color: var(--main-light-color);
+    background-color: var(--main-light-color-20);
     transition: var(--animation-3s);
 }
 

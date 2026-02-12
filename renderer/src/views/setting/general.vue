@@ -104,12 +104,25 @@ onMounted(() => {
 </script>
 
 <style scoped>
-
 .sub-item {
     display: flex;
     width: 100%;
     justify-content: space-between;
     align-items: center;
+    padding: 8px 0;
+    gap: 16px;
+}
+
+.sub-item .option-title {
+    flex-shrink: 0;
+}
+
+.sub-item .el-input {
+    max-width: 200px;
+}
+
+.sub-item .el-switch {
+    flex-shrink: 0;
 }
 
 </style>

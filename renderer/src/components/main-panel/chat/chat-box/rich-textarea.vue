@@ -214,21 +214,25 @@ function handleCompositionEnd() {
 
 <style>
 .k-rich-textarea {
-    border: 1px solid var(--main-color);
-    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
+    border: 1px solid var(--input-border);
+    background-color: var(--background);
     background-image: none;
-    border-radius: .5em;
-    box-shadow: 0 0 0 1px var(--el-input-border-color, var(--el-border-color)) inset;
+    border-radius: 16px;
     box-sizing: border-box;
-    color: var(--el-input-text-color, var(--el-text-color-regular));
-    padding: 10px 10px;
+    color: var(--input-foreground);
+    padding: 10px;
     display: inline-block;
-    font-size: var(--el-font-size-base);
+    font-size: var(--vscode-editor-font-size, 14px);
     position: relative;
     vertical-align: bottom;
     width: 100%;
     min-height: 50px;
-    transition: var(--el-transition-box-shadow);
+    transition: var(--animation-3s);
+}
+
+.k-rich-textarea:focus-within {
+    border-color: var(--input-active-border);
+    outline: none;
 }
 
 .rich-editor {
@@ -240,7 +244,7 @@ function handleCompositionEnd() {
 
 .rich-editor:empty::before {
     content: attr(placeholder);
-    color: #C0C4CC;
+    color: var(--input-placeholder);
 }
 
 .rich-item {
@@ -250,23 +254,22 @@ function handleCompositionEnd() {
 }
 
 .rich-item-prompt {
-    background-color: #e8f0fe;
-    color: #1a73e8;
+    background-color: var(--sidebar-item-selected);
+    color: var(--link-foreground);
 }
 
 .rich-item-resource {
-    background-color: #f1f3f4;
-    color: #202124;
+    background-color: var(--sidebar-item-selected);
+    color: var(--foreground);
 }
-
 
 .chat-resource-item {
     max-width: 100px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    background-color: #373839;
-    font-size: 12px;
+    background-color: var(--sidebar-item-selected);
+    font-size: var(--vscode-font-size, 12px);
 }
 
 .chat-resource-item .iconfont {

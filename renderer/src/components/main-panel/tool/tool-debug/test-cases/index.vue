@@ -11,11 +11,11 @@
                     :active-text="t('show-only-current-tool')"
                     style="margin-right: 10px;"
                 />
-                <el-button type="primary" size="default" @click="handleCreateTestCase">
+                <el-button size="default" @click="handleCreateTestCase" class="btn-create">
                     <span class="iconfont icon-add"></span>
                     {{ t('create-test-case') }}
                 </el-button>
-                <el-button type="success" size="default" @click="handleRunAllTests" :loading="runningAll">
+                <el-button size="default" @click="handleRunAllTests" :loading="runningAll" class="btn-run-all">
                     <span class="iconfont icon-play"></span>
                     {{ t('run-all-tests') }}
                 </el-button>
@@ -27,7 +27,7 @@
                 <el-empty v-if="testCases.length === 0" :description="t('no-test-cases')" />
                 <div v-else class="test-case-items">
                     <div v-for="testCase in testCases" :key="testCase.id" class="test-case-item"
-                        :class="{ 'active': selectedTestCase?.id === testCase.id }" @click="selectTestCase(testCase)">
+                        :class="{ 'active': selectedTestCase?.id === testCase.id }">
                         <div class="test-case-header">
                             <div class="test-case-info">
                                 <el-tag :type="getStatusTagType(testCase.status)" size="small" class="status-tag">
@@ -37,19 +37,31 @@
                                 <span class="test-case-tool">{{ testCase.toolName }}</span>
                             </div>
                             <div class="test-case-actions">
-                                <el-button type="primary" size="small" circle @click.stop="handleRunTest(testCase)"
-                                    :loading="testCase.status === 'running'">
-                                    <span class="iconfont icon-play"></span>
-                                </el-button>
-                                <el-button type="info" size="small" circle @click.stop="handleEditTestCase(testCase)">
-                                    <span class="iconfont icon-edit"></span>
-                                </el-button>
+                                <el-tooltip :content="t('run-test')" placement="top">
+                                    <el-button type="primary" size="small" circle @click.stop="handleRunTest(testCase)"
+                                        :loading="testCase.status === 'running'" class="btn-run">
+                                        <span class="iconfont icon-play"></span>
+                                    </el-button>
+                                </el-tooltip>
+                                <el-tooltip v-if="testCase.actualOutput" :content="t('view-result')" placement="top">
+                                    <el-button size="small" circle @click.stop="selectTestCase(testCase)" class="btn-view">
+                                        <span class="iconfont icon-wendang"></span>
+                                    </el-button>
+                                </el-tooltip>
+                                <el-tooltip :content="t('edit-test-case')" placement="top">
+                                    <el-button size="small" circle @click.stop="handleEditTestCase(testCase)"
+                                        class="btn-edit">
+                                        <span class="iconfont icon-edit"></span>
+                                    </el-button>
+                                </el-tooltip>
                                 <el-popconfirm :title="t('confirm-delete-test-case')"
                                     @confirm="handleDeleteTestCase(testCase.id)">
                                     <template #reference>
-                                        <el-button type="danger" size="small" circle @click.stop>
-                                            <span class="iconfont icon-delete"></span>
-                                        </el-button>
+                                        <el-tooltip :content="t('delete-test-case')" placement="top">
+                                            <el-button type="danger" size="small" circle @click.stop class="btn-delete">
+                                                <span class="iconfont icon-delete"></span>
+                                            </el-button>
+                                        </el-tooltip>
                                     </template>
                                 </el-popconfirm>
                             </div>
@@ -67,7 +79,7 @@
 
         <!-- 测试用例详情/编辑对话框 -->
         <el-dialog v-model="dialogVisible" :title="isEditing ? t('edit-test-case') : t('create-test-case')" width="60%"
-            :close-on-click-modal="false">
+            :close-on-click-modal="false" class="test-case-dialog">
             <el-form :model="currentTestCaseForm" label-position="top" ref="formRef">
                 <el-form-item :label="t('test-case-name')" required>
                     <el-input v-model="currentTestCaseForm.name" :placeholder="t('enter-test-case-name')" />
@@ -86,32 +98,26 @@
                 <el-form-item :label="t('input-parameters')" required>
                     <div class="json-editor">
                         <el-input v-model="inputJson" type="textarea" :rows="8" :placeholder="t('enter-json-input')" />
-                        <el-button type="info" size="small" @click="formatInputJson" style="margin-top: 8px;">
-                            {{ t('format-json') }}
-                        </el-button>
-                        <el-button type="success" size="small" @click="copyFromCurrentForm" style="margin-top: 8px;">
-                            {{ t('copy-from-executor') }}
-                        </el-button>
+                        <el-button size="small" @click="formatInputJson" class="btn-format"> {{ t('format-json') }}</el-button>
+                        <el-button size="small" @click="copyFromCurrentForm" class="btn-copy">{{ t('copy-from-executor') }}</el-button>
                     </div>
                 </el-form-item>
                 <el-form-item :label="t('expected-output')">
                     <div class="json-editor">
                         <el-input v-model="expectedJson" type="textarea" :rows="8"
                             :placeholder="t('enter-json-input')" />
-                        <el-button type="info" size="small" @click="formatExpectedJson" style="margin-top: 8px;">
-                            {{ t('format-json') }}
-                        </el-button>
+                        <el-button size="small" @click="formatExpectedJson" class="btn-format">{{ t('format-json') }}</el-button>
                     </div>
                 </el-form-item>
             </el-form>
             <template #footer>
-                <el-button @click="dialogVisible = false">{{ t('cancel') }}</el-button>
-                <el-button type="primary" @click="handleSaveTestCase">{{ t('save') }}</el-button>
+                <el-button @click="dialogVisible = false" class="btn-cancel">{{ t('cancel') }}</el-button>
+                <el-button @click="handleSaveTestCase" class="btn-save">{{ t('save') }}</el-button>
             </template>
         </el-dialog>
 
         <!-- 测试结果详情对话框 -->
-        <el-dialog v-model="resultDialogVisible" :title="t('test-result-details')" width="70%">
+        <el-dialog v-model="resultDialogVisible" :title="t('test-result-details')" width="70%" class="test-result-dialog">
             <div v-if="selectedTestCase" class="test-result-container">
                 <div class="result-section">
                     <h4>{{ t('input-parameters') }}</h4>
@@ -127,7 +133,7 @@
                 </div>
             </div>
             <template #footer>
-                <el-button @click="resultDialogVisible = false">{{ t('close') }}</el-button>
+                <el-button @click="resultDialogVisible = false" class="btn-close">{{ t('close') }}</el-button>
             </template>
         </el-dialog>
     </div>
@@ -362,8 +368,9 @@ async function handleRunTest(testCase: TestCase) {
         const response = await mcpClientAdapter.callTool(testCase.toolName, testCase.input);
         testCase.actualOutput = response;
 
-        // 简单的对比逻辑，可以后续扩展
-        const isMatch = JSON.stringify(response) === JSON.stringify(testCase.expectedOutput);
+        // 无预期输出时，工具调用成功即视为通过；有预期输出时进行比对
+        const hasExpected = testCase.expectedOutput !== undefined && testCase.expectedOutput !== null;
+        const isMatch = !hasExpected || JSON.stringify(response) === JSON.stringify(testCase.expectedOutput);
         testCase.status = isMatch ? 'passed' : 'failed';
 
 
@@ -466,6 +473,34 @@ function formatTime(timestamp: number): string {
     gap: 10px;
 }
 
+.header-actions .btn-create {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    border-radius: 8px;
+}
+
+.header-actions .btn-create:hover {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
+}
+
+.header-actions .btn-run-all {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    border-radius: 8px;
+}
+
+.header-actions .btn-run-all:hover {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
+}
+
 .test-cases-list {
     flex: 1;
     overflow: hidden;
@@ -477,19 +512,21 @@ function formatTime(timestamp: number): string {
 
 .test-case-item {
     background-color: var(--background);
-    border-radius: 0.5em;
+    border: 1px solid transparent;
+    border-radius: 10px;
     padding: 15px;
     margin-bottom: 12px;
-    cursor: pointer;
     transition: var(--animation-3s);
 }
 
 .test-case-item:hover {
-    background-color: var(--main-light-color);
+    background-color: var(--main-light-color-20);
 }
 
 .test-case-item.active {
-    border: 2px solid var(--main-color);
+    border-color: var(--main-color);
+    box-shadow: 0 0 0 2px var(--main-light-color-20);
+    background-color: var(--main-light-color-10);
 }
 
 .test-case-header {
@@ -530,6 +567,58 @@ function formatTime(timestamp: number): string {
     gap: 5px;
 }
 
+.test-case-actions .btn-edit {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+}
+
+.test-case-actions .btn-edit:hover {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
+}
+
+.test-case-actions .btn-run {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+}
+
+.test-case-actions .btn-run:hover {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
+}
+
+.test-case-actions .btn-view {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+}
+
+.test-case-actions .btn-view:hover {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
+}
+
+.test-case-actions .btn-delete {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+}
+
+.test-case-actions .btn-delete:hover {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
+}
+
 .test-case-description {
     opacity: 0.8;
     font-size: 13px;
@@ -543,6 +632,82 @@ function formatTime(timestamp: number): string {
 
 .json-editor {
     width: 100%;
+}
+
+.json-editor .el-button {
+    margin-top: 8px;
+    margin-right: 8px;
+}
+
+.json-editor .btn-format {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    border-radius: 6px;
+}
+
+.json-editor .btn-format:hover {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
+}
+
+.json-editor .btn-copy {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    border-radius: 6px;
+}
+
+.json-editor .btn-copy:hover {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
+}
+
+/* 编辑/创建对话框底部按钮 */
+.test-cases-container :deep(.test-case-dialog .el-dialog__footer) .btn-cancel {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    border-radius: 8px;
+}
+
+.test-cases-container :deep(.test-case-dialog .el-dialog__footer) .btn-cancel:hover {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
+}
+
+.test-cases-container :deep(.test-case-dialog .el-dialog__footer) .btn-save {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    border-radius: 8px;
+}
+
+.test-cases-container :deep(.test-case-dialog .el-dialog__footer) .btn-save:hover {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
+}
+
+.test-cases-container :deep(.test-result-dialog .el-dialog__footer) .btn-close {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    border-radius: 8px;
+}
+
+.test-cases-container :deep(.test-result-dialog .el-dialog__footer) .btn-close:hover {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
 }
 
 .test-result-container {

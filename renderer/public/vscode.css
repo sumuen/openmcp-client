@@ -30,6 +30,7 @@
     --title-bar: #1f1f1f;
     --title-color: #fff;
     --foreground: var(--vscode-editor-foreground);
+    --foreground-muted: var(--vscode-list-inactiveSelectionBackground);
     --background: var(--vscode-editor-background);
     --label: rgb(189, 189, 189);
     --shadow: #000;
@@ -59,6 +60,7 @@
     --sidebar-group-text: var(--vscode-sideBarSectionHeader-foreground);
     --sidebar-group-border: var(--vscode-sideBarSectionHeader-border);
     --sidebar-group-background: var(--vscode-sideBarSectionHeader-background);
+    --sidebar-hover: var(--vscode-list-hoverBackground);
 
     /* Labels */
     --signalSize-background: rgba(0,0,0,0.5);
@@ -120,6 +122,7 @@
 
     /* Signals */
     --signal-highlight: var(--vscode-list-inactiveSelectionBackground);
+    --signal-default-color: var(--vscode-testing-iconPassed, #4CAF50);
 
     /* Colors */
     --accent: var(--vscode-button-background);

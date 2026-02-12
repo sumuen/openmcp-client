@@ -71,6 +71,7 @@
 				placement="top"
 				width="400"
 				trigger="click"
+				popper-class="setting-popover"
 				v-model:visible="testPromptPopoverVisible"
 			>
 				<template #reference>
@@ -401,20 +402,78 @@ function handleCommand(command: {type: string, index: number}) {
 	background-color: var(--main-light-color) !important;
 }
 
+.api-man-dialog .el-button--primary {
+	border-radius: 16px !important;
+	background-color: var(--foreground) !important;
+	color: var(--background) !important;
+	border-color: var(--foreground) !important;
+}
+
+.api-man-dialog .el-button--primary:hover,
+.api-man-dialog .el-button--primary:focus {
+	background-color: var(--foreground) !important;
+	color: var(--background) !important;
+	border-color: var(--foreground) !important;
+	opacity: 0.9;
+}
+
+.setting-popover .el-button--primary {
+	border-radius: 16px !important;
+	background-color: var(--foreground) !important;
+	color: var(--background) !important;
+	border-color: var(--foreground) !important;
+}
+
+.setting-popover .el-button--primary:hover,
+.setting-popover .el-button--primary:focus {
+	background-color: var(--foreground) !important;
+	color: var(--background) !important;
+	border-color: var(--foreground) !important;
+	opacity: 0.9;
+}
+
 .setting-save-container {
-	margin: 5px;
+	margin: 16px 0;
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.setting-save-container .el-button {
+	border-radius: 16px !important;
+	padding: 8px 18px;
+	font-size: 14px;
+	transition: var(--animation-3s);
+}
+
+.setting-save-container .el-button--primary,
+.setting-save-container .el-button--success {
+	background-color: var(--foreground) !important;
+	color: var(--background) !important;
+	border-color: var(--foreground) !important;
+}
+
+.setting-save-container .el-button--primary:hover,
+.setting-save-container .el-button--primary:focus,
+.setting-save-container .el-button--success:hover,
+.setting-save-container .el-button--success:focus {
+	opacity: 0.9;
+	background-color: var(--foreground) !important;
+	color: var(--background) !important;
+	border-color: var(--foreground) !important;
 }
 
 .setting-save-container .iconfont {
-	margin-right: 5px;
-	font-weight: 700;
+	margin-right: 6px;
+	font-weight: 600;
 }
 
 .api-title {
 	display: flex;
 	align-items: center;
+	font-size: 15px;
+	font-weight: 600;
 }
-
 
 .api-title .iconfont {
 	font-weight: 300;

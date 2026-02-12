@@ -48,6 +48,36 @@ body::-webkit-scrollbar {
     width: 0;
 }
 
+.el-segmented__item-selected {
+    border-radius: 16px !important;
+}
+
+.chat-option-dialog .el-button--primary {
+    border-radius: 16px !important;
+    background-color: var(--foreground) !important;
+    color: var(--background) !important;
+    border-color: var(--foreground) !important;
+}
+
+.chat-option-dialog .el-button--primary:hover {
+    background-color: var(--foreground) !important;
+    color: var(--background) !important;
+    border-color: var(--foreground) !important;
+    opacity: 0.9;
+}
+
+.chat-option-dialog .el-button--danger {
+    border-radius: 16px !important;
+    background-color: transparent !important;
+    color: var(--foreground) !important;
+    border: 1px solid var(--foreground) !important;
+}
+
+.chat-option-dialog .el-button--danger:hover {
+    background-color: var(--foreground) !important;
+    color: var(--background) !important;
+    border-color: var(--foreground) !important;
+}
 
 .el-select__wrapper {
     min-width: 100px;

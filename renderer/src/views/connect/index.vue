@@ -107,7 +107,7 @@ function deleteServer(index: number) {
 	display: flex;
 	align-items: center;
 	width: 150px;
-	border-right: 1px solid var(--border-color);
+	border-right: 1px solid var(--border);
 	padding: 0 25px;
 }
 
@@ -124,8 +124,8 @@ function deleteServer(index: number) {
 }
 
 .server-item.active {
-	background-color: var(--main-color);
-	color: white;
+	background-color: var(--foreground);
+	color: var(--background);
 }
 
 .server-item .name {
@@ -158,11 +158,12 @@ function deleteServer(index: number) {
 	text-align: center;
 	cursor: pointer;
 	border-radius: 4px;
-	border: 1px dashed var(--border-color);
+	border: 1px dashed var(--border);
 }
 
 .add-server:hover {
-	background-color: var(--background);
+	background-color: var(--foreground);
+	color: var(--background);
 }
 
 .panel-container {
@@ -173,7 +174,7 @@ function deleteServer(index: number) {
 .delete-btn {
     margin-left: 10px;
     cursor: pointer;
-    color: var(--error-color);
+    color: var(--el-color-danger);
 }
 .delete-btn:hover {
     opacity: 0.8;
@@ -181,11 +182,11 @@ function deleteServer(index: number) {
 
 .empty-state {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: var(--text-secondary);
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	color: var(--el-text-color-secondary);
 }
 
 .empty-state .iconfont {
@@ -195,6 +196,6 @@ function deleteServer(index: number) {
 
 .empty-text {
     font-size: 18px;
-    color: var(--text-secondary);
+    color: var(--el-text-color-secondary);
 }
 </style>

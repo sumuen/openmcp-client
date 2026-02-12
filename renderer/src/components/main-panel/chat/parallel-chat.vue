@@ -293,4 +293,17 @@ function getModelName(modelId: string) {
     margin-right: 0;
     margin-left: 8px;
 }
+
+.parallel-chat-container .chat-actions .el-button {
+    border-radius: 16px !important;
+    background-color: var(--foreground) !important;
+    color: var(--background) !important;
+    border-color: var(--foreground) !important;
+}
+
+.parallel-chat-container .chat-actions .el-button:hover {
+    background-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
+}
 </style>

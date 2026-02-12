@@ -1,11 +1,13 @@
 <template>
 	<div class="sidebar-container">
-		<div>
+		<div class="sidebar-top">
 			<McpTitle></McpTitle>
-			<SidebarItemContainer></SidebarItemContainer>
+			<div class="sidebar-buttons-wrapper">
+				<SidebarItemContainer></SidebarItemContainer>
+			</div>
 		</div>
 
-		<div>
+		<div class="sidebar-bottom">
 			<Connected></Connected>
 		</div>
 	</div>
@@ -24,17 +26,41 @@ defineComponent({ name: 'sidebar' });
 
 <style>
 .sidebar-container {
-	width: fit-content;
+	width: var(--sidebar-width, 52px);
+	min-width: var(--sidebar-width, 52px);
 	height: 100%;
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
 }
 
+.sidebar-top {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	min-height: 0;
+}
+
+.sidebar-buttons-wrapper {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+.sidebar-bottom {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
 .sidebar-container > hr {
 	height: 1px;
 	width: 90%;
-	fill: var(--main-color);
+	background-color: var(--sidebar-border);
+	border: none;
 }
 
 </style>

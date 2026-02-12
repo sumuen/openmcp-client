@@ -101,13 +101,14 @@ provide('tabStorage', tabStorage);
 }
 
 .setting-button.active {
-	background-color: var(--el-color-primary);
-	color: var(--el-text-color-primary);
+	background-color: var(--foreground);
+	color: var(--background);
 	transition: var(--animation-3s);
 }
 
 .setting-button.active:hover {
-	background-color: var(--el-color-primary);
+	background-color: var(--foreground);
+	opacity: 0.9;
 	transition: var(--animation-3s);
 }
 
@@ -214,8 +215,8 @@ provide('tabStorage', tabStorage);
 
 .badge-inner {
 	position: absolute;
-	color: var(--foreground);
-	background-color: var(--main-color);
+	color: var(--background);
+	background-color: var(--foreground);
 	border-radius: 50%;
 	padding: 2px 6px;
 	font-size: 10px;

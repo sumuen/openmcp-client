@@ -19,7 +19,7 @@
                         :stroke-width="5"
                         type="circle"
                         :width="80"
-                        color="var(--main-color)"    
+                        color="var(--foreground)"    
                     >
                         <template #default="{ percentage }">
                             <div class="progress-label">
@@ -33,7 +33,9 @@
             </div>
         </div>
 
-        <div v-else class="tool-other">{{ JSON.stringify(props.item) }}</div>
+        <div v-else class="tool-other">
+            <pre class="tool-other-json">{{ formatOtherItem(props.item) }}</pre>
+        </div>
     </el-scrollbar>
 </template>
 
@@ -45,6 +47,15 @@ import { defineComponent, type PropType, defineProps, ref, defineEmits } from 'v
 
 defineComponent({ name: 'toolcall-result-item' });
 const emits = defineEmits(['update:item', 'update:ocr-done']);
+
+function formatOtherItem(item: ToolCallContent): string {
+    try {
+        const { _meta, ...rest } = item as any;
+        return JSON.stringify(rest, null, 2);
+    } catch {
+        return JSON.stringify(item);
+    }
+}
 
 const props = defineProps({
     item: {
@@ -96,10 +107,7 @@ if (ocr) {
 const thumbnail = ref('');
 
 if (props.item.data) {
-    console.log(props.item.data);
     getBlobUrlByFilename(props.item.data).then(url => {
-        console.log(url);
-
         if (url) {
             thumbnail.value = url;
         }
@@ -228,5 +236,23 @@ const showFullImage = () => {
 
 .media-item:hover {
     opacity: 0.9;
+}
+
+/* 其他类型结果 - 开发者可读的 JSON 展示 */
+.tool-other {
+    font-family: var(--font-monospace-family, var(--code-font-family, monospace));
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+.tool-other-json {
+    margin: 0;
+    padding: 12px 14px;
+    white-space: pre;
+    display: inline-block;
+    min-width: 100%;
+    background: var(--sidebar-item-selected);
+    border: 1px solid var(--sidebar-item-border);
+    border-radius: 8px;
 }
 </style>

@@ -31,7 +31,7 @@
 				<span class="iconfont icon-QQ"></span>
 				{{ t('join-discussion') }}
 			</el-button>
-			<el-button type="success" class="join-qq"
+			<el-button type="primary" class="join-qq btn-primary"
 				@click="gotoWebsite('https://marketplace.visualstudio.com/items?itemName=kirigaya.openmcp&ssr=false#review-details')">
 				<span class="iconfont icon-star"></span>
 				{{ t('comment-for-us') }}
@@ -66,23 +66,21 @@ defineComponent({ name: 'about' });
 }
 
 .about-icon-container {
-	box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.3);
-	border-radius: .8em;
-	padding: 20px 30px;
+	box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.2);
+	border-radius: 16px;
+	padding: 24px 40px;
 	background-color: var(--background);
+	border: 1px solid var(--sidebar-border);
 	display: flex;
 	font-size: 30px;
 	flex-direction: column;
-	margin-bottom: 20px;
+	margin-bottom: 24px;
 }
 
 .about-icon-container span {
-	background: -webkit-linear-gradient(120deg, #bd34fe, #41d1ff);
-	-webkit-background-clip: text;
-	background-clip: text;
-	color: transparent;
+	color: var(--foreground);
 	font-weight: bold;
-	font-size: 45px;
+	font-size: 40px;
 }
 
 .about-icon-container .iconfont {
@@ -101,17 +99,48 @@ defineComponent({ name: 'about' });
 
 .about-container>.qr-code {
 	height: 180px;
-	border: 2px solid transparent;
-	/* 设置边框宽度，但颜色透明 */
-	border-image: linear-gradient(to bottom right, #7DDCEB, #CB81DA);
-	border-image-slice: 1;
-	/* 确保渐变覆盖整个边框 */
-	background: white;
-	/* 可选：防止内容穿透 */
+	border: 1px solid var(--sidebar-border);
+	border-radius: 16px;
+	background-color: var(--sidebar);
+}
+
+.about-container p {
+	color: var(--foreground);
+	margin-bottom: 24px;
+}
+
+.about-container .el-button.join-qq {
+	border-radius: 16px;
+	background-color: var(--foreground) !important;
+	color: var(--background) !important;
+	border: 1px solid var(--foreground) !important;
+	padding: 10px 20px;
+	margin: 0 6px 12px;
+	transition: var(--animation-3s);
+}
+
+.about-container .el-button.join-qq:hover {
+	opacity: 0.9;
+	background-color: var(--foreground) !important;
+	color: var(--background) !important;
+	border-color: var(--foreground) !important;
+}
+
+.about-container .el-button.join-qq.btn-primary,
+.about-container .el-button.join-qq.btn-primary:hover,
+.about-container .el-button.join-qq.btn-primary:focus,
+.about-container .el-button.join-qq.btn-primary:active {
+	background-color: var(--main-color) !important;
+	color: var(--button-text) !important;
+	border-color: var(--main-color) !important;
+}
+
+.about-container .el-button.join-qq.btn-primary:hover {
+	opacity: 0.9;
 }
 
 .join-qq .iconfont {
-	font-size: 20px;
-	margin-right: 6px;
+	font-size: 18px;
+	margin-right: 8px;
 }
 </style>

@@ -128,8 +128,14 @@ async function whenGetResourceResponse(msg: ResourcesReadResponse) {
     background-color: transparent !important;
 }
 
-.el-dialog .el-collapse-item__wrap {
+.el-collapse-item__wrap {
     background-color: transparent !important;
+}
+
+.el-collapse,
+.el-collapse-item__wrap {
+    border-bottom: unset !important;
+    border-top: unset !important;
 }
 
 </style>

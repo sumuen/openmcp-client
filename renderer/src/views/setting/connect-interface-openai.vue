@@ -178,7 +178,7 @@ function getModelBadge(modelId: string) {
 .model-name {
     font-size: 14px;
     font-weight: 500;
-    color: var(--el-text-color-primary, #303133);
+    color: var(--foreground);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -186,16 +186,17 @@ function getModelBadge(modelId: string) {
 
 .model-provider {
     font-size: 12px;
-    color: var(--el-text-color-regular, #606266);
+    color: var(--foreground);
+    opacity: 0.7;
     margin-top: 2px;
 }
 
 .model-badge {
     font-size: 10px;
     padding: 2px 6px;
-    border-radius: 4px;
-    background-color: #f0f9ff;
-    color: #0369a1;
+    border-radius: 6px;
+    background-color: var(--main-light-color);
+    color: var(--main-color);
     font-weight: 600;
     margin-left: 8px;
     white-space: nowrap;
@@ -204,14 +205,15 @@ function getModelBadge(modelId: string) {
 /* 普通模型选项样式 */
 .regular-model-option {
     font-size: 14px;
-    color: var(--el-text-color-primary, #303133);
+    color: var(--foreground);
     font-weight: 500;
 }
 
 /* 搜索为空时的样式 */
 .search-empty {
     text-align: center;
-    color: var(--el-text-color-secondary, #909399);
+    color: var(--foreground);
+    opacity: 0.7;
     font-size: 13px;
     padding: 12px 0;
 }
@@ -233,25 +235,6 @@ function getModelBadge(modelId: string) {
 }
 
 :global(.el-select .el-input.is-focus .el-input__wrapper) {
-    box-shadow: 0 0 0 1px var(--el-color-primary, #409eff) inset;
-}
-
-/* 暗色主题下的文字优化 */
-@media (prefers-color-scheme: dark) {
-    .model-name {
-        color: #e5eaf3 !important;
-    }
-    
-    .model-provider {
-        color: #a3a6ad !important;
-    }
-    
-    .regular-model-option {
-        color: #e5eaf3 !important;
-    }
-    
-    .search-empty {
-        color: #8b949e !important;
-    }
+    box-shadow: 0 0 0 1px var(--main-color) inset;
 }
 </style>

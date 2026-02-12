@@ -139,11 +139,11 @@ const clearSingleChat = () => {
 .chat-toolbar {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px;
+    gap: 12px;
+    padding: 10px 16px;
     background-color: var(--sidebar);
-    border-radius: 0.8em 0.8em 0 0;
-    border-bottom: 1px solid var(--background);
+    border-radius: 4px 4px 0 0;
+    border-bottom: 1px solid var(--border);
 }
 
 .model-selector {
@@ -154,5 +154,18 @@ const clearSingleChat = () => {
 
 .mode-selector {
     width: 200px;
+}
+
+.chat-toolbar .el-button {
+    border-radius: 16px !important;
+    background-color: var(--foreground) !important;
+    color: var(--background) !important;
+    border-color: var(--foreground) !important;
+}
+
+.chat-toolbar .el-button:hover {
+    background-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
 }
 </style>

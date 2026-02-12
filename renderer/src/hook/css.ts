@@ -31,7 +31,7 @@ export function setDefaultCss() {
     // 设置全局宏
     document?.body.style.setProperty('--time-scale-height', '30px');
     document?.body.style.setProperty('--vcd-render-padding', '30px');
-    document?.body.style.setProperty('--sidebar-width', '330px');
+    document?.body.style.setProperty('--sidebar-width', '52px');
     document?.body.style.setProperty('--toolbar-height', '60px');
 
     // 下面是 get style

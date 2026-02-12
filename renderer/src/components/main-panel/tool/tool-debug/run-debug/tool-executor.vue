@@ -38,21 +38,21 @@
                 </el-form-item>
             </template>
 
-            <el-form-item>
-                <el-button type="primary" :loading="loading" @click="handleExecute">
+            <el-form-item class="executor-actions">
+                <el-button type="primary" :loading="loading" @click="handleExecute" class="btn-execute">
                     {{ t('execute-tool') }}
                 </el-button>
-                <el-button @click="resetForm">
+                <el-button @click="resetForm" class="btn-reset">
                     {{ t('reset') }}
                 </el-button>
                 <el-button @click="generateMockData" :loading="mockLoading"
-                    :disabled="loading || aiMockLoading || mockLoading">
+                    :disabled="loading || aiMockLoading || mockLoading" class="btn-mock">
                     {{ 'mock' }}
                 </el-button>
 
                 <el-popover placement="top" width="350" trigger="click" v-model:visible="aiPromptVisible">
                     <template #reference>
-                        <el-button :loading="aiMockLoading" :disabled="loading || aiMockLoading || mockLoading">
+                        <el-button :loading="aiMockLoading" :disabled="loading || aiMockLoading || mockLoading" class="btn-ai">
                             {{ 'AI' }}
                         </el-button>
                     </template>
@@ -76,9 +76,9 @@
                 </el-popover>
                 
                 <el-button 
-                    type="success" 
                     @click="saveAsTestCase"
-                    :disabled="!tabStorage.lastToolCallResponse || loading"
+                    :disabled="!currentTool || loading"
+                    class="btn-save-case"
                 >
                     {{ t('save-as-test-case') }}
                 </el-button>
@@ -407,12 +407,17 @@ async function handleExecute() {
 }
 
 import type { TestCase, ToolStorage as ToolStorageType } from '../../tools';
+import { initTestCasesStore, testCasesState, saveTestCases } from '../test-cases/store';
 
 function saveAsTestCase() {
-    if (!currentTool.value || !tabStorage.lastToolCallResponse) {
-        ElMessage.warning(t('no-execution-result'));
+    if (!currentTool.value) return;
+    if (!mcpClientAdapter.masterNode) {
+        ElMessage.warning(t('preset-requires-connection'));
         return;
     }
+    try {
+        initTestCasesStore(mcpClientAdapter.masterNode);
+    } catch { /* 已初始化忽略 */ }
 
     const now = Date.now();
     const newTestCase: TestCase = {
@@ -421,19 +426,20 @@ function saveAsTestCase() {
         toolName: currentTool.value.name,
         description: t('auto-generated-from-executor'),
         input: { ...tabStorage.formData },
-        expectedOutput: typeof tabStorage.lastToolCallResponse === 'string' 
-            ? { content: [{ type: 'text', text: tabStorage.lastToolCallResponse }], isError: false }
-            : tabStorage.lastToolCallResponse,
-        status: 'passed',
+        status: 'pending',
         createdAt: now,
         updatedAt: now
     };
-
-    if (!tabStorage.testCases) {
-        tabStorage.testCases = [];
+    // 若有执行结果，一并保存为预期输出
+    if (tabStorage.lastToolCallResponse !== undefined && tabStorage.lastToolCallResponse !== null) {
+        newTestCase.expectedOutput = typeof tabStorage.lastToolCallResponse === 'string'
+            ? { content: [{ type: 'text', text: tabStorage.lastToolCallResponse }], isError: false }
+            : tabStorage.lastToolCallResponse;
+        newTestCase.status = 'passed';
     }
 
-    tabStorage.testCases.push(newTestCase);
+    testCasesState.value = [...(testCasesState.value || []), newTestCase];
+    saveTestCases();
     ElMessage.success(t('test-case-saved-successfully'));
 }
 
@@ -469,7 +475,59 @@ watch(() => tabStorage.currentToolName, () => {
     border: 1px solid var(--main-color) !important;
 }
 
-.el-button:active {
+/* 执行器按钮：统一使用主题色系 */
+.executor-actions .el-button {
+    border-radius: 8px;
+}
+
+.executor-actions .btn-execute {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+}
+
+.executor-actions .btn-execute:hover {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
+}
+
+.executor-actions .btn-reset,
+.executor-actions .btn-mock,
+.executor-actions .btn-ai {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+}
+
+.executor-actions .btn-reset:hover:not(:disabled),
+.executor-actions .btn-mock:hover:not(:disabled),
+.executor-actions .btn-ai:hover:not(:disabled) {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
+}
+
+.executor-actions .el-button.is-disabled {
+    opacity: 0.5;
+}
+
+.executor-actions .btn-save-case {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+}
+
+.executor-actions .btn-save-case:hover:not(:disabled) {
+    background-color: var(--foreground) !important;
+    border-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
+}
+
+.tool-executor-container .el-button:active {
     transform: scale(0.95);
     transition: transform 0.08s;
 }

@@ -7,7 +7,7 @@
 
     </el-tooltip>
 
-    <el-dialog v-model="showDialog" width="800px">
+    <el-dialog v-model="showDialog" width="800px" class="chat-option-dialog">
 
         <template #header>
             <div>

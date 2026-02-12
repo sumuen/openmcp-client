@@ -344,13 +344,14 @@ onUnmounted(() => {
 
 <style>
 .chat-footer {
-    padding-bottom: 16px;
-    border-top: 1px solid var(--el-border-color);
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--border);
     flex-shrink: 0;
     position: absolute;
     height: fit-content !important;
     bottom: 0;
     width: 100%;
+    background-color: var(--sidebar);
 }
 
 .input-area {
@@ -368,17 +369,24 @@ onUnmounted(() => {
 }
 
 .chat-input textarea {
-    border-radius: .5em;
+    border-radius: 4px;
+    border: 1px solid var(--input-border);
+}
+
+.chat-input textarea:focus {
+    border-color: var(--input-active-border);
+    outline: none;
 }
 
 .send-button {
     position: absolute !important;
     right: 8px !important;
     bottom: 8px !important;
-    height: auto;
-    padding: 8px 12px;
-    font-size: 20px;
-    border-radius: 1.2em !important;
+    height: 32px;
+    min-width: 32px;
+    padding: 6px 12px;
+    font-size: 16px;
+    border-radius: 16px !important;
 }
 
 :deep(.chat-settings) {

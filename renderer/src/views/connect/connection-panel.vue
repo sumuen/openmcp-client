@@ -157,7 +157,6 @@ function handleDrop(event: DragEvent) {
 	max-height: 85vh;
 }
 
-
 .connect-panel-container.left {
 	display: flex;
 	flex-direction: column;
@@ -174,7 +173,6 @@ function handleDrop(event: DragEvent) {
 	min-width: 450px;
 	padding: 5px 20px;
 }
-
 
 .connection-option {
 	display: flex;
@@ -227,6 +225,37 @@ function handleDrop(event: DragEvent) {
 
 .connect-action {
 	padding: 10px;
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.connect-action .el-button--primary {
+	border-radius: 16px !important;
+	background-color: var(--foreground) !important;
+	color: var(--background) !important;
+	border-color: var(--foreground) !important;
+}
+
+.connect-action .el-button--primary:hover,
+.connect-action .el-button--primary:focus {
+	background-color: var(--foreground) !important;
+	color: var(--background) !important;
+	border-color: var(--foreground) !important;
+	opacity: 0.9;
+}
+
+.connect-action .el-button--danger {
+	border-radius: 16px !important;
+	background-color: transparent !important;
+	color: var(--foreground) !important;
+	border: 1px solid var(--foreground) !important;
+}
+
+.connect-action .el-button--danger:hover {
+	background-color: var(--foreground) !important;
+	color: var(--background) !important;
+	border-color: var(--foreground) !important;
 }
 
 .drag-mask {

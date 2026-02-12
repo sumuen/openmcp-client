@@ -1,12 +1,9 @@
 <template>
-	<div class="mcp-title">
-		<div class="simple-logo"
-			@click="clickLogo"
-		>
+	<el-tooltip content="访问 OpenMCP 官网" placement="right" effect="light">
+		<div class="mcp-title" @click="clickLogo">
 			<span class="iconfont icon-openmcp"></span>
-			<span style="font-size: 12px;">openmcp</span>
 		</div>
-	</div>
+	</el-tooltip>
 </template>
 
 <script setup lang="ts">
@@ -16,40 +13,33 @@ defineComponent({ name: 'mcp-title' });
 
 
 function clickLogo() {
-	window.open('https://kirigaya.cn/blog/article?seq=311', '_blank');
+	window.open('https://openmcp.kirigaya.cn/', '_blank');
 }
 
 </script>
 
 <style>
 .mcp-title {
+	height: 44px;
 	display: flex;
 	align-items: center;
-	padding: 5px 10px;
-}
-
-.mcp-title>div {
-	font-size: 24px;
-}
-
-.simple-logo {
-	height: 73px;
-	display: flex;
-	align-items: center;
-
-	flex-direction: column;
+	justify-content: center;
+	padding: 0 10px;
+	border-bottom: 1px solid var(--sidebar-border);
 	user-select: none;
 	-webkit-user-drag: none;
 	transition: var(--animation-3s);
 	cursor: pointer;
+	color: var(--foreground);
 }
 
-.simple-logo:hover {
+.mcp-title:hover {
 	color: var(--main-color);
 }
 
-.simple-logo .iconfont {
-	font-size: 38px;
+.mcp-title .iconfont {
+    margin-top: 10px;
+	font-size: 50px;
 }
 
 </style>

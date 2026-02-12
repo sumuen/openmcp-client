@@ -341,16 +341,21 @@ const reload = async () => {
     transition: var(--animation-3s);
     position: absolute;
     bottom: -34px;
-    right: 0;    
+    right: 0;
+    z-index: 100;
 }
 
-.message-actions .el-button {
-    border-radius: .5em;
-    padding: 5px 8px;
+.message-actions .el-button:not(.el-button--primary) {
+    border-radius: 16px !important;
+    background-color: var(--foreground) !important;
+    color: var(--background) !important;
+    border-color: var(--foreground) !important;
 }
 
-.message-actions .el-button:hover {
-    background-color: var(--main-light-color);
+.message-actions .el-button:not(.el-button--primary):hover {
+    background-color: var(--foreground) !important;
+    color: var(--background) !important;
+    opacity: 0.9;
 }
 
 .message-actions .el-button+.el-button {
@@ -366,9 +371,10 @@ const reload = async () => {
 
 .user .message-content > span {
     max-width: calc(100% - 48px);
-    border-radius: .9em;
+    border-radius: 6px;
     background-color: var(--sidebar-item-selected);
-    padding: 10px 15px;
+    padding: 10px 16px;
+    border: 1px solid var(--sidebar-item-border);
     box-sizing: border-box;
     white-space: pre-wrap;
     word-break: break-word;

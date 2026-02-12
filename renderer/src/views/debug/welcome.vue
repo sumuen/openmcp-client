@@ -133,8 +133,9 @@ function chooseDebugMode(index: number) {
 }
 
 .debug-welcome > span {
-	font-size: 30px;
-	margin: 30px 0; /* 调整上下边距 */
+	font-size: 24px;
+	margin: 30px 0;
+	color: var(--foreground);
 }
 
 .module-title {
@@ -179,16 +180,18 @@ function chooseDebugMode(index: number) {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	font-size: 20px; /* 稍微减小字体 */
-	padding: 25px 0; 
-	border-radius: .5em;
+	font-size: 14px;
+	padding: 24px 20px; 
+	border-radius: 16px;
 	cursor: pointer;
-	border: 1px solid var(--sidebar);
+	border: 1px solid var(--sidebar-border);
 	transition: var(--animation-3s);
 	height: 100%;
-	min-height: 160px; /* 稍微减小最小高度 */
+	min-height: 140px;
 	justify-content: center;
 	text-align: center;
+	background-color: var(--sidebar);
+	color: var(--foreground);
 }
 
 .debug-option > span:first-child {
@@ -196,13 +199,14 @@ function chooseDebugMode(index: number) {
 }
 
 .debug-option:hover {
-	border: 1px solid var(--main-color);
+	background-color: var(--foreground);
+	color: var(--background);
+	border-color: var(--foreground);
 	transition: var(--animation-3s);
-	transform: translateY(-5px); /* 添加轻微的上移效果 */
 }
 
 .debug-option .iconfont {
-	font-size: 42px; /* 稍微减小图标大小 */
+	font-size: 42px;
 }
 
 .debug-welcome {

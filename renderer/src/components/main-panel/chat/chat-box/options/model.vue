@@ -8,7 +8,7 @@
     </el-tooltip>
 
     <!-- 模型选择对话框 -->
-    <el-dialog v-model="showModelDialog" :title="t('choose-model')" width="400px">
+    <el-dialog v-model="showModelDialog" :title="t('choose-model')" width="400px" class="chat-option-dialog">
         <!-- 搜索框 -->
         <el-input v-model="searchText" :placeholder="t('search-model')" clearable style="margin-bottom: 15px;">
             <template #prefix>

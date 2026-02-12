@@ -39,38 +39,49 @@ function gotoOption(ident: string) {
 
 <style>
 .sidebar-item-container {
-	display: contents;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	padding: 6px 4px;
+	border-radius: 8px;
+	background-color: var(--main-light-color-10);
 }
 
 .sidebar-option-item {
-	margin: 7px;
+	margin: 0;
 	height: 32px;
-	width: fit-content;
+	width: 36px;
+	min-width: 36px;
 	display: flex;
 	align-items: center;
-	padding: 5px 12px;
-	border-radius: 16px;
+	justify-content: center;
+	padding: 0;
+	border-radius: 8px;
 	transition: var(--animation-3s);
 	cursor: pointer;
-	border: 1px solid var(--background);
+	border: 1px solid transparent;
+	background-color: transparent;
+	color: var(--sidebar-item-text);
 }
 
 .sidebar-option-item:hover {
-	border: 1px solid var(--main-color);
+	background-color: var(--sidebar-item-hover);
+	color: var(--foreground);
 	transition: var(--animation-3s);
 }
 
 .sidebar-option-item .iconfont {
-	margin-top: 2px;
-	margin-right: 7px;
-	width: 13px;
+	width: 14px;
 	display: flex;
-	align-content: center;
-	font-size: 17px;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
 }
 
 .sidebar-option-item.active {
-	background-color: var(--main-light-color);
+	background-color: var(--foreground);
+	color: var(--background);
 	transition: var(--animation-3s);
 }
 </style>

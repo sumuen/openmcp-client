@@ -1,10 +1,22 @@
 import type { PromptsGetResponse } from '@/hook/type';
 
+/** 单条保存的测试数据 */
+export interface SavedTestDataSet {
+    name: string;
+    data: Record<string, any>;
+    createdAt?: number;
+}
+
+/** 按 prompt 名称存储的测试数据 */
+export type SavedTestDataMap = Record<string, SavedTestDataSet[]>;
+
 export interface PromptStorage {
     activeNames: any[];
     currentPromptName: string;
     lastPromptGetResponse?: PromptsGetResponse;
     formData: Record<string, any>;
+    /** 按 prompt 名称分组的已保存测试数据 */
+    savedTestData?: SavedTestDataMap;
 }
 
 export function parsePromptTemplate(template: string): {
