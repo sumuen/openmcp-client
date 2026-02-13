@@ -373,7 +373,7 @@ const reload = async () => {
     max-width: calc(100% - 48px);
     border-radius: 6px;
     background-color: var(--sidebar-item-selected);
-    padding: 10px 16px;
+    padding: 8px 12px;
     border: 1px solid var(--sidebar-item-border);
     box-sizing: border-box;
     white-space: pre-wrap;

@@ -257,7 +257,7 @@ function getModelName(modelId: string) {
     padding: 8px 12px;
     background-color: var(--input-active-background);
     border-bottom: 1px solid var(--background);
-    font-size: 12px;
+    font-size: var(--chat-font-size-sm);
     font-weight: bold;
 }
 
@@ -278,7 +278,7 @@ function getModelName(modelId: string) {
 
 .parallel-chat-instance .chat-openmcp-icon {
     padding-top: 30px;
-    font-size: 14px;
+    font-size: var(--chat-font-size);
 }
 
 .parallel-chat-instance .message-item {

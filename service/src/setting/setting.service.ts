@@ -21,6 +21,7 @@ function getDefaultConfig() {
         LANG: DEFAULT_LANG,
         MCP_TIMEOUT_SEC: 60,
         PROXY_SERVER: '',
+        SKILL_PATH: '',
     }
 }
 

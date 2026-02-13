@@ -23,13 +23,14 @@ import Chat from '@/components/main-panel/chat/index.vue';
 import Reflux from '@/components/main-panel/reflux/index.vue';
 import Prompt from '@/components/main-panel/prompt/index.vue';
 import Tool from '@/components/main-panel/tool/index.vue';
+import BatchValidation from '@/components/main-panel/batch-validation/index.vue';
 
 import Welcome from './welcome.vue';
 import { tabs } from '@/components/main-panel/panel';
 import { panelLoaded } from '@/hook/panel';
 
 const debugComponent = [
-	Resource, Prompt, Tool, Chat, Reflux
+	Resource, Prompt, Tool, Chat, Reflux, BatchValidation
 ]
 
 defineComponent({ name: 'debug' });

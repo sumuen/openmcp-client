@@ -7,6 +7,8 @@ import { OcrController } from "../mcp/ocr.controller.js";
 import { PanelController } from "../panel/panel.controller.js";
 import { SettingController } from "../setting/setting.controller.js";
 import { RefluxController } from "../feedback/reflux.controller.js";
+import { SkillController } from "../skill/skill.controller.js";
+import { BatchValidationController } from "../batch-validation/batch-validation.controller.js";
 export { disconnectService } from "../mcp/connect.service.js";
 
 export const ModuleControllers = [
@@ -16,7 +18,9 @@ export const ModuleControllers = [
     PanelController,
     SettingController,
     OcrController,
-    RefluxController
+    RefluxController,
+    SkillController,
+    BatchValidationController
 ];
 
 export async function routeMessage(command: string, data: any, webview: PostMessageble) {

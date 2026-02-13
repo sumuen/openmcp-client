@@ -1,52 +1,18 @@
 <template>
-	<div v-if="!isConnecting" class="connected-status-container" id="connected-status-container"
-		@click.stop="toggleConnectionPanel()" :class="{ 'connected': client.connectionResult.success }">
-		<span class="mcp-server-info">
-			<el-tooltip class="extra-connect-container" effect="light" placement="right"
-				:content="mcpClientAdapter.masterNode.connectionResult.name + ' / ' + mcpClientAdapter.masterNode.connectionResult.version"
-            >
-				<span class="name">{{ displayServerName }}</span>
-			</el-tooltip>
-		</span>
-		<span class="connect-status">
-			<span v-if="client.connectionResult.success">
-				<span class="iconfont icon-connect"></span>
-				<span class="iconfont icon-dui"></span>
+	<el-tooltip :content="tooltipContent" placement="right" effect="light">
+		<div
+			class="connection-status"
+			id="connected-status-container"
+			:class="statusClass"
+			@click.stop="toggleConnectionPanel()"
+		>
+			<span class="status-indicator">
+				<span v-if="isConnecting" class="status-loading"></span>
+				<span v-else class="status-dot" :class="client.connectionResult.success ? 'connected' : 'disconnected'"></span>
 			</span>
-			<span v-else>
-				<span class="iconfont icon-connect"></span>
-				<span class="iconfont icon-cuo"></span>
-			</span>
-		</span>
-	</div>
-	<div v-else class="connected-status-container">
-		<span class="mcp-server-info">
-			<el-tooltip class="extra-connect-container" effect="light" placement="right"
-				:content="'loading ...'"
-            >
-				<span class="name">
-					{{ t("loading") }}
-				</span>
-			</el-tooltip>
-		</span>
-		<span class="connect-status">
-			<span style="display: flex;">
-				<span class="iconfont icon-connect"></span>
-				<div class="custom-loading">
-					<svg class="circular" viewBox="-10, -10, 50, 50">
-						<path class="path" d="
-            M 30 15
-            L 28 17
-            M 25.61 25.61
-            A 15 15, 0, 0, 1, 15 30
-            A 15 15, 0, 1, 1, 27.99 7.5
-            L 15 15
-          " style="stroke-width: 4px; fill: rgba(0, 0, 0, 0); stroke: var(--main-color);" />
-					</svg>
-				</div>
-			</span>
-		</span>
-	</div>
+			<span class="server-name">{{ displayText }}</span>
+		</div>
+	</el-tooltip>
 </template>
 
 <script setup lang="ts">
@@ -60,10 +26,15 @@ defineComponent({ name: 'connected' });
 const { t } = useI18n();
 const client = computed(() => mcpClientAdapter.masterNode);
 
+const displayText = computed(() => {
+	if (isConnecting.value) return t("loading");
+	return displayServerName.value;
+});
+
 const displayServerName = computed(() => {
 	const name = client.value.connectionResult.name;
-    
-	if (name?.length <= 3) return name;
+	if (!name) return '—';
+	if (name.length <= 3) return name.toUpperCase();
 
 	// 处理中文混合名称
 	const chineseMatch = name.match(/[\u4e00-\u9fa5]/g);
@@ -71,10 +42,10 @@ const displayServerName = computed(() => {
 		return chineseMatch.slice(0, 3).join('');
 	}
 
-	// 处理各种命名格式
+	// 处理各种命名格式：驼峰、空格、连字符、下划线
 	const words = name
-		.replace(/([a-z])([A-Z])/g, '$1 $2')  // 驼峰分割
-		.split(/[\s\-_]+/)  // 分割空格、连字符和下划线
+		.replace(/([a-z])([A-Z])/g, '$1 $2')
+		.split(/[\s\-_]+/)
 		.filter(word => word.length > 0);
 
 	if (words.length === 1 && words[0].length > 3) {
@@ -87,117 +58,99 @@ const displayServerName = computed(() => {
 		.join('');
 });
 
+const tooltipContent = computed(() => {
+	if (isConnecting.value) return t("loading");
+	const { name, version } = client.value.connectionResult;
+	return name ? `${name}${version ? ' / ' + version : ''}` : t("disconnected");
+});
+
+const statusClass = computed(() => ({
+	'connecting': isConnecting.value,
+	'connected': !isConnecting.value && client.value.connectionResult.success,
+	'disconnected': !isConnecting.value && !client.value.connectionResult.success,
+}));
 
 function toggleConnectionPanel() {
 	Connection.showPanel = true;
 }
-
 </script>
 
-<style>
-.connected .status-circle {
-	background-color: var(--main-color) !important;
-	opacity: 1;
-}
-
-.connected .connect-status {
-	border-color: var(--main-color) !important;
-	color: var(--main-color) !important;
-}
-
-.disconnected-color {
-	background-color: var(--main-color);
-}
-
-.status-circle {
-	height: 10px;
-	width: 10px;
-	border-radius: 50%;
-	background-color: var(--main-color);
-	opacity: 0.6;
-}
-
-.extra-connect-container {
-	user-select: none;
-}
-
-.connected-status-container {
-	user-select: none;
+<style scoped>
+.connection-status {
 	display: flex;
-	align-items: center;
-	width: 100%;
-	padding: 6px 0;
 	flex-direction: column;
-	border-radius: 6px;
-	transition: background-color 0.3s ease;
+	align-items: center;
+	gap: 6px;
+	width: calc(100% - 16px);
+	margin: 8px;
+	padding: 6px 4px;
+	border-radius: 8px;
+	background-color: var(--main-light-color-10);
+	cursor: pointer;
+	user-select: none;
+	transition: var(--animation-3s);
 	box-sizing: border-box;
 }
 
-.connected-status-container .connect-status {
+.connection-status:hover {
+	background-color: var(--sidebar-item-hover);
+}
+
+.connection-status.disconnected {
+	opacity: 0.85;
+}
+
+.status-indicator {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	margin-top: 8px;
-	border-radius: 4px;
-	padding: 4px;
-	width: 36px;
-	border: 1px solid var(--main-color);
-	color: var(--main-color);
+	flex-shrink: 0;
 }
 
-.connected-status-container:hover {
-	background-color: var(--sidebar-hover);
-}
-
-
-.status-string {
-	color: var(--foreground);
+.status-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
 	transition: var(--animation-3s);
-	font-size: 13px;
-	font-weight: 500;
-	white-space: nowrap;
-	margin-top: 4px;
 }
 
-.mcp-server-info {
-	display: flex;
-	flex-direction: column;
+.status-dot.connected {
+	background-color: var(--main-color);
+	box-shadow: 0 0 0 2px var(--main-light-color-30);
 }
 
-.mcp-server-info .name {
-	font-size: var(--vscode-font-size, 11px);
+.status-dot.disconnected {
+	background-color: var(--sidebar-item-text);
+	opacity: 0.7;
+}
+
+.status-loading {
+	width: 10px;
+	height: 10px;
+	border: 2px solid var(--sidebar-item-text);
+	border-top-color: var(--main-color);
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+}
+
+.server-name {
+	width: 100%;
+	text-align: center;
+	font-size: var(--vscode-font-size, 10px);
 	font-weight: 600;
-	width: 36px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
+	color: var(--sidebar-item-text);
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	background-color: var(--vscode-badge-background);
-	padding: 4px 6px;
-	border-radius: 4px;
-	color: var(--vscode-badge-foreground);
+	transition: var(--animation-3s);
 }
 
-.mcp-server-info .version {
-	font-size: 12px;
-	font-weight: 400;
+.connection-status:hover .server-name,
+.connection-status.connected .server-name {
+	color: var(--foreground);
 }
 
-.custom-loading .circular {
-	margin-right: 6px;
-	width: 18px;
-	height: 18px;
-	animation: loading-rotate 2s linear infinite;
-}
-
-.custom-loading .circular .path {
-	animation: loading-dash 1.5s ease-in-out infinite;
-	stroke-dasharray: 90, 150;
-	stroke-dashoffset: 0;
-	stroke-width: 2;
-	stroke: var(--el-button-text-color);
-	stroke-linecap: round;
+@keyframes spin {
+	to { transform: rotate(360deg); }
 }
 </style>

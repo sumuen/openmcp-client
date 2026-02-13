@@ -1,6 +1,7 @@
 import type { ToolCallContent, ToolCallResponse } from "@/hook/type";
 import { MessageState, type ToolCall } from "../chat-box/chat";
 import { mcpClientAdapter } from "@/views/connect/core";
+import { readSkillFile } from "@/api/skill";
 import type { BasicLlmDescription } from "@/views/setting/llm";
 import type OpenAI from "openai";
 
@@ -60,6 +61,23 @@ export async function handleToolCalls(toolCall: ToolCall): Promise<ToolCallResul
     }
 
     const toolArgs = argsResult.value;
+
+    // 内置工具 read_skill_file：当用户设置了 skill 入口时由 service 处理
+    if (toolName === 'read_skill_file') {
+        const start = Date.now();
+        const skillName = toolArgs?.skill_name ?? '';
+        const filePath = toolArgs?.file_path ?? '';
+        const toolResponse = await readSkillFile(skillName, filePath);
+        const timecost = Date.now() - start;
+        const response = handleToolResponse(toolResponse as ToolCallResponse);
+        return {
+            index: toolCall.index,
+            id: toolCall.id,
+            function: toolCall.function,
+            timecost,
+            ...response
+        };
+    }
 
     // 进行调用，根据结果返回不同的值
     const start = Date.now();

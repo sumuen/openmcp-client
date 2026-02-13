@@ -11,6 +11,7 @@
             :placeholder="placeholder"
             @input="handleInput"
             @paste="handlePaste"
+            @keydown="(e: KeyboardEvent) => emit('keydown', e)"
             @keydown.backspace="handleBackspace"
             @keydown.enter="handleKeydown"
             @compositionstart="handleCompositionStart"
@@ -40,6 +41,11 @@ const props = defineProps({
     customClass: {
         type: String,
         default: ''
+    },
+    /** 为 true 时 Enter 插入换行而非发送（用于批量验证等多行输入） */
+    enterInsertsNewline: {
+        type: Boolean,
+        default: false
     }
 });
 
@@ -52,7 +58,7 @@ const modelValue = computed({
     }
 })
 
-const emit = defineEmits(['update:modelValue', 'pressEnter']);
+const emit = defineEmits(['update:modelValue', 'pressEnter', 'keydown']);
 
 const editor = ref<any>(null);
 
@@ -126,6 +132,10 @@ defineExpose({
 function handleKeydown(event: KeyboardEvent) {
     
     if (event.key === 'Enter' && !event.shiftKey && !isComposing.value) {
+        if (props.enterInsertsNewline) {
+            // 插入换行，不阻止默认
+            return;
+        }
         event.preventDefault();
         const editorElement = editor.value;
         if (!(editorElement instanceof HTMLDivElement)) {
@@ -222,7 +232,7 @@ function handleCompositionEnd() {
     color: var(--input-foreground);
     padding: 10px;
     display: inline-block;
-    font-size: var(--vscode-editor-font-size, 14px);
+    font-size: var(--chat-font-size);
     position: relative;
     vertical-align: bottom;
     width: 100%;
@@ -269,7 +279,7 @@ function handleCompositionEnd() {
     text-overflow: ellipsis;
     white-space: nowrap;
     background-color: var(--sidebar-item-selected);
-    font-size: var(--vscode-font-size, 12px);
+    font-size: var(--chat-font-size-xs);
 }
 
 .chat-resource-item .iconfont {

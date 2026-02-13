@@ -241,13 +241,13 @@ const showFullImage = () => {
 /* 其他类型结果 - 开发者可读的 JSON 展示 */
 .tool-other {
     font-family: var(--font-monospace-family, var(--code-font-family, monospace));
-    font-size: 13px;
-    line-height: 1.65;
+    font-size: var(--chat-font-size);
+    line-height: 1.5;
 }
 
 .tool-other-json {
     margin: 0;
-    padding: 12px 14px;
+    padding: 8px 10px;
     white-space: pre;
     display: inline-block;
     min-width: 100%;

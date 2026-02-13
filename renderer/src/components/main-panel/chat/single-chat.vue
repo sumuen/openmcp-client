@@ -128,7 +128,7 @@ defineExpose({
     display: flex;
     flex-direction: column;
     align-items: left;
-    font-size: var(--vscode-font-size, 14px);
+    font-size: var(--chat-font-size);
     color: var(--foreground);
 }
 
@@ -137,7 +137,7 @@ defineExpose({
 }
 
 .chat-openmcp-icon .iconfont {
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .message-list {
@@ -165,23 +165,25 @@ defineExpose({
 .message-role {
     font-weight: bold;
     margin-bottom: 4px;
+    font-size: var(--chat-font-size);
     color: var(--el-text-color-regular);
 }
 
 .message-text {
-    line-height: 1.6;
+    font-size: var(--chat-font-size);
+    line-height: 1.5;
 }
 
 .user .message-text {
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin-top: 8px;
+    margin-bottom: 8px;
     width: 100%;
 }
 
 .user .message-text>span {
     border-radius: 6px;
     background-color: var(--sidebar-item-selected);
-    padding: 10px 16px;
+    padding: 8px 12px;
     border: 1px solid var(--sidebar-item-border);
 }
 
@@ -201,26 +203,26 @@ defineExpose({
 
 .assistant {
     text-align: left;
-    margin-top: 30px;
+    margin-top: 20px;
 }
 
 .assistant.tool_calls {
-    margin-top: 5px;
+    margin-top: 4px;
 }
 
 .message-text p,
 .message-text h3,
 .message-text ol,
 .message-text ul {
-    margin-top: 0.5em;
-    margin-bottom: 0.5em;
+    margin-top: 0.4em;
+    margin-bottom: 0.4em;
     line-height: 1.4;
 }
 
 .message-text ol li,
 .message-text ul li {
-    margin-top: 0.2em;
-    margin-bottom: 0.2em;
+    margin-top: 0.15em;
+    margin-bottom: 0.15em;
 }
 
 /* 新增旋转标记样式 */

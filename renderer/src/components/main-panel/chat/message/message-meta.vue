@@ -55,28 +55,29 @@ const showTime = ref(false);
 <style scoped>
 
 .message-meta {
-    margin-top: 8px;
-    font-size: 0.8em;
+    margin-top: 6px;
+    font-size: 10px;
     color: var(--el-text-color-secondary);
     display: flex;
 }
 
 .message-time {
     opacity: 0.7;
-    padding: 2px 6px 2px 0;
+    padding: 2px 4px 2px 0;
     transition: opacity 0.3s ease;
 }
 
 .message-usage {
     display: flex;
     align-items: center;
+    gap: 2px;
 }
 
 .message-usage > span {
     background-color: var(--el-fill-color-light);
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-right: 3px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    margin-right: 0;
 }
 
 </style>

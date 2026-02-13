@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { routeMessage } from '../common/router.js';
 import * as fs from 'fs';
+import { loadSetting, saveSetting } from '../setting/setting.service.js';
 
 import {
     MessageState,
@@ -127,7 +128,9 @@ export interface OmAgentConfiguration {
         baseURL: string;
         apiToken: string;
         model: string;
-    }
+    };
+    /** Path to SKILL.md file or skill directory */
+    skillPath?: string;
 }
 
 export interface DefaultLLM {
@@ -219,10 +222,16 @@ export class OmAgent {
      */
     public loadMcpConfig(configPath: string, params?: LoadMcpConfigParam) {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as OmAgentConfiguration;
-        const { mcpServers, defaultLLM } = config;
+        const { mcpServers, defaultLLM, skillPath } = config;
 
         // set default llm
         this.setDefaultLLM(defaultLLM);
+
+        // persist skillPath to setting so skills/load can read it
+        if (skillPath && skillPath.trim()) {
+            const currentConfig = loadSetting();
+            saveSetting({ ...currentConfig, SKILL_PATH: skillPath.trim() });
+        }
 
         for (const key in mcpServers) {
             const mcpConfig = mcpServers[key];
@@ -255,6 +264,16 @@ export class OmAgent {
      */
     public addMcpServer(connectionArgs: IConnectionArgs) {
         this._adapter.addMcp(connectionArgs);
+    }
+
+    /**
+     * @description Set skill path (SKILL.md file or skill directory). When set, skill content is added to system prompt and read_skill_file tool is enabled.
+     */
+    public setSkillPath(path: string) {
+        if (path && path.trim()) {
+            const currentConfig = loadSetting();
+            saveSetting({ ...currentConfig, SKILL_PATH: path.trim() });
+        }
     }
 
     public async getLoop(loopOption?: TaskLoopOptions) {

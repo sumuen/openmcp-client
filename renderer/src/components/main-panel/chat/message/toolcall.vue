@@ -179,7 +179,7 @@ const callingTools = computed(() => {
 
 const showJsons = ref<boolean[]>([]);
 props.message.toolResults.forEach(() => {
-    showJsons.value.push(false);
+    showJsons.value.push(true);
 });
 
 const activeNames = ref<string[]>(callingTools.value ? ['tool']: []);
@@ -277,15 +277,15 @@ function parseArguments(args: string | undefined): object {
 /* message-text tool_calls 基础样式 - 与用户消息、测试用例卡片等保持一致 */
 .message-text.tool_calls {
     border: 1px solid var(--sidebar-item-border);
-    border-radius: 10px;
-    padding: 12px 14px;
+    border-radius: 8px;
+    padding: 8px 10px;
     background-color: var(--sidebar-item-selected);
     transition: var(--animation-3s);
 }
 
 .tool-call-message {
-    margin-bottom: 12px;
-    line-height: 1.6;
+    margin-bottom: 8px;
+    line-height: 1.5;
 }
 
 /* info 成功/就绪状态 - 使用中性灰背景，降低刺眼感，利于调试 */
@@ -329,11 +329,16 @@ function parseArguments(args: string | undefined): object {
     background-color: transparent !important;
 }
 
+.message-text.tool_calls .json-render,
+.message-text.tool_calls .json-render :deep(.json-render-body) {
+    font-size: var(--chat-font-size);
+}
+
 .tool-result-content--waiting,
 .tool-result-content .progress {
-    border-radius: 8px;
+    border-radius: 6px;
     background-color: transparent !important;
-    padding: 20px 10px;
+    padding: 12px 8px;
     width: 50%;
     border: 1px solid var(--sidebar-item-border);
 }
@@ -377,26 +382,26 @@ function parseArguments(args: string | undefined): object {
     align-items: center;
     height: fit-content;
     min-height: unset;
-    padding: 6px 0;
+    padding: 2px 0;
     border: none;
     background: transparent !important;
 }
 
 .message-text .el-collapse-item__content {
-    padding: 12px 0 16px;
+    padding: 8px 0 10px;
 }
 
 /* 工具调用主标题 - 开发者可读性优化 */
 .tool-call-header--main {
-    gap: 10px;
+    gap: 4px;
 }
 
 .tool-call-badge {
     font-family: var(--font-monospace-family, var(--code-font-family, monospace));
-    font-size: 11px;
+    font-size: 9px;
     font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: 1px 3px;
+    border-radius: 3px;
     background: var(--sidebar-item-background);
     color: var(--el-text-color-secondary);
     border: 1px solid var(--sidebar-item-border);
@@ -405,11 +410,20 @@ function parseArguments(args: string | undefined): object {
 
 .tool-debug-btn,
 .message-text.tool_calls .el-button {
-    border-radius: 8px !important;
+    border-radius: 6px !important;
+    padding: 2px 6px !important;
+    min-height: 22px !important;
+    height: 22px !important;
+    font-size: 11px !important;
     background-color: var(--foreground) !important;
     color: var(--background) !important;
     border-color: var(--foreground) !important;
     transition: var(--animation-3s);
+}
+
+.tool-debug-btn .iconfont,
+.message-text.tool_calls .tool-debug-btn .iconfont {
+    font-size: 11px;
 }
 
 .tool-debug-btn:hover,
@@ -422,11 +436,14 @@ function parseArguments(args: string | undefined): object {
 
 .tool-feedback-btn {
     margin-left: auto;
+    padding: 2px 6px !important;
+    min-height: 22px !important;
+    font-size: 11px !important;
 }
 
 /* 区块标签 - Arguments / Response 等 */
 .tool-section {
-    margin-top: 14px;
+    margin-top: 10px;
 }
 
 .tool-section:first-of-type {
@@ -436,17 +453,17 @@ function parseArguments(args: string | undefined): object {
 .tool-section-label {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 12px;
+    gap: 4px;
+    font-size: var(--chat-font-size-sm);
     font-weight: 600;
     color: var(--el-text-color-secondary);
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     font-family: var(--font-monospace-family, var(--code-font-family, monospace));
     letter-spacing: 0.02em;
 }
 
 .tool-section-label .iconfont {
-    font-size: 14px;
+    font-size: var(--chat-font-size-sm);
     opacity: 0.9;
 }
 
@@ -467,17 +484,17 @@ function parseArguments(args: string | undefined): object {
 }
 
 .tool-view-switch :deep(.el-switch__label) {
-    font-size: 11px;
+    font-size: var(--chat-font-size-xs);
 }
 
 .toolcall-item .tool-calls {
-    margin-top: 20px;
-    padding-top: 16px;
+    margin-top: 12px;
+    padding-top: 10px;
     border-top: 1px solid var(--sidebar-item-border);
 }
 
 .tool-call-item {
-    margin-bottom: 10px;
+    margin-bottom: 6px;
 }
 
 .tool-call-header {
@@ -486,77 +503,76 @@ function parseArguments(args: string | undefined): object {
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
-    gap: 8px;
+    gap: 4px;
+    min-height: 22px;
 }
 
 .tool-name {
     font-weight: 600;
     color: var(--foreground);
-    margin-right: 8px;
+    margin-right: 6px;
     margin-bottom: 0;
     display: flex;
     align-items: center;
-    height: 26px;
-    font-size: 14px;
+    height: 18px;
+    font-size: var(--chat-font-size-sm);
 }
 
 .tool-name .iconfont {
-    margin-right: 5px;
+    margin-right: 3px;
+    font-size: 12px;
     opacity: 0.9;
 }
 
 .tool-type {
-    font-size: 0.8em;
+    font-size: var(--chat-font-size-xs);
     color: var(--el-text-color-secondary);
     background-color: var(--main-light-color-10);
-    padding: 2px 8px;
+    padding: 2px 6px;
     display: flex;
     align-items: center;
-    border-radius: 6px;
-    margin-right: 10px;
-    height: 22px;
+    border-radius: 4px;
+    margin-right: 6px;
+    height: 20px;
     border: 1px solid var(--main-light-color-20);
 }
 
 .response-item {
-    margin-bottom: 10px;
+    margin-bottom: 6px;
 }
 
 .tool-result-items {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 6px;
 }
 
 /* Arguments 与 Result 区块 - 中性灰背景，利于调试 */
 .tool-arguments {
     margin: 0;
     padding: 0;
-    border-radius: 8px;
+    border-radius: 6px;
     font-family: var(--font-monospace-family, var(--code-font-family, monospace));
-    font-size: 13px;
-    line-height: 1.65;
+    font-size: var(--chat-font-size);
+    line-height: 1.5;
     overflow: hidden;
 }
 
 .tool-arguments :deep(.json-render-body) {
-    padding: 12px 14px;
+    padding: 8px 10px;
 }
 
 .tool-result {
     padding: 0;
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid var(--sidebar-item-border);
     overflow: hidden;
 }
 
 .tool-result :deep(.json-render-body) {
-    padding: 12px 14px;
+    padding: 8px 10px;
 }
 
-.tool-result-content {
-    padding: 12px 14px;
-}
 
 /* 错误展示 - 开发者可读 */
 .tool-result--error {
@@ -569,7 +585,7 @@ function parseArguments(args: string | undefined): object {
 }
 
 .tool-error-item {
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 
 .tool-error-item:last-child {
@@ -578,10 +594,10 @@ function parseArguments(args: string | undefined): object {
 
 .tool-error-content {
     margin: 0;
-    padding: 12px 14px;
+    padding: 8px 10px;
     font-family: var(--font-monospace-family, var(--code-font-family, monospace));
-    font-size: 13px;
-    line-height: 1.65;
+    font-size: var(--chat-font-size);
+    line-height: 1.5;
     white-space: pre;
     display: inline-block;
     min-width: 100%;
@@ -592,15 +608,15 @@ function parseArguments(args: string | undefined): object {
 
 .tool-text {
     white-space: pre-wrap;
-    line-height: 1.6;
+    line-height: 1.5;
     font-family: var(--font-monospace-family, var(--code-font-family, monospace));
-    font-size: 13px;
+    font-size: var(--chat-font-size);
 }
 
 .tool-other {
     font-family: var(--font-monospace-family, monospace);
-    font-size: 12px;
+    font-size: var(--chat-font-size-sm);
     color: var(--el-text-color-secondary);
-    margin-top: 4px;
+    margin-top: 2px;
 }
 </style>

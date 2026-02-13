@@ -746,5 +746,6 @@ function cleanupTempConfigs() {
     display: flex;
     position: relative;
     flex-direction: column;
+    font-size: var(--chat-font-size);
 }
 </style>

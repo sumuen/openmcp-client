@@ -9,6 +9,49 @@ import { ocrWorkerStorage } from "../mcp/ocr.service.js";
 // 用 Map<string, AsyncIterable<any> | null> 管理多个流
 export const chatStreams = new Map<string, AsyncIterable<any>>();
 
+/**
+ * 非流式聊天补全，用于批量验证等需要完整响应的场景
+ */
+export async function chatCompletion(
+    data: {
+        baseURL: string;
+        apiKey: string;
+        model: string;
+        messages: any[];
+        temperature?: number;
+    }
+): Promise<string> {
+    const {
+        baseURL,
+        apiKey,
+        model,
+        messages,
+        temperature = 0
+    } = data;
+
+    const defaultHeaders: Record<string, string> = {};
+    if (baseURL && baseURL.includes('openrouter.ai')) {
+        defaultHeaders['HTTP-Referer'] = 'https://github.com/openmcp/openmcp-client';
+        defaultHeaders['X-Title'] = 'OpenMCP Client';
+    }
+
+    const client = new OpenAI({
+        baseURL,
+        apiKey,
+        defaultHeaders: Object.keys(defaultHeaders).length > 0 ? defaultHeaders : undefined
+    });
+
+    const response = await client.chat.completions.create({
+        model,
+        messages,
+        temperature,
+        stream: false
+    });
+
+    const content = response.choices?.[0]?.message?.content;
+    return typeof content === 'string' ? content : '';
+}
+
 export async function streamingChatCompletion(
     data: any,
     webview: PostMessageble

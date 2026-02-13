@@ -2,6 +2,23 @@
 <footer class="chat-footer">
     <div class="input-area">
         <div class="input-wrapper">
+            <!-- Slash 命令面板：输入 / 时显示可选技能 -->
+            <div v-if="showSlashMenu" class="slash-menu">
+                <div
+                    v-for="(skill, idx) in filteredSlashSkills"
+                    :key="skill.name"
+                    class="slash-menu-item"
+                    :class="{ active: slashMenuIndex === idx }"
+                    @click="selectSlashSkill(skill)"
+                >
+                    <span class="iconfont icon-filepath"></span>
+                    <span class="slash-menu-name">{{ skill.name }}</span>
+                    <span v-if="skill.description" class="slash-menu-desc">{{ skill.description }}</span>
+                </div>
+                <div v-if="filteredSlashSkills.length === 0" class="slash-menu-empty">
+                    {{ t('skill-no-available') || 'No skills configured' }}
+                </div>
+            </div>
 
             <KRichTextarea
                 :ref="el => editorRef = el"
@@ -10,6 +27,7 @@
                 :placeholder="t('enter-message-dot')"
                 :customClass="'chat-input'"
                 @press-enter="handleSend()"
+                @keydown="(e: KeyboardEvent) => handleSlashKeydown(e)"
             />
 
             <!-- <button @click="testReflux">test</button> -->
@@ -24,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { provide, onMounted, onUnmounted, ref, defineEmits, defineProps, type PropType, inject, type Ref, watch } from 'vue';
+import { provide, onMounted, onUnmounted, ref, defineEmits, defineProps, type PropType, inject, type Ref, watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import KRichTextarea from './rich-textarea.vue';
@@ -36,6 +54,7 @@ import { TaskLoop } from '../core/task-loop';
 import { llmManager, llms } from '@/views/setting/llm';
 import { ElMessage } from 'element-plus';
 import { v4 as uuidv4 } from 'uuid';
+import { listSkills, type SkillMetadata } from '@/api/skill';
 
 const { t } = useI18n();
 
@@ -61,6 +80,20 @@ const userInput = ref<string>('');
 
 let loop: TaskLoop | undefined = undefined;
 
+// Slash 命令相关
+const showSlashMenu = ref(false);
+const slashSkills = ref<SkillMetadata[]>([]);
+const slashMenuIndex = ref(0);
+const slashQuery = ref('');
+
+const filteredSlashSkills = computed(() => {
+    const q = slashQuery.value.toLowerCase().trim();
+    if (!q) return slashSkills.value;
+    return slashSkills.value.filter(s =>
+        s.name.toLowerCase().includes(q) || (s.description && s.description.toLowerCase().includes(q))
+    );
+});
+
 const isLoading = inject('isLoading') as Ref<boolean>;
 const autoScroll = inject('autoScroll') as Ref<boolean>;
 const streamingContent = inject('streamingContent') as Ref<string>;
@@ -75,6 +108,62 @@ const parallelChats = inject('parallelChats') as Ref<any[]>;
 const updateChatRenderMessages = inject('updateChatRenderMessages') as (chat: any, streamingToolCalls?: ToolCall[]) => Promise<void>;
 
 chatContext.handleSend = handleSend;
+
+/** 解析 /skillname 格式，返回 [skillName, actualMessage] */
+function parseSlashCommand(text: string): { skillName: string; actualMessage: string } | null {
+    const match = text.match(/^\s*\/([\w-]+)(?:\s+(.*))?$/s);
+    if (!match) return null;
+    return {
+        skillName: match[1],
+        actualMessage: (match[2] || '').trim()
+    };
+}
+
+async function loadSlashSkills() {
+    slashSkills.value = await listSkills();
+}
+
+function updateSlashMenu() {
+    const match = userInput.value.match(/\/([\w-]*)$/);
+    if (match) {
+        slashQuery.value = match[1];
+        showSlashMenu.value = true;
+        slashMenuIndex.value = 0;
+        loadSlashSkills();
+    } else {
+        showSlashMenu.value = false;
+    }
+}
+
+function selectSlashSkill(skill: SkillMetadata) {
+    const match = userInput.value.match(/^(.*)\/([\w-]*)$/);
+    const prefix = match ? match[1] : '';
+    const insertName = skill.dirName || skill.name;
+    userInput.value = prefix + '/' + insertName + ' ';
+    showSlashMenu.value = false;
+}
+
+function handleSlashKeydown(event: KeyboardEvent) {
+    if (!showSlashMenu.value) return;
+    if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        event.stopPropagation();
+        slashMenuIndex.value = Math.min(slashMenuIndex.value + 1, filteredSlashSkills.value.length - 1);
+    } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        event.stopPropagation();
+        slashMenuIndex.value = Math.max(slashMenuIndex.value - 1, 0);
+    } else if (event.key === 'Enter' && filteredSlashSkills.value.length > 0) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        selectSlashSkill(filteredSlashSkills.value[slashMenuIndex.value]);
+    } else if (event.key === 'Escape') {
+        event.preventDefault();
+        showSlashMenu.value = false;
+    }
+}
+
+watch(userInput, () => updateSlashMenu());
 
 function clearErrorMessage(errorMessage: string) {
     try {
@@ -95,25 +184,31 @@ function clearErrorMessage(errorMessage: string) {
 
 function handleSend(newMessage?: string) {
     
-    const userMessage = newMessage || userInput.value;
+    let userMessage = newMessage || userInput.value;
 
 
     if (!userMessage || isLoading.value) {
         return;
     }
 
+    // 解析 /skillname 手动触发
+    const slashParsed = parseSlashCommand(userMessage);
+    if (slashParsed) {
+        (tabStorage as any)._skillOverrideForNextMessage = slashParsed.skillName;
+        userMessage = slashParsed.actualMessage || userMessage;
+    }
+
     // 清空文本
     userInput.value = '';
-    const editor = editorRef.value.editor;
+    showSlashMenu.value = false;
+    const editor = editorRef.value?.editor;
     if (editor) {
         editor.innerHTML = '';
     }
 
     if (chatMode.value === 'parallel-chat' && parallelChats.value.length > 0) {
-        // 并行模式：同时发送到多个模型
         handleParallelSend(userMessage);
     } else {
-        // 单聊天模式：发送到当前模型
         handleSingleSend(userMessage);
     }
 }
@@ -165,19 +260,24 @@ function handleSingleSend(userMessage: string) {
 
     loop.start(tabStorage, userMessage, { mode: 'single-chat' }).then(() => {
         isLoading.value = false;
+        delete (tabStorage as any)._skillOverrideForNextMessage;
     });
 }
 
 function handleParallelSend(userMessage: string) {
     isLoading.value = true;
     
+    // 解析 /skillname 用于并行模式
+    const slashParsed = parseSlashCommand(userMessage);
+    const actualUserMessage = slashParsed ? slashParsed.actualMessage || userMessage : userMessage;
+
     // 为每个并行聊天实例启动独立的对话
     const parallelPromises = parallelChats.value.map(async (chat, index) => {
         
         // 添加用户消息到这个聊天实例
         chat.messages.push({
             role: 'user',
-            content: userMessage,
+            content: actualUserMessage,
             extraInfo: {
                 created: Date.now(),
                 state: MessageState.Success,
@@ -212,7 +312,8 @@ function handleParallelSend(userMessage: string) {
                     currentModelIndex: targetModelIndex,
                     // 关闭并行工具调用，避免索引冲突
                     parallelToolCalls: false
-                }
+                },
+                _skillOverrideForNextMessage: slashParsed?.skillName
             };
             
             // 动态注入模型索引到 chatLoop 的上下文中
@@ -385,7 +486,7 @@ onUnmounted(() => {
     height: 32px;
     min-width: 32px;
     padding: 6px 12px;
-    font-size: 16px;
+    font-size: var(--chat-font-size);
     border-radius: 16px !important;
 }
 
@@ -409,5 +510,62 @@ onUnmounted(() => {
     50% {
         opacity: 0;
     }
+}
+
+/* Slash 命令面板 */
+.slash-menu {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 80px;
+    margin-bottom: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--sidebar);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+}
+
+.slash-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: var(--chat-font-size);
+    color: var(--foreground);
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+}
+
+.slash-menu-item:last-child {
+    border-bottom: none;
+}
+
+.slash-menu-item:hover,
+.slash-menu-item.active {
+    background: var(--sidebar-item-hover);
+}
+
+.slash-menu-name {
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.slash-menu-desc {
+    font-size: var(--chat-font-size-sm);
+    color: var(--el-text-color-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.slash-menu-empty {
+    padding: 16px;
+    font-size: var(--chat-font-size-sm);
+    color: var(--el-text-color-secondary);
+    text-align: center;
 }
 </style>

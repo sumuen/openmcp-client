@@ -41,4 +41,6 @@ export const mcpSetting = reactive({
     enableDatasetReflux: false,
     datasetName: '',
     proxyServer: '',
+    /** Path to SKILL.md file or skill directory */
+    skillPath: '',
 });

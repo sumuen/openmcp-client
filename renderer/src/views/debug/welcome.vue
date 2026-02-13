@@ -32,7 +32,7 @@
 				:class="{ 'disable': !mcpClientAdapter.connected }"
 				v-for="(option, index) of advanceOptions"
 				:key="index"
-				@click="chooseDebugMode(index + 3)"
+				@click="chooseDebugMode(index + baseOptions.length)"
 			>
 				<span>
 					<span :class="`iconfont ${option.icon}`"></span>
@@ -74,7 +74,7 @@ const baseOptions = [
 	}
 ];
 
-// MCP Advance 模块 - interaction-test, lookup-reflux-data
+// MCP Advance 模块 - interaction-test, lookup-reflux-data, batch-validation
 const advanceOptions = [
 	{
 		icon: 'icon-robot',
@@ -85,6 +85,11 @@ const advanceOptions = [
 		icon: 'icon-database',
 		name: computed(() => t('lookup-reflux-data')),
 		ident: 'reflux'
+	},
+	{
+		icon: 'icon-dui',
+		name: computed(() => t('batch-validation')),
+		ident: 'batch-validation'
 	}
 ];
 
@@ -94,12 +99,12 @@ function chooseDebugMode(index: number) {
 		const activeTab = tabs.activeTab;
 		activeTab.componentIndex = index;
 		// 根据索引确定使用哪个选项数组中的图标
-		if (index < 3) {
+		if (index < baseOptions.length) {
 			activeTab.icon = baseOptions[index].icon;
 			activeTab.name = baseOptions[index].name as any;
 		} else {
-			activeTab.icon = advanceOptions[index - 3].icon;
-			activeTab.name = advanceOptions[index - 3].name as any;
+			activeTab.icon = advanceOptions[index - baseOptions.length].icon;
+			activeTab.name = advanceOptions[index - baseOptions.length].name as any;
 		}
 
 		// 此处可以这么做是因为这个操作过后 activeTab 绑定的 tab 的 name 就不会再被进行赋值操作了
@@ -163,9 +168,9 @@ function chooseDebugMode(index: number) {
 }
 
 .advance-module {
-	/* 下方 2 列，整体块居中 */
-	grid-template-columns: repeat(2, minmax(var(--card-min), 1fr));
-	max-width: calc(2 * var(--card-min) + 1 * var(--gap));
+	/* 下方 3 列，整体块居中 */
+	grid-template-columns: repeat(3, minmax(var(--card-min), 1fr));
+	max-width: calc(3 * var(--card-min) + 2 * var(--gap));
 	margin: 0 auto;
 }
 
@@ -227,7 +232,11 @@ function chooseDebugMode(index: number) {
 		max-width: calc(2 * var(--card-min) + 1 * var(--gap));
 	}
 
-	/* 下方依然 2 列，宽度保持不变 */
+	/* 下方 3 列退化为 2 列 */
+	.advance-module {
+		grid-template-columns: repeat(2, minmax(var(--card-min), 1fr));
+		max-width: calc(2 * var(--card-min) + 1 * var(--gap));
+	}
 
 	.debug-option {
 		font-size: 18px;

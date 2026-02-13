@@ -1,7 +1,7 @@
 import { Controller } from "../common/index.js";
 import { RequestData } from "../common/index.dto.js";
 import { PostMessageble } from "../hook/adapter.js";
-import { abortMessageService, streamingChatCompletion } from "./llm.service.js";
+import { abortMessageService, streamingChatCompletion, chatCompletion } from "./llm.service.js";
 import { OpenAI } from "openai";
 import { fetchOpenRouterModels, getSimplifiedModels } from "../hook/openrouter.js";
 export class LlmController {
@@ -79,6 +79,23 @@ export class LlmController {
             return {
                 code: 500,
                 msg: `Failed to fetch OpenRouter models: ${error instanceof Error ? error.message : String(error)}`
+            };
+        }
+    }
+
+    @Controller('llm/chat/completions/sync')
+    async chatCompletionSync(data: RequestData, webview: PostMessageble) {
+        try {
+            const { baseURL, apiKey, model, messages, temperature } = data;
+            const content = await chatCompletion({ baseURL, apiKey, model, messages, temperature });
+            return {
+                code: 200,
+                msg: { content }
+            };
+        } catch (error) {
+            return {
+                code: 500,
+                msg: `Chat completion failed: ${error instanceof Error ? error.message : String(error)}`
             };
         }
     }

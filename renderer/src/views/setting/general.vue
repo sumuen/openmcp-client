@@ -66,6 +66,19 @@
                     @input="safeSaveSetting" />
             </div>
         </div>
+
+        <div class="setting-option">
+            <span>
+                <span class="iconfont icon-filepath"></span>
+                <el-tooltip content="Path to SKILL.md file or skill directory (e.g. .cursor/skills/code-review). When set, skill content is added to system prompt and read_skill_file tool is enabled.">
+                    <span class="option-title">{{ t('skill-path') }}</span>
+                </el-tooltip>
+            </span>
+            <div style="flex: 1; min-width: 200px;">
+                <el-input v-model="mcpSetting.skillPath" :placeholder="'.cursor/skills or path to SKILL.md'"
+                    clearable @input="safeSaveSetting" />
+            </div>
+        </div>
     </div>
 </template>
 

@@ -157,7 +157,7 @@ props.contents.forEach((content) => {
     padding: 0 4px;
     background-color: #373839;
     border: 1px solid var(--foreground);
-    font-size: 12px;
+    font-size: var(--chat-font-size-sm);
     margin-left: 3px;
     margin-right: 3px;
 }

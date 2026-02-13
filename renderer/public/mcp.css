@@ -22,6 +22,11 @@
     --font-size-xsp: 11px;
     --md-zoom: 1.12;
 
+    /* 对话交互字体 - 与代码编辑器一致，便于开发者阅读 */
+    --chat-font-size: var(--font-monospace-size, var(--vscode-editor-font-size, 13px));
+    --chat-font-size-sm: 12px;
+    --chat-font-size-xs: 11px;
+
     --code-font-family: Consolas, Monaco, "CustomCodeFont", 'Andale Mono', 'Ubuntu Mono', monospace;
 
     /* css 动画属性 */

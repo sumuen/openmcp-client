@@ -10,6 +10,7 @@ import { getToolCallIndexAdapter, handleToolCalls, type IToolCallIndex, type Too
 import { getPlatform } from "@/api/platform";
 import { getSystemPrompt } from "../chat-box/options/system-prompt";
 import { mcpSetting } from "@/hook/mcp";
+import { loadSkillContent, READ_SKILL_FILE_TOOL } from "@/api/skill";
 import { mcpClientAdapter } from "@/views/connect/core";
 import type { ToolItem } from "@/hook/type";
 
@@ -297,7 +298,7 @@ export class TaskLoop {
         mcpSetting.enableDatasetReflux = enableDatasetReflux;
     }
 
-    public makeChatData(tabStorage: ChatStorage): ChatCompletionCreateParamsBase | undefined {
+    public async makeChatData(tabStorage: ChatStorage): Promise<ChatCompletionCreateParamsBase | undefined> {
         const baseURL = this.getLlmConfig().baseUrl;
         const apiKey = this.getLlmConfig().userToken || '';
 
@@ -317,7 +318,15 @@ export class TaskLoop {
 
         // 如果是 xml 模式，则 tools 为空
         const enableXmlWrapper = tabStorage.settings.enableXmlWrapper;
-        const tools = enableXmlWrapper ? [] : getToolSchema(tabStorage.settings.enableTools);
+        let tools = enableXmlWrapper ? [] : getToolSchema(tabStorage.settings.enableTools);
+
+        // 当用户设置了 skill 入口时，加载 skill 并添加 read_skill_file 工具（仅当有 skill 时才添加）
+        // 支持 /skillname 手动触发：优先使用 slash 指定的 skill
+        const skillOverride = (tabStorage as any)._skillOverrideForNextMessage as string | undefined;
+        const skillContent = await loadSkillContent(skillOverride);
+        if (skillContent) {
+            tools = [...tools, READ_SKILL_FILE_TOOL];
+        }
 
         const userMessages = [];
 
@@ -329,6 +338,12 @@ export class TaskLoop {
         // 如果存在系统提示词，则从数据库中获取对应的数据
         if (tabStorage.settings.systemPrompt) {
             prompt += getSystemPrompt(tabStorage.settings.systemPrompt) || tabStorage.settings.systemPrompt;
+        }
+
+        // 如果加载了 skill，追加到 system prompt
+        if (skillContent) {
+            if (prompt) prompt += '\n\n---\n\n';
+            prompt += `## Skill: ${skillContent.name}\n${skillContent.description ? skillContent.description + '\n\n' : ''}${skillContent.body}`;
         }
 
         // 如果是 xml 模式，则在开头注入 xml
@@ -640,7 +655,7 @@ export class TaskLoop {
             this.completionUsage = undefined;
 
             // 构造 chatData
-            const chatData = this.makeChatData(tabStorage);
+            const chatData = await this.makeChatData(tabStorage);
 
             if (!chatData) {
                 this.consumeDones();

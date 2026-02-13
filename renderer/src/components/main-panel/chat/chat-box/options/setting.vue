@@ -2,6 +2,7 @@
 	<div class="chat-settings">
 		<Model />
 		<SystemPrompt />
+		<Skill />
 		<ToolUse />
 		<Prompt />
 		<Resource />
@@ -14,13 +15,15 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, provide, computed } from 'vue';
+import { defineProps, defineEmits, provide, computed, inject } from 'vue';
+import type { Ref } from 'vue';
 import { llmManager } from '@/views/setting/llm';
 import { tabs } from '@/components/main-panel/panel';
 import type { ChatSetting, ChatStorage } from '../chat';
 
 import Model from './model.vue';
 import SystemPrompt from './system-prompt.vue';
+import Skill from './skill.vue';
 import ToolUse from './tool-use.vue';
 import Prompt from './prompt.vue';
 import Resource from './resource.vue';
@@ -53,23 +56,27 @@ const modelValue = computed({
 });
 
 
-const tab = tabs.content[props.tabId];
-const tabStorage = tab.storage as ChatStorage & { settings: ChatSetting };
+const injectedStorage = inject<Ref<ChatStorage | null> | (ChatStorage & { settings?: ChatSetting }) | null>('batchValidationStorage', null);
+const tab = props.tabId >= 0 ? tabs.content[props.tabId] : null;
+const tabStorage = (injectedStorage && typeof (injectedStorage as any).value !== 'undefined'
+	? (injectedStorage as Ref<ChatStorage | null>).value
+	: (injectedStorage as ChatStorage | null)) ?? (tab?.storage ?? null);
 
-if (!tabStorage.settings) {
-	tabStorage.settings = {
-		modelIndex: llmManager.currentModelIndex,
-		enableTools: [],
-		enableWebSearch: false,
-		temperature: 0.6,
-		contextLength: 100,
-		systemPrompt: '',
-		enableXmlWrapper: false,
-		parallelToolCalls: true
-	} as ChatSetting;
+if (tabStorage) {
+	if (!tabStorage.settings) {
+		tabStorage.settings = {
+			modelIndex: llmManager.currentModelIndex,
+			enableTools: [],
+			enableWebSearch: false,
+			temperature: 0.6,
+			contextLength: 100,
+			systemPrompt: '',
+			enableXmlWrapper: false,
+			parallelToolCalls: true
+		} as ChatSetting;
+	}
+	provide('tabStorage', tabStorage);
 }
-
-provide('tabStorage', tabStorage);
 
 </script>
 

@@ -35,7 +35,7 @@
                     :value="model.id"
                 />
             </el-select>
-            <span v-if="parallelChats.length > 0" style="margin-left: 10px; font-size: 12px; width: 130px;">
+            <span v-if="parallelChats.length > 0" style="margin-left: 10px; font-size: var(--chat-font-size-sm); width: 130px;">
                 已选择 {{ parallelChats.length }} 个模型
             </span>
         </div>
@@ -141,6 +141,7 @@ const clearSingleChat = () => {
     align-items: center;
     gap: 12px;
     padding: 10px 16px;
+    font-size: var(--chat-font-size);
     background-color: var(--sidebar);
     border-radius: 4px 4px 0 0;
     border-bottom: 1px solid var(--border);
