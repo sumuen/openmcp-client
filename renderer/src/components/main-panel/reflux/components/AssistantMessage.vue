@@ -12,7 +12,7 @@
         </div>
         <div v-if="message.tool_calls && message.tool_calls.length > 0" class="tool-calls">
             <h4>工具调用:</h4>
-            <el-table :data="message.tool_calls" style="width: 100%" size="small">
+            <el-table :data="message.tool_calls" style="width: 100%">
                 <el-table-column prop="function.name" label="工具名称" />
                 <el-table-column label="参数">
                     <template #default="scope">

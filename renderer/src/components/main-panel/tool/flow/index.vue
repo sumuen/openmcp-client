@@ -5,15 +5,15 @@
         <!-- 重置按钮弹出下拉列表 -->
         <el-popover placement="bottom" width="180" trigger="click" v-model:visible="resetPopoverVisible">
             <template #reference>
-                <el-button size="small" type="primary">
+                <el-button type="primary">
                     {{ t("preset") }}
                 </el-button>
             </template>
             <div style="display: flex; gap: 8px;">
-                <el-button size="small" @click="tomoPreset('serial')">
+                <el-button @click="tomoPreset('serial')">
                     <span class="iconfont icon-serial"></span>
                 </el-button>
-                <el-button size="small" @click="tomoPreset('parallel')">
+                <el-button @click="tomoPreset('parallel')">
                     <span class="iconfont icon-parallel"></span>
                 </el-button>
             </div>
@@ -21,7 +21,7 @@
         <!-- 原有自检程序弹出表单 -->
         <el-popover placement="top" width="350" trigger="click" v-model:visible="testFormVisible">
             <template #reference>
-                <el-button size="small" type="primary">
+                <el-button type="primary">
                     {{ t('start-auto-detect') }}
                 </el-button>
             </template>
@@ -43,8 +43,8 @@
                 }">{{ t('parallel-test') }}</span>
             </div>
             <div style="text-align: right;">
-                <el-button size="small" @click="testFormVisible = false">{{ t("cancel") }}</el-button>
-                <el-button size="small" type="primary" @click="onTestConfirm">
+                <el-button @click="testFormVisible = false">{{ t("cancel") }}</el-button>
+                <el-button type="primary" @click="onTestConfirm">
                     {{ t("confirm") }}
                 </el-button>
             </div>

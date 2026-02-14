@@ -30,7 +30,7 @@
                         :class="{ 'active': selectedTestCase?.id === testCase.id }">
                         <div class="test-case-header">
                             <div class="test-case-info">
-                                <el-tag :type="getStatusTagType(testCase.status)" size="small" class="status-tag">
+                                <el-tag :type="getStatusTagType(testCase.status)" class="status-tag">
                                     {{ getStatusText(testCase.status) }}
                                 </el-tag>
                                 <span class="test-case-name">{{ testCase.name }}</span>
@@ -38,18 +38,18 @@
                             </div>
                             <div class="test-case-actions">
                                 <el-tooltip :content="t('run-test')" placement="top">
-                                    <el-button type="primary" size="small" circle @click.stop="handleRunTest(testCase)"
+                                    <el-button type="primary" circle @click.stop="handleRunTest(testCase)"
                                         :loading="testCase.status === 'running'" class="btn-run">
                                         <span class="iconfont icon-play"></span>
                                     </el-button>
                                 </el-tooltip>
                                 <el-tooltip v-if="testCase.actualOutput" :content="t('view-result')" placement="top">
-                                    <el-button size="small" circle @click.stop="selectTestCase(testCase)" class="btn-view">
+                                    <el-button circle @click.stop="selectTestCase(testCase)" class="btn-view">
                                         <span class="iconfont icon-wendang"></span>
                                     </el-button>
                                 </el-tooltip>
                                 <el-tooltip :content="t('edit-test-case')" placement="top">
-                                    <el-button size="small" circle @click.stop="handleEditTestCase(testCase)"
+                                    <el-button circle @click.stop="handleEditTestCase(testCase)"
                                         class="btn-edit">
                                         <span class="iconfont icon-edit"></span>
                                     </el-button>
@@ -58,7 +58,7 @@
                                     @confirm="handleDeleteTestCase(testCase.id)">
                                     <template #reference>
                                         <el-tooltip :content="t('delete-test-case')" placement="top">
-                                            <el-button type="danger" size="small" circle @click.stop class="btn-delete">
+                                            <el-button type="danger" circle @click.stop class="btn-delete">
                                                 <span class="iconfont icon-delete"></span>
                                             </el-button>
                                         </el-tooltip>
@@ -98,15 +98,15 @@
                 <el-form-item :label="t('input-parameters')" required>
                     <div class="json-editor">
                         <el-input v-model="inputJson" type="textarea" :rows="8" :placeholder="t('enter-json-input')" />
-                        <el-button size="small" @click="formatInputJson" class="btn-format"> {{ t('format-json') }}</el-button>
-                        <el-button size="small" @click="copyFromCurrentForm" class="btn-copy">{{ t('copy-from-executor') }}</el-button>
+                        <el-button @click="formatInputJson" class="btn-format"> {{ t('format-json') }}</el-button>
+                        <el-button @click="copyFromCurrentForm" class="btn-copy">{{ t('copy-from-executor') }}</el-button>
                     </div>
                 </el-form-item>
                 <el-form-item :label="t('expected-output')">
                     <div class="json-editor">
                         <el-input v-model="expectedJson" type="textarea" :rows="8"
                             :placeholder="t('enter-json-input')" />
-                        <el-button size="small" @click="formatExpectedJson" class="btn-format">{{ t('format-json') }}</el-button>
+                        <el-button @click="formatExpectedJson" class="btn-format">{{ t('format-json') }}</el-button>
                     </div>
                 </el-form-item>
             </el-form>

@@ -14,7 +14,6 @@
                       >
                         <template #reference>
                             <el-button 
-                                size="small" 
                                 type="warning"
                                 title="清空上下文"
                             >
@@ -25,7 +24,6 @@
 
                     <el-button 
                         @click="removeParallelChat(chatIndex)" 
-                        size="small" 
                         type="danger"
                         title="移除此对话"
                     >

@@ -1,7 +1,6 @@
 <template>
 		<el-tooltip :content="t('websearch')" placement="top" effect="light">
-			<div class="setting-button" :class="{ 'active': tabStorage.settings.enableWebSearch }" size="small"
-				@click="toggleWebSearch">
+			<div class="setting-button" :class="{ 'active': tabStorage.settings.enableWebSearch }" @click="toggleWebSearch">
 				<span class="iconfont icon-web"></span>
 			</div>
 		</el-tooltip>

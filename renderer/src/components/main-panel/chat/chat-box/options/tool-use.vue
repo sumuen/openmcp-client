@@ -1,6 +1,6 @@
 <template>
     <el-tooltip :content="t('tool-use')" placement="top" effect="light">
-        <div class="setting-button" :class="{ 'active': availableToolsNum > 0 }" size="small" @click="toggleTools">
+        <div class="setting-button" :class="{ 'active': availableToolsNum > 0 }" @click="toggleTools">
             <span class="iconfont icon-tool badge-outer">
                 <span class="badge-inner">
                     {{ availableToolsNum }}

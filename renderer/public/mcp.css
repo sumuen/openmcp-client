@@ -57,6 +57,10 @@ body::-webkit-scrollbar {
     border-radius: 16px !important;
 }
 
+.chat-option-dialog .el-button {
+    border-radius: 16px !important;
+}
+
 .chat-option-dialog .el-button--primary {
     border-radius: 16px !important;
     background-color: var(--foreground) !important;
@@ -108,9 +112,10 @@ body::-webkit-scrollbar {
     font-size: 16px !important;
 }
 
-.el-textarea__inner {
-    padding: 10px !important;
-    box-shadow: 0 0 0 1px var(--main-color) !important;
+
+.el-textarea.el-input--small .el-textarea__inner {
+    padding: 1px 7px !important;
+    font-size: 12px;
 }
 
 
@@ -127,26 +132,24 @@ a {
     box-shadow: unset !important;
 }
 
-.el-textarea__inner::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+.el-textarea__inner {
+    padding: auto 10px !important;
 }
 
-.el-textarea__inner::-webkit-scrollbar-track {
-    background: transparent;
-    /* 浅紫色背景 */
-    border-radius: 4px;
+/* textarea 滚动条与 input 一致 */
+.el-textarea__inner::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.el-textarea__inner::-webkit-scrollbar-track,
+.el-textarea__inner::-webkit-scrollbar-corner {
+    background: var(--el-fill-color-blank, #fff);
 }
 
 .el-textarea__inner::-webkit-scrollbar-thumb {
-    background: var(--main-color);
-    /* 使用您的主题色 */
-    border-radius: 4px;
-}
-
-.el-textarea__inner::-webkit-scrollbar-thumb:hover {
-    background: var(--main-color);
-    /* 深紫色悬停状态 */
+    background: var(--el-text-color-disabled);
+    border-radius: 5px;
 }
 
 * hr {

@@ -1,7 +1,6 @@
 <template>
     <el-tooltip :content="t('parallel-tool-calls')" placement="top" effect="light">
-        <div class="setting-button" :class="{ 'active': tabStorage.settings.parallelToolCalls }" size="small"
-            @click="toggle">
+        <div class="setting-button" :class="{ 'active': tabStorage.settings.parallelToolCalls }" @click="toggle">
             <span class="iconfont icon-parallel"></span>
         </div>
     </el-tooltip>

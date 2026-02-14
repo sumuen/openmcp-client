@@ -11,7 +11,6 @@
                 </div>
                 <el-button
                     circle
-                    size="small"
                     :type="state.pinnedNodeId ? 'primary' : 'default'"
                     @click="togglePin"
                     style="margin-bottom: 4px;"

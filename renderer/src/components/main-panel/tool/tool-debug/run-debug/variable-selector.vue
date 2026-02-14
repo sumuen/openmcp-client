@@ -1,7 +1,7 @@
 <template>
     <el-popover placement="bottom-start" :width="400" trigger="click" v-model:visible="visible" @hide="onPopoverHide">
         <template #reference>
-            <el-button size="small" :disabled="disabled">
+            <el-button :disabled="disabled">
                 <span class="iconfont icon-variable"></span>
                 {{ buttonText }}
             </el-button>
@@ -9,7 +9,7 @@
 
         <div class="variable-selector">
             <!-- 搜索框 -->
-            <el-input v-model="searchKeyword" placeholder="搜索变量..." clearable size="small" style="margin-bottom: 10px;">
+            <el-input v-model="searchKeyword" placeholder="搜索变量..." clearable style="margin-bottom: 10px;">
                 <template #prefix>
                     <span class="iconfont icon-search"></span>
                 </template>
@@ -22,7 +22,7 @@
                 <div v-for="variable in filteredVariables" :key="variable.id" class="variable-item"
                     :class="{ selected: selectedVariableId === variable.id }" @click="selectVariable(variable)">
                     <div class="variable-item-header">
-                        <el-tag :type="getTypeColor(variable.type)" size="small">
+                        <el-tag :type="getTypeColor(variable.type)">
                             {{ variable.type }}
                         </el-tag>
                         <span class="variable-item-name">{{ variable.name }}</span>
@@ -48,12 +48,12 @@
             </p>
             <!-- 底部操作 -->
             <div class="variable-selector-footer">
-                <el-button size="small" @click="handleManageVariables">
+                <el-button @click="handleManageVariables">
                     管理变量
                 </el-button>
                 <div style="flex: 1;"></div>
-                <el-button size="small" @click="visible = false">取消</el-button>
-                <el-button size="small" type="primary" :disabled="!selectedVariableId" @click="handleApply">
+                <el-button @click="visible = false">取消</el-button>
+                <el-button type="primary" :disabled="!selectedVariableId" @click="handleApply">
                     应用
                 </el-button>
             </div>

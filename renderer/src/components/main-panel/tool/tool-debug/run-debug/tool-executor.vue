@@ -68,8 +68,8 @@
                         <span style="opacity: 0.7;">XML</span>
                     </div>
                     <div style="text-align: right;">
-                        <el-button size="small" @click="aiPromptVisible = false">{{ t('cancel') }}</el-button>
-                        <el-button size="small" type="primary" :loading="aiMockLoading" @click="onAIMookConfirm">
+                        <el-button @click="aiPromptVisible = false">{{ t('cancel') }}</el-button>
+                        <el-button type="primary" :loading="aiMockLoading" @click="onAIMookConfirm">
                             {{ t('confirm') }}
                         </el-button>
                     </div>

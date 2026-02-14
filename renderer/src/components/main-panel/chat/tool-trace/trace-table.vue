@@ -3,7 +3,7 @@
         <div class="column-selector">
             <el-popover placement="bottom" :width="300" trigger="click">
                 <template #reference>
-                    <el-button size="small">
+                    <el-button>
                         <i class="iconfont icon-setting" />
                         &ensp;{{ t('table-setting') }}
                     </el-button>
@@ -51,7 +51,7 @@
                     <el-descriptions-item v-if="selectedRow.toolCalls" :label="t('tool-call')">
                         <el-scrollbar height="300px">
                             <div v-for="(toolCall, index) in selectedRow.toolCalls" :key="index" class="tool-call-item">
-                                <el-descriptions :column="1" size="small">
+                                <el-descriptions :column="1">
                                     <el-descriptions-item :label="t('toolbar.search.name')">
                                         <code>{{ toolCall.function?.name }}</code>
                                     </el-descriptions-item>

@@ -250,11 +250,13 @@ function handleCompositionEnd() {
     outline: none;
     padding-bottom: 20px;
     white-space: pre-wrap;
+    cursor: text;
 }
 
 .rich-editor:empty::before {
     content: attr(placeholder);
     color: var(--input-placeholder);
+    cursor: text;
 }
 
 .rich-item {

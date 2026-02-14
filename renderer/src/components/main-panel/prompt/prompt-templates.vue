@@ -136,7 +136,7 @@ onMounted(async () => {
 }
 
 .prompt-template-container>.item:hover {
-	background-color: var(--main-light-color);
+	background-color: var(--el-fill-color-light);
 	transition: var(--animation-3s);
 }
 
@@ -146,7 +146,8 @@ onMounted(async () => {
 }
 
 .prompt-template-container>.item.active {
-	background-color: var(--main-light-color);
+	background-color: var(--el-fill-color-light);
+	border-left: 3px solid var(--el-color-primary-light-5);
 	transition: var(--animation-3s);
 }
 

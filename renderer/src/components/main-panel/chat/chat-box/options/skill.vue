@@ -1,7 +1,6 @@
 <template>
     <el-tooltip :content="t('skill-path')" placement="top" effect="light">
-        <div class="setting-button" :class="{ 'active': hasSkillPath }" size="small"
-            @click="showSkillDialog = true">
+        <div class="setting-button" :class="{ 'active': hasSkillPath }" @click="showSkillDialog = true">
             <span class="skill-label">SKILL</span>
         </div>
     </el-tooltip>

@@ -23,7 +23,6 @@
             tab-id="-1"
             v-model="inputValue"
             :placeholder="placeholder"
-            custom-class="chat-input"
             enter-inserts-newline
             @keydown="(e: KeyboardEvent) => handleSlashKeydown(e)"
         />
@@ -183,9 +182,9 @@ defineExpose({
     right: 0;
     max-height: 200px;
     overflow-y: auto;
-    background: var(--background);
-    border: 1px solid var(--input-border);
-    border-radius: 8px;
+    background: var(--el-input-bg-color, var(--el-fill-color-blank));
+    border: 1px solid var(--el-input-border-color, var(--el-border-color));
+    border-radius: var(--el-input-border-radius, var(--el-border-radius-base));
     margin-bottom: 4px;
     z-index: 100;
 }
@@ -206,11 +205,37 @@ defineExpose({
 .slash-menu-desc { font-size: 12px; opacity: 0.7; }
 .slash-menu-empty { padding: 12px; color: var(--el-text-color-secondary); }
 
+/* 与 Element Plus el-input__wrapper 完全一致：默认 / hover / focus 均用 box-shadow */
 :deep(.k-rich-textarea) {
-    min-height: 80px;
+    min-height: 160px;
+    border: none !important;
+    border-radius: var(--el-input-border-radius, var(--el-border-radius-base));
+    padding: 6px 11px 1px 11px;
+    box-shadow: 0 0 0 1px var(--el-input-border-color, var(--el-border-color)) inset;
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
+    transition: var(--el-transition-box-shadow);
+    font-size: var(--el-font-size-base);
+    outline: none;
+}
+
+:deep(.k-rich-textarea:hover) {
+    box-shadow: 0 0 0 1px var(--el-text-color-disabled) inset !important;
+    outline: none;
+    transition: var(--el-transition-box-shadow);
+}
+
+:deep(.k-rich-textarea:focus-within) {
+    box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
+    outline: none;
+    transition: var(--el-transition-box-shadow);
 }
 
 :deep(.rich-editor) {
-    min-height: 60px;
+    min-height: 120px;
+    color: var(--el-input-text-color, var(--el-text-color-regular));
+}
+
+:deep(.rich-editor:empty::before) {
+    color: var(--el-input-placeholder-color, var(--el-text-color-placeholder));
 }
 </style>

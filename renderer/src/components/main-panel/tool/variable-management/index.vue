@@ -54,7 +54,7 @@
             >
                 <el-table-column label="类型" width="90">
                     <template #default="{ row }">
-                        <el-tag :type="getTypeColor(row.type)" size="small">
+                        <el-tag :type="getTypeColor(row.type)">
                             {{ row.type }}
                         </el-tag>
                     </template>
@@ -79,7 +79,6 @@
                             v-else
                             v-for="tag in row.tags"
                             :key="tag"
-                            size="small"
                             style="margin-right: 5px;"
                         >
                             {{ tag }}
@@ -96,7 +95,6 @@
                 <el-table-column label="操作" width="210">
                     <template #default="{ row }">
                         <el-button
-                            size="small"
                             type="primary"
                             text
                             @click.stop="handleEdit(row)"
@@ -104,7 +102,6 @@
                             编辑
                         </el-button>
                         <el-button
-                            size="small"
                             type="primary"
                             text
                             @click.stop="handleCopy(row)"
@@ -112,7 +109,6 @@
                             复制
                         </el-button>
                         <el-button
-                            size="small"
                             type="danger"
                             text
                             @click.stop="handleDelete(row.id)"

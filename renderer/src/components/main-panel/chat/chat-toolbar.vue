@@ -48,7 +48,7 @@
                 @confirm="clearSingleChat"
             >
                 <template #reference>
-                    <el-button size="small">
+                    <el-button>
                         <span class="iconfont icon-delete"></span>
                     </el-button>
                 </template>

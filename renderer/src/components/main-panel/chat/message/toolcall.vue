@@ -22,7 +22,7 @@
                                 <span class="iconfont icon-tool"></span>
                                 {{ props.message.tool_calls[0].function!.name }}
                             </span>
-                            <el-button size="small" class="tool-debug-btn" @click="createTest(props.message.tool_calls[0])" :title="t('create-test-case')">
+                            <el-button class="tool-debug-btn" @click="createTest(props.message.tool_calls[0])" :title="t('create-test-case')">
                                 <span class="iconfont icon-send"></span>
                             </el-button>
                         </div>
@@ -39,7 +39,7 @@
                                 <span class="iconfont icon-tool"></span>
                                 {{ props.message.tool_calls[toolIndex].function!.name }}
                             </span>
-                            <el-button size="small" class="tool-debug-btn" @click="createTest(props.message.tool_calls[toolIndex])" :title="t('create-test-case')">
+                            <el-button class="tool-debug-btn" @click="createTest(props.message.tool_calls[toolIndex])" :title="t('create-test-case')">
                                 <span class="iconfont icon-send"></span>
                             </el-button>
                         </div>
@@ -66,7 +66,7 @@
                             <span v-if="isValid(toolResult)" class="iconfont icon-dui"></span>
                             <span v-else :class="`iconfont icon-${currentMessageLevel}`"></span>
                             {{ isValid(toolResult) ? t('response') : t('error') }}
-                            <el-button v-if="!isValid(toolResult)" size="small" class="tool-feedback-btn" @click="gotoIssue()">
+                            <el-button v-if="!isValid(toolResult)" class="tool-feedback-btn" @click="gotoIssue()">
                                 {{ t('feedback') }}
                             </el-button>
                             <el-switch

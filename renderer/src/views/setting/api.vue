@@ -96,8 +96,8 @@
 					clearable
 				/>
 				<div style="text-align: right;">
-					<el-button size="small" @click="testPromptPopoverVisible = false">{{ t('cancel') }}</el-button>
-					<el-button size="small" type="primary" @click="testPromptPopoverVisible = false; makeSimpleTalk()">{{ t('confirm') }}</el-button>
+					<el-button @click="testPromptPopoverVisible = false">{{ t('cancel') }}</el-button>
+					<el-button type="primary" @click="testPromptPopoverVisible = false; makeSimpleTalk()">{{ t('confirm') }}</el-button>
 				</div>
 			</el-popover>
 

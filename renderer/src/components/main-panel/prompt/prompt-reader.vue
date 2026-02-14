@@ -10,7 +10,6 @@
                 v-model="selectedSavedName"
                 :placeholder="t('choose-saved-test-data')"
                 clearable
-                size="small"
                 class="saved-data-select"
                 @change="handleLoadSaved"
             >
