@@ -1,33 +1,39 @@
 <template>
     <div class="tool-module-container">
-        <div class="tool-list-panel">
-            <div class="list-container">
-                <el-scrollbar>
-                    <div class="list-inner">
-                        <div
-                            v-for="opt in menuOptions"
-                            :key="opt.value"
-                            class="list-item"
-                            :class="{ active: activeView === opt.value }"
-                            @click="activeView = opt.value"
-                        >
-                            <div class="list-item-content">
-                                <div class="item-title">{{ opt.label }}</div>
+        <el-splitter class="tool-splitter">
+            <el-splitter-panel :min="120" :max="400" size="200" class="splitter-panel-left">
+                <div class="tool-list-panel">
+                    <div class="list-container">
+                        <el-scrollbar>
+                            <div class="list-inner">
+                                <div
+                                    v-for="opt in menuOptions"
+                                    :key="opt.value"
+                                    class="list-item"
+                                    :class="{ active: activeView === opt.value }"
+                                    @click="activeView = opt.value"
+                                >
+                                    <div class="list-item-content">
+                                        <div class="item-title">{{ opt.label }}</div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        </el-scrollbar>
                     </div>
-                </el-scrollbar>
-            </div>
-        </div>
-        <div class="tool-detail-panel">
-            <el-scrollbar>
-                <div class="detail-content">
-                    <keep-alive>
-                        <component :is="currentView" :tab-id="props.tabId" />
-                    </keep-alive>
                 </div>
-            </el-scrollbar>
-        </div>
+            </el-splitter-panel>
+            <el-splitter-panel class="splitter-panel-right">
+                <div class="tool-detail-panel">
+                    <el-scrollbar>
+                        <div class="detail-content">
+                            <keep-alive>
+                                <component :is="currentView" :tab-id="props.tabId" />
+                            </keep-alive>
+                        </div>
+                    </el-scrollbar>
+                </div>
+            </el-splitter-panel>
+        </el-splitter>
     </div>
 </template>
 
@@ -85,19 +91,38 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* 与批量测试一致的左右分栏布局 */
+/* 与批量测试一致的左右分栏布局，使用 Splitter 支持拖拽调整宽度 */
 .tool-module-container {
-    display: flex;
     height: 100%;
 }
 
+.tool-splitter {
+    height: 100%;
+}
+
+.tool-splitter :deep(.el-splitter__panel) {
+    overflow: hidden;
+}
+
+.splitter-panel-left {
+    display: flex;
+    flex-direction: column;
+}
+
+.splitter-panel-right {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
 .tool-list-panel {
-    width: 200px;
+    width: 100%;
+    height: 100%;
     border-right: 1px solid var(--el-border-color-light);
     background-color: var(--el-bg-color);
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
+    overflow: hidden;
 }
 
 .tool-list-panel .list-container {
@@ -155,7 +180,10 @@ onBeforeUnmount(() => {
 .tool-detail-panel {
     flex: 1;
     min-width: 0;
+    width: 100%;
+    height: 100%;
     background-color: var(--el-bg-color);
+    overflow: hidden;
 }
 
 .tool-detail-panel .el-scrollbar {
