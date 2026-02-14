@@ -37,6 +37,11 @@
                         </template>
                     </template>
                 </el-table-column>
+                <template #empty>
+                    <div class="trace-table-empty-form">
+                        <div class="trace-table-empty-form-row" v-for="i in 4" :key="i" />
+                    </div>
+                </template>
             </el-table>
         </el-scrollbar>
 
@@ -331,5 +336,21 @@ const handleDialogClose = () => {
 .tool-names-container {
     display: flex;
     gap: 4px;
+}
+
+/* 无数据时显示空表单占位，不显示 No Data */
+.trace-table-empty-form {
+    padding: 24px 16px;
+    min-height: 120px;
+}
+.trace-table-empty-form-row {
+    height: 32px;
+    margin-bottom: 12px;
+    background: var(--el-fill-color-lighter);
+    border-radius: 4px;
+    opacity: 0.5;
+}
+.trace-table-empty-form-row:last-child {
+    margin-bottom: 0;
 }
 </style>

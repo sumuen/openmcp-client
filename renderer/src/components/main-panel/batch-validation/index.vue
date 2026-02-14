@@ -70,7 +70,7 @@
                     </div>
                     <div class="detail-section">
                         <label class="detail-section-label">{{ t('batch-validation-test-input') }}</label>
-                        <BatchValidationInput :ref="el => setTcInputRef(formModel.id, el)" v-model="formModel.input"
+                        <BatchValidationInput :ref="el => setTcInputRef(formModel.id, el)" :tab-id="props.tabId" v-model="formModel.input"
                             :source-storage="sourceStorage"
                             :placeholder="t('batch-validation-test-input-placeholder')" />
                     </div>
@@ -204,6 +204,8 @@ interface ValidationResult {
 /** 当前 tab 的持久化数据（绑定到 tab.storage，与 chat/index.vue 一致） */
 const tab = tabs.content[props.tabId];
 const tabStorage = tab.storage as BatchValidationStorage;
+
+
 ensureBatchValidationStorage(tab.storage);
 const isRunning = ref(false);
 const runStatusText = ref('');
@@ -278,17 +280,6 @@ function commitDraftToTab(tabIndex: number) {
     }
 }
 
-watch(() => tabStorage.selectedTabIndex, (newIdx, oldIdx) => {
-    if (oldIdx !== undefined && draftTestCase.value) {
-        commitDraftToTab(oldIdx);
-    }
-    if (chatTabs.value[newIdx] && !tabStorage.testCasesByTabIndex[newIdx]) {
-        draftTestCase.value = createEmptyTestCase();
-    } else {
-        draftTestCase.value = null;
-    }
-}, { immediate: true });
-
 /** 当前表单对应测试案例的验证结果 */
 const currentResultItems = computed(() => {
     const tc = formModel.value;
@@ -323,11 +314,6 @@ const runDisabledReason = computed(() => {
     if (llms.length === 0) return t('batch-validation-no-llm');
     return '';
 });
-
-function addTestCaseForCurrentTab() {
-    const idx = tabStorage.selectedTabIndex;
-    tabStorage.testCasesByTabIndex[idx] = { id: uuidv4(), input: '', criteria: [''] };
-}
 
 /** 左侧列表数据：所有交互测试标签页（含无测试案例的） */
 const listItems = computed(() => {
@@ -364,11 +350,6 @@ function addTestCaseFromList() {
     const nextIdx = target >= 0 ? target : 0;
     byIndex[nextIdx] = createEmptyTestCase();
     tabStorage.selectedTabIndex = nextIdx;
-}
-
-function removeCurrentTestCase() {
-    const idx = tabStorage.selectedTabIndex;
-    delete tabStorage.testCasesByTabIndex[idx];
 }
 
 function addCriterion() {
@@ -547,6 +528,11 @@ async function runValidation() {
 
 watch(chatTabs, (val) => {
     if (val.length > 0 && tabStorage.selectedTabIndex >= val.length) tabStorage.selectedTabIndex = 0;
+    // 刚创建或尚无任何测试用例时，至少创建一个空交互测试用例
+    if (val.length > 0 && Object.keys(tabStorage.testCasesByTabIndex).length === 0) {
+        tabStorage.testCasesByTabIndex[0] = createEmptyTestCase();
+        tabStorage.selectedTabIndex = 0;
+    }
 }, { immediate: true });
 </script>
 

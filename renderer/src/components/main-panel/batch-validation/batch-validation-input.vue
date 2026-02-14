@@ -19,7 +19,7 @@
         </div>
 
         <KRichTextarea
-            :ref="el => editorRef = el"
+            :ref="(el: any) => editorRef = el"
             :tab-id="-1"
             v-model="inputValue"
             :placeholder="placeholder"
@@ -37,10 +37,14 @@ import KRichTextarea from '../chat/chat-box/rich-textarea.vue';
 import type { ChatStorage, ChatSetting } from '../chat/chat-box/chat';
 import { llmManager } from '@/views/setting/llm';
 import { v4 as uuidv4 } from 'uuid';
+import { tabs } from '../panel';
+import type { BatchValidationStorage } from './storage';
+import { ensureBatchValidationStorage } from './storage';
 
 const { t } = useI18n();
 
 const props = defineProps<{
+    tabId: number;
     modelValue: string;
     placeholder?: string;
     sourceStorage: ChatStorage | null;
@@ -52,13 +56,39 @@ const emit = defineEmits<{
 
 const editorRef = ref<InstanceType<typeof KRichTextarea> | null>(null);
 
-const inputValue = computed({
-    get: () => props.modelValue,
-    set: (v) => emit('update:modelValue', v)
+/** 从 tabId 取 tabStorage，直接作为输入等数据的存储 */
+const tab = computed(() => (props.tabId >= 0 ? tabs.content[props.tabId] : null));
+const tabStorage = computed(() => {
+    const tabItem = tab.value;
+    if (!tabItem?.storage) return null;
+    ensureBatchValidationStorage(tabItem.storage);
+    return tabItem.storage as BatchValidationStorage;
 });
 
-// 为当前测试用例创建虚拟 storage，与 source 合并
-const virtualStorage = ref<ChatStorage | null>(null);
+/** 输入内容：优先读写 tabStorage 当前用例的 input，否则回退到 modelValue/emit（草稿） */
+const inputValue = computed({
+    get: () => {
+        const st = tabStorage.value;
+        if (!st) return props.modelValue;
+        const idx = st.selectedTabIndex;
+        const tc = st.testCasesByTabIndex[idx];
+        return tc ? tc.input : props.modelValue;
+    },
+    set: (v: string) => {
+        const st = tabStorage.value;
+        if (!st) {
+            emit('update:modelValue', v);
+            return;
+        }
+        const idx = st.selectedTabIndex;
+        const tc = st.testCasesByTabIndex[idx];
+        if (tc) {
+            tc.input = v;
+        } else {
+            emit('update:modelValue', v);
+        }
+    }
+});
 
 function createDefaultStorage(): ChatStorage {
     return {
@@ -77,24 +107,8 @@ function createDefaultStorage(): ChatStorage {
     };
 }
 
-watch(
-    () => props.sourceStorage,
-    (source) => {
-        const base = source
-            ? JSON.parse(JSON.stringify({
-                ...source,
-                id: uuidv4(),
-                messages: []
-            }))
-            : createDefaultStorage();
-        if (!base.settings) {
-            base.settings = createDefaultStorage().settings;
-        }
-        virtualStorage.value = base;
-    },
-    { immediate: true }
-);
-
+const defaultStorageRef = ref<ChatStorage>(createDefaultStorage());
+const virtualStorage = computed(() => props.sourceStorage ?? defaultStorageRef.value);
 provide('batchValidationStorage', virtualStorage);
 
 // Slash 命令
