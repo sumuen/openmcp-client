@@ -282,7 +282,7 @@
     "lookup-reflux-data": "View reflux data",
     "mcp-base-module": "MCP Basic Functions",
     "mcp-advance-module": "MCP Advanced Features",
-    "test-flow": "Test Process",
+    "test-flow": "Tool Batch Test",
     "tool-test": "Tool Test",
     "tool-debug": "Tool Debugging",
     "variable-management": "Variable Management",

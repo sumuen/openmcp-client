@@ -817,17 +817,19 @@ class McpClientAdapter {
         return msg;
     }
 
-    public async callTool(toolName: string, toolArgs: Record<string, any>) {
-        // TODO: 如果遇到不同服务器的同名 tool，请拓展解决方案
-        // 目前只找到第一个匹配 toolName 的工具进行调用
-        let clientId = this.clients[0].clientId;
-
-        for (const client of this.clients) {
-            const tools = await client.getTools();
-            const tool = tools.get(toolName);
-            if (tool) {
-                clientId = client.clientId;
-                break;
+    public async callTool(toolName: string, toolArgs: Record<string, any>, clientIndex?: number) {
+        let clientId: string;
+        if (clientIndex !== undefined && clientIndex >= 0 && clientIndex < this.clients.length) {
+            clientId = this.clients[clientIndex].clientId;
+        } else {
+            clientId = this.clients[0]?.clientId ?? '';
+            for (const client of this.clients) {
+                const tools = await client.getTools();
+                const tool = tools.get(toolName);
+                if (tool) {
+                    clientId = client.clientId;
+                    break;
+                }
             }
         }
 

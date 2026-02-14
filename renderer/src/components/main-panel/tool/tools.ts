@@ -16,6 +16,8 @@ export interface TestCase {
 
 export interface ToolStorage {
     activeNames: any[];
+    /** 当前选中的 MCP 客户端索引，与 currentToolName 一起定位工具 */
+    currentClientIndex?: number;
     currentToolName: string;
     lastToolCallResponse?: ToolCallResponse | string;
     formData: Record<string, any>;

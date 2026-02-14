@@ -37,6 +37,7 @@ import { useI18n } from 'vue-i18n';
 import ToolDebug from './tool-debug/index.vue';
 import Flow from './flow/index.vue';
 import VariableManagement from './variable-management/index.vue';
+import TestCases from './tool-debug/test-cases/index.vue';
 const { t } = useI18n();
 
 const props = defineProps({
@@ -51,19 +52,22 @@ const activeView = ref('cases');
 
 const menuOptions = computed(() => [
     { label: t('tool-debug'), value: 'cases' },
+    { label: t('test-cases'), value: 'test-cases' },
     { label: t('variable-management'), value: 'variable-management' },
     { label: t('test-flow'), value: 'flow' },
 ]);
 
 const currentView = computed(() => {
+    if (activeView.value === 'test-cases') {
+        return TestCases;
+    }
     if (activeView.value === 'variable-management') {
         return VariableManagement;
-    } else if (activeView.value === 'flow') {
-        return Flow;
-    } else {
-        return ToolDebug;
     }
-
+    if (activeView.value === 'flow') {
+        return Flow;
+    }
+    return ToolDebug;
 });
 
 // Allow external triggers to open the "variable-management" tab via a custom event

@@ -73,7 +73,7 @@
 }
 
 .add-criterion-btn:hover {
-    color: var(--main-light-color-70) !important;
+    color: var(--main-light-color-100) !important;
     border: 1px solid var(--main-light-color-70);
     background-color: var(--main-light-color-20);
 }

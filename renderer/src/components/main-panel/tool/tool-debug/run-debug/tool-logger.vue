@@ -1,18 +1,26 @@
 <template>
     <div class="tool-logger">
-        <span>
-            <span>{{ t('response') }}</span>
-            <span style="width: 200px; display: flex;">
-				<el-segmented v-model="renderMode.current" :options="renderMode.data" size="default"
-					style="margin: 10px; background-color: var(--background); font-size: 12px;">
-					<template #default="scope">
-						{{ scope.item.label }}
-					</template>
-				</el-segmented>
-            </span>
-        </span>
-        <el-scrollbar height="500px">
-            <div class="output-content" contenteditable="false">
+        <div class="tool-logger-header">
+            <div class="tool-logger-header-left">
+                <div class="response-type-tabs">
+                    <div
+                        v-for="item in renderMode.data"
+                        :key="item.value"
+                        class="response-type-tab"
+                        :class="{ 'is-selected': renderMode.current === item.value }"
+                        @click="renderMode.current = item.value"
+                    >
+                        {{ item.label }}
+                    </div>
+                </div>
+            </div>
+            <div class="tool-logger-header-actions">
+                <slot name="actions"></slot>
+            </div>
+        </div>
+        <div class="tool-logger-body">
+            <el-scrollbar>
+                <div class="output-content" contenteditable="false">
 
                 <!-- TODO: 更加稳定，现在通过下面这个来判断上一次执行结果是否成功 -->
                 <div v-if="typeof tabStorage.lastToolCallResponse === 'string'" class="error-tool-call">
@@ -43,8 +51,9 @@
                     </template>
                 </div>
 
-            </div>
-        </el-scrollbar>
+                </div>
+            </el-scrollbar>
+        </div>
     </div>
 </template>
 
@@ -108,6 +117,19 @@ const renderMode = reactive({
     border-radius: .5em;
     background-color: var(--background);
     padding: 10px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.tool-logger-body {
+    flex: 1;
+    min-height: 0;
+}
+
+.tool-logger-body .el-scrollbar {
+    height: 100%;
 }
 
 .tool-logger .el-switch__core {
@@ -123,16 +145,54 @@ const renderMode = reactive({
     background-color: var(--sidebar);
 }
 
-.tool-logger>span:first-child {
-    margin-bottom: 5px;
+.tool-logger-header {
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tool-logger-header-left {
     display: flex;
     align-items: center;
+    gap: 12px;
+}
+
+.tool-logger-header-actions {
+    display: flex;
+    align-items: center;
+}
+
+/* 响应类型：自定义 DIV 选项卡，选中项下侧高亮线 */
+.response-type-tabs {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    font-size: 12px;
+}
+
+.response-type-tab {
+    opacity: 0.5;
+    padding: 6px 12px;
+    color: var(--el-text-color-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.response-type-tab:hover {
+    color: var(--el-text-color-regular);
+}
+
+.response-type-tab.is-selected {
+    opacity: 1;
+    border-bottom-color: var(--el-text-color-regular);
 }
 
 .tool-logger .output-content {
     border-radius: .5em;
     padding: 15px;
-    min-height: 450px;
+    min-height: 100%;
     height: fit-content;
     font-family: var(--code-font-family);
     background-color: var(--sidebar);

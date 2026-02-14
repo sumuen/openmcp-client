@@ -55,7 +55,7 @@
                                     </el-button>
                                 </div>
                                 <el-button type="primary" :loading="isRunning" :disabled="!canRun"
-                                    @click="runValidation">
+                                    class="detail-run-btn" @click="runValidation">
                                     <span v-if="!isRunning" class="iconfont icon-play"></span>
                                     {{ t('batch-validation-run') }}
                                 </el-button>
@@ -594,13 +594,11 @@ watch(chatTabs, (val) => {
 }
 
 .batch-list-panel .list-add-btn:hover {
+    color: var(--main-light-color-100) !important;
     border: 1px solid var(--main-light-color-70);
     background-color: var(--main-light-color-20);
 }
 
-.batch-list-panel .list-add-btn .iconfont {
-    color: var(--main-light-color-70);
-}
 
 .batch-list-panel .list-container {
     flex: 1;
@@ -730,6 +728,14 @@ watch(chatTabs, (val) => {
     align-items: center;
     justify-content: center;
 }
+.batch-detail-panel .detail-actions-top .detail-actions-row .detail-setting-btn:hover {
+    border: 1px solid var(--main-light-color-70);
+    background-color: var(--main-light-color-20);
+    color: var(--main-light-color-100) !important;
+}
+.batch-detail-panel .detail-actions-top .detail-actions-row .detail-setting-btn:hover .iconfont {
+    color: var(--main-light-color-100) !important;
+}
 
 .batch-detail-panel .detail-actions-top .detail-actions-row .detail-setting-btn .iconfont {
     margin: 0;
@@ -737,6 +743,18 @@ watch(chatTabs, (val) => {
 
 .batch-detail-panel .detail-actions-top .detail-actions-row .el-button {
     flex-shrink: 0;
+}
+
+/* 执行验证按钮：与 list-add-btn hover 一致，hover 时颜色 +20 */
+.batch-detail-panel .detail-actions-top .detail-actions-row .detail-run-btn {
+    border: 1px solid var(--main-light-color-70);
+    background-color: var(--main-light-color-20);
+    color: var(--main-light-color-100) !important;
+}
+.batch-detail-panel .detail-actions-top .detail-actions-row .detail-run-btn:hover:not(:disabled) {
+    border: 1px solid var(--main-light-color-90);
+    background-color: var(--main-light-color-40);
+    color: var(--main-light-color-100) !important;
 }
 
 .batch-detail-panel .detail-actions-top .iconfont {

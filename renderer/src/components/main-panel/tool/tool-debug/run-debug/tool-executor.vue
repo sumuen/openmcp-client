@@ -1,6 +1,14 @@
 <template>
-    <div>
-        <h3>{{ currentTool?.name }}</h3>
+    <div class="tool-executor-header">
+        <el-tree-select
+            v-model="selectedToolValue"
+            :data="toolTreeData"
+            :render-after-expand="false"
+            :placeholder="t('select-tool')"
+            :render-content="renderToolSelectContent"
+            popper-class="tool-tree-select-dropdown"
+            class="tool-tree-select"
+        />
     </div>
     <div class="tool-executor-container">
         <el-form :model="tabStorage.formData" :rules="formRules" ref="formRef" label-position="top">
@@ -37,92 +45,53 @@
 
                 </el-form-item>
             </template>
-
-            <el-form-item class="executor-actions-container">
-                <div class="executor-actions-wrapper">
-                    <div class="left-actions">
-                        <el-button-group>
-                            <el-tooltip :content="t('reset')" placement="top">
-                                <el-button @click="resetForm">
-                                    <span class="iconfont icon-restart"></span>
-                                    {{ t('reset') }}
-                                </el-button>
-                            </el-tooltip>
-                            <el-tooltip content="Mock" placement="top">
-                                <el-button
-                                    @click="generateMockData"
-                                    :loading="mockLoading"
-                                    :disabled="loading || aiMockLoading || mockLoading"
-                                >
-                                    <span class="iconfont icon-dataset"></span>
-                                    Mock
-                                </el-button>
-                            </el-tooltip>
-                            <el-popover placement="top" :width="320" trigger="click" v-model:visible="aiPromptVisible">
-                                <template #reference>
-                                    <el-button :loading="aiMockLoading" :disabled="loading || aiMockLoading || mockLoading">
-                                        <span class="iconfont icon-robot"></span>
-                                        AI
-                                    </el-button>
-                                </template>
-                                <div class="ai-config-panel">
-                                    <h4 class="panel-title">{{ t('edit-ai-mock-prompt') }}</h4>
-                                    <el-input
-                                        type="textarea"
-                                        v-model="aiMookPrompt"
-                                        :rows="3"
-                                        :placeholder="t('enter-message-dot')"
-                                        class="mb-3"
-                                    />
-                                    <div class="panel-footer">
-                                        <div class="flex-center">
-                                            <el-switch v-model="enableXmlWrapper" size="small" />
-                                            <span class="label-text">XML</span>
-                                        </div>
-                                        <div class="footer-btns">
-                                            <el-button size="small" @click="aiPromptVisible = false">{{ t('cancel') }}</el-button>
-                                            <el-button size="small" type="primary" :loading="aiMockLoading" @click="onAIMookConfirm">
-                                                {{ t('confirm') }}
-                                            </el-button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </el-popover>
-                        </el-button-group>
-                    </div>
-
-                    <div class="right-actions">
-                        <el-button
-                            v-if="currentTool"
-                            @click="saveAsTestCase"
-                            :disabled="loading"
-                            class="btn-secondary"
-                        >
-                            <span class="iconfont icon-save"></span>
-                            {{ t('save-as-test-case') }}
-                        </el-button>
-                        <el-tooltip :content="t('execute-tool') + ' (Ctrl+Enter)'" placement="top">
-                            <el-button
-                                type="primary"
-                                :loading="loading"
-                                @click="handleExecute"
-                                class="btn-execute"
-                            >
-                                <span class="iconfont icon-play"></span>
-                                {{ t('execute-tool') }}
-                            </el-button>
-                        </el-tooltip>
+        </el-form>
+        <el-dialog
+            v-model="aiPromptVisible"
+            :title="t('edit-ai-mock-prompt')"
+            width="360px"
+            class="ai-mock-dialog"
+            destroy-on-close
+        >
+            <div class="ai-config-panel">
+                <el-input
+                    type="textarea"
+                    v-model="aiMookPrompt"
+                    :rows="3"
+                    :placeholder="t('enter-message-dot')"
+                    class="mb-3"
+                />
+                <div class="panel-footer">
+                    <div class="flex-center">
+                        <el-switch v-model="enableXmlWrapper" size="small" />
+                        <span class="label-text">XML</span>
                     </div>
                 </div>
-            </el-form-item>
-        </el-form>
+            </div>
+            <template #footer>
+                <el-button @click="aiPromptVisible = false">{{ t('cancel') }}</el-button>
+                <el-button type="primary" :loading="aiMockLoading" @click="onAIMookConfirm">
+                    {{ t('confirm') }}
+                </el-button>
+            </template>
+        </el-dialog>
+        <el-drawer
+            v-model="variableExtractionVisible"
+            :title="t('variable-extraction')"
+            direction="rtl"
+            size="420px"
+            destroy-on-close
+        >
+            <VariableExtraction v-if="variableExtractionVisible" :tab-id="props.tabId" />
+        </el-drawer>
     </div>
 </template>
 
 <script setup lang="ts">
-import { defineComponent, defineProps, watch, ref, computed } from 'vue';
+import { defineComponent, watch, ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
+import { ArrowDown } from '@element-plus/icons-vue';
 import { tabs } from '../../../panel';
 import type { ToolStorage } from '../../tools';
 import { getDefaultValue, normaliseJavascriptType } from '@/hook/mcp';
@@ -133,6 +102,7 @@ import { JSONSchemaFaker } from 'json-schema-faker';
 
 import { faker } from '@faker-js/faker';
 import VariableSelector from './variable-selector.vue';
+import VariableExtraction from '../variable-extraction/index.vue';
 import { initVariableStore, getVariables } from '../../variable-management/store';
 import type { ToolVariable } from '../../variable-management/types';
 
@@ -150,6 +120,7 @@ const mockLoading = ref(false);
 const aiMockLoading = ref(false);
 const aiPromptVisible = ref(false);
 const enableXmlWrapper = ref(false);
+const variableExtractionVisible = ref(false);
 
 const { t } = useI18n();
 
@@ -170,14 +141,84 @@ if (!tabStorage.formData) {
 const formRef = ref<FormInstance>();
 const loading = ref(false);
 
+/** 下拉项自定义渲染：第一行标题，第二行描述（字体稍淡） */
+function renderToolSelectContent(h: any, { data }: { data: { label: string; description?: string } }) {
+    return h('div', { class: 'tree-select-node-content' }, [
+        h('div', { class: 'tree-select-node-label' }, data.label),
+        data.description
+            ? h('div', { class: 'tree-select-node-desc' }, data.description)
+            : null
+    ]);
+}
+
+/** 深度为 2 的树：一级 MCP 服务器，二级该服务器下工具 */
+const toolTreeData = computed(() => {
+    return mcpClientAdapter.clients.map((client, index) => {
+        const tools = client.tools;
+        const children = tools ? Array.from(tools.values()).map(tool => ({
+            label: tool.name,
+            value: `${index}::${tool.name}`,
+            description: tool.description || ''
+        })) : [];
+        return {
+            label: client.name,
+            value: `server-${index}`,
+            children
+        };
+    });
+});
+
+const TOOL_VALUE_SEP = '::';
+
+const selectedToolValue = computed({
+    get() {
+        const name = tabStorage.currentToolName;
+        if (!name) return '';
+        let idx = tabStorage.currentClientIndex;
+        if (idx !== undefined && idx >= 0 && idx < mcpClientAdapter.clients.length) {
+            const client = mcpClientAdapter.clients[idx];
+            if (client.tools?.has(name)) return `${idx}${TOOL_VALUE_SEP}${name}`;
+        }
+        for (let i = 0; i < mcpClientAdapter.clients.length; i++) {
+            if (mcpClientAdapter.clients[i].tools?.get(name)) return `${i}${TOOL_VALUE_SEP}${name}`;
+        }
+        return '';
+    },
+    set(val: string) {
+        if (!val || !val.includes(TOOL_VALUE_SEP)) return;
+        const sepAt = val.indexOf(TOOL_VALUE_SEP);
+        const i = Number(val.slice(0, sepAt));
+        const toolName = val.slice(sepAt + TOOL_VALUE_SEP.length);
+        if (!Number.isNaN(i) && toolName) {
+            tabStorage.currentClientIndex = i;
+            tabStorage.currentToolName = toolName;
+            tabStorage.lastToolCallResponse = undefined;
+        }
+    }
+});
+
+onMounted(() => {
+    if (!tabStorage.currentToolName && toolTreeData.value.length > 0) {
+        const first = toolTreeData.value[0];
+        const firstChild = first?.children?.[0];
+        if (firstChild && typeof firstChild.value === 'string' && firstChild.value.includes(TOOL_VALUE_SEP)) {
+            const val = firstChild.value as string;
+            const sepAt = val.indexOf(TOOL_VALUE_SEP);
+            tabStorage.currentClientIndex = Number(val.slice(0, sepAt));
+            tabStorage.currentToolName = val.slice(sepAt + TOOL_VALUE_SEP.length);
+        }
+    }
+});
+
 const currentTool = computed(() => {
+    const idx = tabStorage.currentClientIndex;
+    if (idx !== undefined && idx >= 0 && idx < mcpClientAdapter.clients.length) {
+        const tool = mcpClientAdapter.clients[idx].tools?.get(tabStorage.currentToolName);
+        if (tool) return tool;
+    }
     for (const client of mcpClientAdapter.clients) {
         const tool = client.tools?.get(tabStorage.currentToolName);
-        if (tool) {
-            console.log(tool);
-
-            return tool;
-        }
+        if (tool) return tool;
     }
 });
 
@@ -382,6 +423,14 @@ const generateAIMockData = async (prompt?: string) => {
     }
 };
 
+function onMockCommand(command: string) {
+    if (command === 'schema') {
+        generateMockData();
+    } else if (command === 'ai') {
+        aiPromptVisible.value = true;
+    }
+}
+
 const generateMockData = async () => {
     if (!currentTool.value?.inputSchema) return;
     mockLoading.value = true;
@@ -431,7 +480,7 @@ async function handleExecute() {
     try {
         tabStorage.lastToolCallResponse = undefined;
         const resolvedForm = resolveFormPlaceholders(tabStorage.formData);
-        const toolResponse = await mcpClientAdapter.callTool(tabStorage.currentToolName, resolvedForm);
+        const toolResponse = await mcpClientAdapter.callTool(tabStorage.currentToolName, resolvedForm, tabStorage.currentClientIndex);
         tabStorage.lastToolCallResponse = toolResponse;
     } finally {
         loading.value = false;
@@ -484,9 +533,79 @@ watch(() => tabStorage.currentToolName, () => {
     resetForm();
 }, { immediate: true });
 
+defineExpose({
+    formRef,
+    resetForm,
+    handleExecute,
+    saveAsTestCase,
+    variableExtractionVisible,
+    mockLoading,
+    aiMockLoading,
+    aiPromptVisible,
+    enableXmlWrapper,
+    aiMookPrompt,
+    onMockCommand,
+    onAIMookConfirm,
+    currentTool,
+    loading,
+    t
+});
+
 </script>
 
 <style>
+.el-tree-select__popper .el-select-dropdown__item {
+    height: fit-content !important;
+}
+
+
+.el-tree-node__content {
+    height: fit-content !important;
+}
+
+.tool-executor-header {
+    margin-bottom: 12px;
+}
+
+.tool-executor-header .tool-tree-select {
+    width: 100%;
+    max-width: 420px;
+}
+
+/* 下拉项在 teleport 中，样式需全局生效：第一行标题，第二行描述 */
+.tree-select-node-content {
+    padding: 2px 0;
+    min-width: 0;
+}
+
+.tree-select-node-label {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.tree-select-node-desc {
+    font-size: 12px;
+    color: var(--el-text-color-placeholder);
+    opacity: 0.85;
+    line-height: 1.4;
+    margin-top: 2px;
+    max-width: 320px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 下拉在 teleport 中，用 popper-class 定位：列表项允许多行 */
+.tool-tree-select-dropdown.el-select-dropdown .el-select-dropdown__item {
+    height: auto;
+    min-height: 32px;
+    padding: 6px 12px;
+    white-space: normal;
+}
+
 .tool-executor-container {
     background-color: var(--background);
     padding: 10px 12px;
@@ -507,85 +626,10 @@ watch(() => tabStorage.currentToolName, () => {
     border: 1px solid var(--main-color) !important;
 }
 
-/* 执行器操作栏：语义分层（左侧辅助 / 右侧核心）、顶部分割、图标+文字 */
-.executor-actions-container {
-    margin-top: 20px;
-    border-top: 1px solid var(--el-border-color-lighter);
-    padding-top: 16px;
-}
-
-.executor-actions-container :deep(.el-form-item__content) {
-    width: 100%;
-}
-
-.executor-actions-wrapper {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    gap: 12px;
-}
-
 .flex-center {
     display: flex;
     align-items: center;
     gap: 8px;
-}
-
-/* 左侧：重置 / Mock / AI（透明主题色按钮组） */
-.left-actions .el-button-group {
-    display: inline-flex;
-}
-
-.left-actions .el-button-group .el-button {
-    border-radius: 0;
-    border: 1px solid var(--main-light-color-70);
-    background-color: var(--main-light-color-20);
-    color: var(--main-light-color-70);
-}
-
-.left-actions .el-button-group .el-button .iconfont {
-    margin-right: 6px;
-}
-
-.left-actions .el-button-group > *:first-child .el-button {
-    border-top-left-radius: 8px;
-    border-bottom-left-radius: 8px;
-}
-
-.left-actions .el-button-group > *:last-child .el-button {
-    border-top-right-radius: 8px;
-    border-bottom-right-radius: 8px;
-}
-
-.left-actions .el-button-group .el-button:hover:not(:disabled) {
-    border-color: var(--main-light-color-90);
-    background-color: var(--main-light-color-40);
-    color: var(--main-light-color-90);
-}
-
-.left-actions .el-button-group .el-button.is-disabled {
-    opacity: 0.5;
-}
-
-/* 右侧：保存为测试用例（次要）+ 执行（primary 主操作） */
-.right-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.right-actions .btn-secondary .iconfont,
-.right-actions .btn-execute .iconfont {
-    margin-right: 6px;
-}
-
-.btn-execute {
-    border-radius: 8px;
-    padding-left: 20px;
-    padding-right: 20px;
-    font-weight: 600;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* AI 配置 Popover 面板 */
