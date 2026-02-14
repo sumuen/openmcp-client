@@ -2,10 +2,12 @@
     <div class="batch-validation-container">
         <div class="batch-list-panel">
             <div class="list-header">
-                <el-button type="primary" @click="addTestCaseFromList">
-                    <span class="iconfont icon-add"></span>
-                    {{ t('add') }}
-                </el-button>
+                <div class="list-add-btn-wrap">
+                    <el-button class="list-add-btn" @click="addTestCaseFromList">
+                        <span class="iconfont icon-add"></span>
+                        <span class="list-add-btn-text">{{ t('add') }}</span>
+                    </el-button>
+                </div>
             </div>
             <div class="list-container">
                 <el-scrollbar>
@@ -13,13 +15,20 @@
                         <div v-for="item in listItems" :key="item.tabIndex" class="list-item"
                             :class="{ active: selectedTabIndex === item.tabIndex }"
                             @click="selectTestCase(item.tabIndex)">
-                            <div class="item-title">
-                                {{ getListItemTitle(item.tabIndex) }}
+                            <div class="list-item-content">
+                                <div class="item-title">
+                                    {{ getListItemTitle(item.tabIndex) }}
+                                </div>
+                                <div v-if="getListItemPreview(item.tabIndex)" class="item-preview">
+                                    {{ getListItemPreview(item.tabIndex) }}
+                                </div>
+                                <div v-else class="item-empty">-</div>
                             </div>
-                            <div v-if="getListItemPreview(item.tabIndex)" class="item-preview">
-                                {{ getListItemPreview(item.tabIndex) }}
-                            </div>
-                            <div v-else class="item-empty">-</div>
+                            <el-button type="default" circle class="list-item-setting-btn"
+                                :title="t('batch-validation-settings-drawer-title')"
+                                @click.stop="openSettingsForTab(item.tabIndex)">
+                                <span class="iconfont icon-setting"></span>
+                            </el-button>
                         </div>
                         <div v-if="listItems.length === 0" class="list-empty">
                             {{ t('batch-validation-no-chat-tabs') }}
@@ -36,20 +45,21 @@
                 <div v-else-if="formModel" class="detail-content">
                     <div class="detail-section detail-actions-top">
                         <div class="detail-actions-row">
-                            <el-input v-model="formModel.name" :placeholder="defaultTestCaseName" class="detail-name-input" />
-                            <el-button
-                                type="default"
-                                :title="t('batch-validation-settings-drawer-title')"
-                                circle
-                                @click="settingsDrawerVisible = true"
-                            >
-                                <span class="iconfont icon-setting"></span>
-                            </el-button>
-                            <el-button type="primary" :loading="isRunning" :disabled="!canRun"
-                                @click="runValidation">
-                                <span v-if="!isRunning" class="iconfont icon-play"></span>
-                                {{ t('batch-validation-run') }}
-                            </el-button>
+                            <el-input v-model="formModel.name" :placeholder="defaultTestCaseName"
+                                class="detail-name-input" />
+                            <div class="detail-actions-right">
+                                <div class="detail-actions-center">
+                                    <el-button type="default" :title="t('batch-validation-settings-drawer-title')"
+                                        circle class="detail-setting-btn" @click="settingsDrawerVisible = true">
+                                        <span class="iconfont icon-setting"></span>
+                                    </el-button>
+                                </div>
+                                <el-button type="primary" :loading="isRunning" :disabled="!canRun"
+                                    @click="runValidation">
+                                    <span v-if="!isRunning" class="iconfont icon-play"></span>
+                                    {{ t('batch-validation-run') }}
+                                </el-button>
+                            </div>
                         </div>
                         <div v-if="runStatusText" class="detail-status">{{ runStatusText }}</div>
                         <div v-if="!canRun && runDisabledReason" class="detail-hint">{{ runDisabledReason }}</div>
@@ -83,11 +93,11 @@
                                 class="result-item" :class="{ error: r.error }">
                                 <div class="result-header">
                                     <span class="result-index">#{{ r.testCaseIndex + 1 }}-{{ r.criterionIndex + 1
-                                        }}</span>
+                                    }}</span>
                                     <span v-if="evaluationMode === 'pass-fail'" class="result-badge"
                                         :class="r.pass === true ? 'pass' : r.pass === false ? 'fail' : 'unknown'">
                                         {{ r.pass === true ? t('batch-validation-pass') : r.pass === false ?
-                                        t('batch-validation-fail') : '?' }}
+                                            t('batch-validation-fail') : '?' }}
                                     </span>
                                     <span v-else class="result-score">
                                         {{ r.score !== undefined ? `${r.score}/10` : '-' }}
@@ -108,34 +118,32 @@
             <!-- 从右往左拉出的配置抽屉：当前测试样例的 pass/score、描述等 -->
             <Teleport to="body">
                 <Transition name="settings-drawer">
-                    <div
-                        v-if="settingsDrawerVisible && formModel"
-                        class="settings-drawer-mask"
-                        @click.self="settingsDrawerVisible = false"
-                    >
+                    <div v-if="settingsDrawerVisible && formModel" class="settings-drawer-mask"
+                        @click.self="settingsDrawerVisible = false">
                         <div class="settings-drawer-panel">
                             <div class="settings-drawer-header">
-                                <span class="settings-drawer-title">{{ t('batch-validation-settings-drawer-title') }}</span>
+                                <span class="settings-drawer-title">{{ t('batch-validation-settings-drawer-title')
+                                    }}</span>
                                 <el-button type="primary" text circle @click="settingsDrawerVisible = false">
                                     <span class="iconfont icon-close"></span>
                                 </el-button>
                             </div>
                             <div class="settings-drawer-body">
                                 <div class="settings-drawer-section">
-                                    <label class="detail-section-label">{{ t('batch-validation-evaluation-mode') }}</label>
+                                    <label class="detail-section-label">{{ t('batch-validation-evaluation-mode')
+                                        }}</label>
                                     <el-radio-group v-model="evaluationMode" class="settings-drawer-radio">
-                                        <el-radio-button label="pass-fail">{{ t('batch-validation-mode-pass-fail') }}</el-radio-button>
-                                        <el-radio-button label="score">{{ t('batch-validation-mode-score') }}</el-radio-button>
+                                        <el-radio-button label="pass-fail">{{ t('batch-validation-mode-pass-fail')
+                                            }}</el-radio-button>
+                                        <el-radio-button label="score">{{ t('batch-validation-mode-score')
+                                            }}</el-radio-button>
                                     </el-radio-group>
                                 </div>
                                 <div class="settings-drawer-section">
-                                    <label class="detail-section-label">{{ t('batch-validation-test-case-desc') }}</label>
-                                    <el-input
-                                        v-model="formModel.description"
-                                        type="textarea"
-                                        :rows="4"
-                                        :placeholder="t('batch-validation-test-case-desc-placeholder')"
-                                    />
+                                    <label class="detail-section-label">{{ t('batch-validation-test-case-desc')
+                                        }}</label>
+                                    <el-input v-model="formModel.description" type="textarea" :rows="4"
+                                        :placeholder="t('batch-validation-test-case-desc-placeholder')" />
                                 </div>
                             </div>
                         </div>
@@ -338,6 +346,12 @@ function selectTestCase(tabIndex: number) {
         commitDraftToTab(selectedTabIndex.value);
     }
     selectedTabIndex.value = tabIndex;
+}
+
+/** 切换到指定测试用例并打开配置抽屉（列表项右侧齿轮点击） */
+function openSettingsForTab(tabIndex: number) {
+    selectTestCase(tabIndex);
+    settingsDrawerVisible.value = true;
 }
 
 /** 从列表头添加：保存当前表单（含草稿），为第一个无测试案例的标签页创建新表单并切换 */
@@ -559,8 +573,33 @@ watch(chatTabs, (val) => {
 }
 
 .batch-list-panel .list-header {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--el-border-color-light);
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.batch-list-panel .list-add-btn-wrap {
+    margin: 3px;
+    width: calc(100% - 6px);
+}
+
+.batch-list-panel .list-add-btn {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding-left: 12px;
+    margin-right: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--vline-stroke-color);
+}
+
+.batch-list-panel .list-add-btn:hover {
+    border: 1px solid var(--main-light-color-70);
+    background-color: var(--main-light-color-20);
+}
+
+.batch-list-panel .list-add-btn .iconfont {
+    color: var(--main-light-color-70);
 }
 
 .batch-list-panel .list-container {
@@ -583,9 +622,36 @@ watch(chatTabs, (val) => {
     user-select: none;
     cursor: pointer;
     display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    transition: var(--animation-3s);
+}
+
+.list-add-btn-text {
+    margin-left: 8px;
+}
+
+.detail-actions-right {
+    display: flex;
+    gap: 8px;
+}
+
+.batch-list-panel .list-item-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
     flex-direction: column;
     align-items: flex-start;
-    transition: var(--animation-3s);
+}
+
+.batch-list-panel .list-item-setting-btn {
+    flex-shrink: 0;
+    padding: 4px;
+}
+
+.batch-list-panel .list-item-setting-btn .iconfont {
+    margin: 0;
 }
 
 .batch-list-panel .list-item:hover {
@@ -604,7 +670,7 @@ watch(chatTabs, (val) => {
 .batch-list-panel .item-title {
     font-weight: bold;
     font-size: 13px;
-    max-width: 250px;
+    max-width: 100%;
     margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
@@ -615,7 +681,7 @@ watch(chatTabs, (val) => {
 .batch-list-panel .item-empty {
     font-size: 12.5px;
     opacity: 0.6;
-    max-width: 250px;
+    max-width: 100%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -651,8 +717,22 @@ watch(chatTabs, (val) => {
     min-width: 0;
 }
 
-.batch-detail-panel .detail-actions-top .detail-actions-row .el-radio-group {
+.batch-detail-panel .detail-actions-top .detail-actions-row .detail-actions-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.batch-detail-panel .detail-actions-top .detail-actions-row .detail-setting-btn {
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.batch-detail-panel .detail-actions-top .detail-actions-row .detail-setting-btn .iconfont {
+    margin: 0;
 }
 
 .batch-detail-panel .detail-actions-top .detail-actions-row .el-button {
@@ -864,8 +944,26 @@ watch(chatTabs, (val) => {
     gap: 4px;
 }
 
+/* 与左侧列表「添加」按钮样式完全一致 */
 .add-criterion-btn {
     margin-top: 4px;
+    width: fit-content;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding-left: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--vline-stroke-color);
+}
+
+.add-criterion-btn:hover {
+    color: var(--main-light-color-70) !important;
+    border: 1px solid var(--main-light-color-70);
+    background-color: var(--main-light-color-20);
+}
+
+.add-criterion-btn .iconfont {
+    margin-right: 8px;
 }
 
 .criterion-item {

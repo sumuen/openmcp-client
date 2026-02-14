@@ -443,7 +443,7 @@ onUnmounted(() => {
 
 </script>
 
-<style>
+<style scoped>
 .chat-footer {
     padding: 12px 16px 16px;
     border-top: 1px solid var(--border);
@@ -452,7 +452,6 @@ onUnmounted(() => {
     height: fit-content !important;
     bottom: 0;
     width: 100%;
-    background-color: var(--sidebar);
 }
 
 .input-area {
@@ -465,18 +464,38 @@ onUnmounted(() => {
     position: relative;
 }
 
-.chat-input {
-    padding-right: 80px;
-}
-
-.chat-input textarea {
-    border-radius: 4px;
-    border: 1px solid var(--input-border);
-}
-
-.chat-input textarea:focus {
-    border-color: var(--input-active-border);
+/* 与批量测试输入框完全一致：Element Plus el-input__wrapper 风格 */
+:deep(.input-wrapper .k-rich-textarea) {
+    min-height: 160px;
+    border: none !important;
+    border-radius: 8px;
+    padding: 6px 11px 1px 11px;
+    box-shadow: 0 0 0 1px var(--el-input-border-color, var(--el-border-color)) inset;
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
+    transition: var(--el-transition-box-shadow);
+    font-size: var(--el-font-size-base);
     outline: none;
+}
+
+:deep(.input-wrapper .k-rich-textarea:hover) {
+    box-shadow: 0 0 0 1px var(--main-light-color-70) inset !important;
+    outline: none;
+    transition: var(--el-transition-box-shadow);
+}
+
+:deep(.input-wrapper .k-rich-textarea:focus-within) {
+    box-shadow: 0 0 0 1px var(--main-light-color-70) inset !important;
+    outline: none;
+    transition: var(--el-transition-box-shadow);
+}
+
+:deep(.input-wrapper .rich-editor) {
+    min-height: 120px;
+    color: var(--el-input-text-color, var(--el-text-color-regular));
+}
+
+:deep(.input-wrapper .rich-editor:empty::before) {
+    color: var(--el-input-placeholder-color, var(--el-text-color-placeholder));
 }
 
 .send-button {
@@ -521,7 +540,7 @@ onUnmounted(() => {
     margin-bottom: 4px;
     max-height: 200px;
     overflow-y: auto;
-    background: var(--sidebar);
+    background: var(--el-input-bg-color, var(--el-fill-color-blank));
     border: 1px solid var(--border);
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -546,7 +565,7 @@ onUnmounted(() => {
 
 .slash-menu-item:hover,
 .slash-menu-item.active {
-    background: var(--sidebar-item-hover);
+    background: var(--el-fill-color-light);
 }
 
 .slash-menu-name {

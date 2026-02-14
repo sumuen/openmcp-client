@@ -279,7 +279,7 @@ function parseArguments(args: string | undefined): object {
     border: 1px solid var(--sidebar-item-border);
     border-radius: 8px;
     padding: 8px 10px;
-    background-color: var(--sidebar-item-selected);
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
     transition: var(--animation-3s);
 }
 
@@ -291,7 +291,7 @@ function parseArguments(args: string | undefined): object {
 /* info 成功/就绪状态 - 使用中性灰背景，降低刺眼感，利于调试 */
 .message-text.tool_calls.info {
     border-color: var(--sidebar-item-border);
-    background-color: var(--sidebar-item-selected);
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
     box-shadow: none;
 }
 
@@ -349,7 +349,7 @@ function parseArguments(args: string | undefined): object {
 
 .message-text.tool_calls.warning {
     border-color: var(--el-color-warning);
-    background-color: rgba(230, 162, 60, 0.08);
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
 }
 
 .message-text.tool_calls.warning .tool-name {
@@ -358,13 +358,13 @@ function parseArguments(args: string | undefined): object {
 
 .message-text.tool_calls.warning .tool-arguments,
 .message-text.tool_calls.warning .tool-result {
-    background-color: rgba(230, 162, 60, 0.12);
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
     border: 1px solid rgba(230, 162, 60, 0.3);
 }
 
 .message-text.tool_calls.error {
     border-color: var(--el-color-error);
-    background-color: rgba(245, 108, 108, 0.08);
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
 }
 
 .message-text.tool_calls.error .tool-name {
@@ -373,7 +373,7 @@ function parseArguments(args: string | undefined): object {
 
 .message-text.tool_calls.error .tool-arguments,
 .message-text.tool_calls.error .tool-result {
-    background-color: rgba(245, 108, 108, 0.12);
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
     border: 1px solid rgba(245, 108, 108, 0.3);
 }
 
@@ -402,7 +402,7 @@ function parseArguments(args: string | undefined): object {
     font-weight: 700;
     padding: 1px 3px;
     border-radius: 3px;
-    background: var(--sidebar-item-background);
+    background: var(--el-input-bg-color, var(--el-fill-color-blank));
     color: var(--el-text-color-secondary);
     border: 1px solid var(--sidebar-item-border);
     letter-spacing: 0.02em;
@@ -527,7 +527,7 @@ function parseArguments(args: string | undefined): object {
 .tool-type {
     font-size: var(--chat-font-size-xs);
     color: var(--el-text-color-secondary);
-    background-color: var(--main-light-color-10);
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
     padding: 2px 6px;
     display: flex;
     align-items: center;
@@ -576,7 +576,7 @@ function parseArguments(args: string | undefined): object {
 
 /* 错误展示 - 开发者可读 */
 .tool-result--error {
-    background-color: rgba(245, 108, 108, 0.08);
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
     border-color: rgba(245, 108, 108, 0.3);
 }
 

@@ -36,7 +36,7 @@
     <div v-else class="chat-openmcp-icon">
         <div>
             <span>{{ t('press-and-run') }}
-                <span style="padding: 6px 14px; border-radius: 4px; background-color: var(--sidebar-item-selected); border: 1px solid var(--border);">
+                <span style="padding: 6px 14px; border-radius: 4px; background-color: var(--el-input-bg-color, var(--el-fill-color-blank)); border: 1px solid var(--border);">
                     <span class="iconfont icon-send"></span>
                 </span>
             </span>
@@ -182,7 +182,7 @@ defineExpose({
 
 .user .message-text>span {
     border-radius: 6px;
-    background-color: var(--sidebar-item-selected);
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
     padding: 8px 12px;
     border: 1px solid var(--sidebar-item-border);
 }

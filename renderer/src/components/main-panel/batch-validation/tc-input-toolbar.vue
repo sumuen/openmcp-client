@@ -146,15 +146,18 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* 与批量验证左侧「添加」按钮样式完全一致 */
 .tc-input-toolbar {
     display: flex;
-    gap: 4px;
+    gap: 8px;
     padding: 6px 0 0 0;
 }
 
 .setting-button {
-    padding: 5px 8px;
-    border-radius: 0.5em;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--main-light-color-70);
+    background-color: var(--main-light-color-20);
     font-size: 12px;
     cursor: pointer;
     display: flex;
@@ -163,10 +166,22 @@ onMounted(async () => {
 }
 
 .setting-button:hover {
-    background-color: rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--main-light-color-90);
+    background-color: var(--main-light-color-40);
+}
+
+.setting-button .iconfont,
+.setting-button .skill-label {
+    color: var(--main-light-color-70);
 }
 
 .setting-button.active {
+    border-color: var(--main-light-color-90);
+    background-color: var(--main-light-color-40);
+}
+
+.setting-button.active .iconfont,
+.setting-button.active .skill-label {
     color: var(--el-color-primary);
 }
 

@@ -225,7 +225,7 @@ function handleCompositionEnd() {
 <style>
 .k-rich-textarea {
     border: 1px solid var(--input-border);
-    background-color: var(--background);
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
     background-image: none;
     border-radius: 16px;
     box-sizing: border-box;
@@ -266,12 +266,12 @@ function handleCompositionEnd() {
 }
 
 .rich-item-prompt {
-    background-color: var(--sidebar-item-selected);
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
     color: var(--link-foreground);
 }
 
 .rich-item-resource {
-    background-color: var(--sidebar-item-selected);
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
     color: var(--foreground);
 }
 
@@ -280,7 +280,7 @@ function handleCompositionEnd() {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    background-color: var(--sidebar-item-selected);
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
     font-size: var(--chat-font-size-xs);
 }
 

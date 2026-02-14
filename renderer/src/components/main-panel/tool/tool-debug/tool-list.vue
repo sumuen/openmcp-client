@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, defineProps, type Reactive } from 'vue';
+import { onMounted, type Reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { ToolStorage } from '../tools';
 import { tabs } from '../../panel';
@@ -93,6 +93,10 @@ onMounted(async () => {
 </script>
 
 <style>
+.el-collapse-item__header {
+    background-color: transparent;
+}
+
 .tool-list-container-scrollbar {
     background-color: var(--background);
     margin-bottom: 10px;
@@ -117,30 +121,31 @@ onMounted(async () => {
     width: 175px;
 }
 
+/* 与批量验证左侧列表样式一致 */
 .tool-list-container>.item {
     margin: 3px;
     padding: 5px 10px;
-    border-radius: .3em;
+    border-radius: 0.3em;
     user-select: none;
     cursor: pointer;
+    display: flex;
+    flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    gap: 8px;
     transition: var(--animation-3s);
-}
-
-.tool-list-container>.item:active {
-	transform: scale(0.95);
-	transition: var(--animation-3s);
 }
 
 .tool-list-container>.item:hover {
-    background-color: var(--main-light-color);
-    transition: var(--animation-3s);
+    background-color: var(--el-fill-color-light);
+}
+
+.tool-list-container>.item:active {
+    transform: scale(0.95);
 }
 
 .tool-list-container>.item.active {
-    background-color: var(--main-light-color-20);
-    transition: var(--animation-3s);
+    background-color: var(--el-fill-color-light);
+    border-left: 3px solid var(--el-color-primary-light-5);
 }
 
 .tool-list-container>.item>span:first-child {

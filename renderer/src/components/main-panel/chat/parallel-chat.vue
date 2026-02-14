@@ -253,7 +253,7 @@ function getModelName(modelId: string) {
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
-    background-color: var(--input-active-background);
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
     border-bottom: 1px solid var(--background);
     font-size: var(--chat-font-size-sm);
     font-weight: bold;

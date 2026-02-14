@@ -38,50 +38,82 @@
                 </el-form-item>
             </template>
 
-            <el-form-item class="executor-actions">
-                <el-button type="primary" :loading="loading" @click="handleExecute" class="btn-execute">
-                    {{ t('execute-tool') }}
-                </el-button>
-                <el-button @click="resetForm" class="btn-reset">
-                    {{ t('reset') }}
-                </el-button>
-                <el-button @click="generateMockData" :loading="mockLoading"
-                    :disabled="loading || aiMockLoading || mockLoading" class="btn-mock">
-                    {{ 'mock' }}
-                </el-button>
+            <el-form-item class="executor-actions-container">
+                <div class="executor-actions-wrapper">
+                    <div class="left-actions">
+                        <el-button-group>
+                            <el-tooltip :content="t('reset')" placement="top">
+                                <el-button @click="resetForm">
+                                    <span class="iconfont icon-restart"></span>
+                                    {{ t('reset') }}
+                                </el-button>
+                            </el-tooltip>
+                            <el-tooltip content="Mock" placement="top">
+                                <el-button
+                                    @click="generateMockData"
+                                    :loading="mockLoading"
+                                    :disabled="loading || aiMockLoading || mockLoading"
+                                >
+                                    <span class="iconfont icon-dataset"></span>
+                                    Mock
+                                </el-button>
+                            </el-tooltip>
+                            <el-popover placement="top" :width="320" trigger="click" v-model:visible="aiPromptVisible">
+                                <template #reference>
+                                    <el-button :loading="aiMockLoading" :disabled="loading || aiMockLoading || mockLoading">
+                                        <span class="iconfont icon-robot"></span>
+                                        AI
+                                    </el-button>
+                                </template>
+                                <div class="ai-config-panel">
+                                    <h4 class="panel-title">{{ t('edit-ai-mock-prompt') }}</h4>
+                                    <el-input
+                                        type="textarea"
+                                        v-model="aiMookPrompt"
+                                        :rows="3"
+                                        :placeholder="t('enter-message-dot')"
+                                        class="mb-3"
+                                    />
+                                    <div class="panel-footer">
+                                        <div class="flex-center">
+                                            <el-switch v-model="enableXmlWrapper" size="small" />
+                                            <span class="label-text">XML</span>
+                                        </div>
+                                        <div class="footer-btns">
+                                            <el-button size="small" @click="aiPromptVisible = false">{{ t('cancel') }}</el-button>
+                                            <el-button size="small" type="primary" :loading="aiMockLoading" @click="onAIMookConfirm">
+                                                {{ t('confirm') }}
+                                            </el-button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </el-popover>
+                        </el-button-group>
+                    </div>
 
-                <el-popover placement="top" width="350" trigger="click" v-model:visible="aiPromptVisible">
-                    <template #reference>
-                        <el-button :loading="aiMockLoading" :disabled="loading || aiMockLoading || mockLoading" class="btn-ai">
-                            {{ 'AI' }}
+                    <div class="right-actions">
+                        <el-button
+                            v-if="currentTool"
+                            @click="saveAsTestCase"
+                            :disabled="loading"
+                            class="btn-secondary"
+                        >
+                            <span class="iconfont icon-save"></span>
+                            {{ t('save-as-test-case') }}
                         </el-button>
-                    </template>
-                    <div style="margin-bottom: 8px; font-weight: bold;">
-                        {{ t('edit-ai-mock-prompt') }}
+                        <el-tooltip :content="t('execute-tool') + ' (Ctrl+Enter)'" placement="top">
+                            <el-button
+                                type="primary"
+                                :loading="loading"
+                                @click="handleExecute"
+                                class="btn-execute"
+                            >
+                                <span class="iconfont icon-play"></span>
+                                {{ t('execute-tool') }}
+                            </el-button>
+                        </el-tooltip>
                     </div>
-                    <el-input type="textarea" v-model="aiMookPrompt" :rows="2" style="margin-bottom: 8px;" />
-                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                        <el-switch
-                            v-model="enableXmlWrapper"
-                            style="margin-right: 8px;"
-                        />
-                        <span style="opacity: 0.7;">XML</span>
-                    </div>
-                    <div style="text-align: right;">
-                        <el-button @click="aiPromptVisible = false">{{ t('cancel') }}</el-button>
-                        <el-button type="primary" :loading="aiMockLoading" @click="onAIMookConfirm">
-                            {{ t('confirm') }}
-                        </el-button>
-                    </div>
-                </el-popover>
-                
-                <el-button 
-                    @click="saveAsTestCase"
-                    :disabled="!currentTool || loading"
-                    class="btn-save-case"
-                >
-                    {{ t('save-as-test-case') }}
-                </el-button>
+                </div>
             </el-form-item>
         </el-form>
     </div>
@@ -475,56 +507,113 @@ watch(() => tabStorage.currentToolName, () => {
     border: 1px solid var(--main-color) !important;
 }
 
-/* 执行器按钮：统一使用主题色系 */
-.executor-actions .el-button {
-    border-radius: 8px;
+/* 执行器操作栏：语义分层（左侧辅助 / 右侧核心）、顶部分割、图标+文字 */
+.executor-actions-container {
+    margin-top: 20px;
+    border-top: 1px solid var(--el-border-color-lighter);
+    padding-top: 16px;
 }
 
-.executor-actions .btn-execute {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
+.executor-actions-container :deep(.el-form-item__content) {
+    width: 100%;
 }
 
-.executor-actions .btn-execute:hover {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
-    opacity: 0.9;
+.executor-actions-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 12px;
 }
 
-.executor-actions .btn-reset,
-.executor-actions .btn-mock,
-.executor-actions .btn-ai {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
+.flex-center {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.executor-actions .btn-reset:hover:not(:disabled),
-.executor-actions .btn-mock:hover:not(:disabled),
-.executor-actions .btn-ai:hover:not(:disabled) {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
-    opacity: 0.9;
+/* 左侧：重置 / Mock / AI（透明主题色按钮组） */
+.left-actions .el-button-group {
+    display: inline-flex;
 }
 
-.executor-actions .el-button.is-disabled {
+.left-actions .el-button-group .el-button {
+    border-radius: 0;
+    border: 1px solid var(--main-light-color-70);
+    background-color: var(--main-light-color-20);
+    color: var(--main-light-color-70);
+}
+
+.left-actions .el-button-group .el-button .iconfont {
+    margin-right: 6px;
+}
+
+.left-actions .el-button-group > *:first-child .el-button {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.left-actions .el-button-group > *:last-child .el-button {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.left-actions .el-button-group .el-button:hover:not(:disabled) {
+    border-color: var(--main-light-color-90);
+    background-color: var(--main-light-color-40);
+    color: var(--main-light-color-90);
+}
+
+.left-actions .el-button-group .el-button.is-disabled {
     opacity: 0.5;
 }
 
-.executor-actions .btn-save-case {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
+/* 右侧：保存为测试用例（次要）+ 执行（primary 主操作） */
+.right-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.executor-actions .btn-save-case:hover:not(:disabled) {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
-    opacity: 0.9;
+.right-actions .btn-secondary .iconfont,
+.right-actions .btn-execute .iconfont {
+    margin-right: 6px;
+}
+
+.btn-execute {
+    border-radius: 8px;
+    padding-left: 20px;
+    padding-right: 20px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* AI 配置 Popover 面板 */
+.ai-config-panel .panel-title {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    color: var(--el-text-color-primary);
+}
+
+.ai-config-panel .panel-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.ai-config-panel .label-text {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+}
+
+.ai-config-panel .mb-3 {
+    margin-bottom: 12px;
+}
+
+.ai-config-panel .footer-btns {
+    display: flex;
+    gap: 8px;
 }
 
 .tool-executor-container .el-button:active {

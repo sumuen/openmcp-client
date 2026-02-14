@@ -48,14 +48,24 @@
             </p>
             <!-- 底部操作 -->
             <div class="variable-selector-footer">
-                <el-button @click="handleManageVariables">
-                    管理变量
-                </el-button>
+                <el-tooltip content="管理变量" placement="top">
+                    <el-button @click="handleManageVariables">
+                        <span class="iconfont icon-setting"></span>
+                    </el-button>
+                </el-tooltip>
                 <div style="flex: 1;"></div>
-                <el-button @click="visible = false">取消</el-button>
-                <el-button type="primary" :disabled="!selectedVariableId" @click="handleApply">
-                    应用
-                </el-button>
+                <el-button-group>
+                    <el-tooltip content="取消" placement="top">
+                        <el-button @click="visible = false">
+                            <span class="iconfont icon-close"></span>
+                        </el-button>
+                    </el-tooltip>
+                    <el-tooltip content="应用" placement="top">
+                        <el-button type="primary" :disabled="!selectedVariableId" @click="handleApply">
+                            <span class="iconfont icon-dui"></span>
+                        </el-button>
+                    </el-tooltip>
+                </el-button-group>
             </div>
         </div>
     </el-popover>

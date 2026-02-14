@@ -74,7 +74,7 @@ const showTime = ref(false);
 }
 
 .message-usage > span {
-    background-color: var(--el-fill-color-light);
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
     padding: 2px 4px;
     border-radius: 3px;
     margin-right: 0;

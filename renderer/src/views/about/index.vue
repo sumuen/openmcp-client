@@ -69,7 +69,7 @@ defineComponent({ name: 'about' });
 	box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.2);
 	border-radius: 16px;
 	padding: 24px 40px;
-	background-color: var(--background);
+    background-color: var(--sidebar);
 	border: 1px solid var(--sidebar-border);
 	display: flex;
 	font-size: 30px;

@@ -58,3 +58,22 @@
   --signal-default-color: #4CAF50;
 }
 ```
+
+
+按钮的基本参考样式：
+
+/* 与左侧列表「添加」按钮样式完全一致 */
+.add-criterion-btn {
+    width: fit-content;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    border-radius: 8px;
+    border: 1px solid var(--vline-stroke-color);
+}
+
+.add-criterion-btn:hover {
+    color: var(--main-light-color-70) !important;
+    border: 1px solid var(--main-light-color-70);
+    background-color: var(--main-light-color-20);
+}

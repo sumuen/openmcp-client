@@ -11,14 +11,18 @@
                     :active-text="t('show-only-current-tool')"
                     style="margin-right: 10px;"
                 />
-                <el-button size="default" @click="handleCreateTestCase" class="btn-create">
-                    <span class="iconfont icon-add"></span>
-                    {{ t('create-test-case') }}
-                </el-button>
-                <el-button size="default" @click="handleRunAllTests" :loading="runningAll" class="btn-run-all">
-                    <span class="iconfont icon-play"></span>
-                    {{ t('run-all-tests') }}
-                </el-button>
+                <el-button-group>
+                    <el-tooltip :content="t('create-test-case')" placement="top">
+                        <el-button size="default" @click="handleCreateTestCase" class="btn-create">
+                            <span class="iconfont icon-add"></span>
+                        </el-button>
+                    </el-tooltip>
+                    <el-tooltip :content="t('run-all-tests')" placement="top">
+                        <el-button size="default" @click="handleRunAllTests" :loading="runningAll" class="btn-run-all">
+                            <span class="iconfont icon-play"></span>
+                        </el-button>
+                    </el-tooltip>
+                </el-button-group>
             </div>
         </div>
 
@@ -37,33 +41,35 @@
                                 <span class="test-case-tool">{{ testCase.toolName }}</span>
                             </div>
                             <div class="test-case-actions">
-                                <el-tooltip :content="t('run-test')" placement="top">
-                                    <el-button type="primary" circle @click.stop="handleRunTest(testCase)"
-                                        :loading="testCase.status === 'running'" class="btn-run">
-                                        <span class="iconfont icon-play"></span>
-                                    </el-button>
-                                </el-tooltip>
-                                <el-tooltip v-if="testCase.actualOutput" :content="t('view-result')" placement="top">
-                                    <el-button circle @click.stop="selectTestCase(testCase)" class="btn-view">
-                                        <span class="iconfont icon-wendang"></span>
-                                    </el-button>
-                                </el-tooltip>
-                                <el-tooltip :content="t('edit-test-case')" placement="top">
-                                    <el-button circle @click.stop="handleEditTestCase(testCase)"
-                                        class="btn-edit">
-                                        <span class="iconfont icon-edit"></span>
-                                    </el-button>
-                                </el-tooltip>
-                                <el-popconfirm :title="t('confirm-delete-test-case')"
-                                    @confirm="handleDeleteTestCase(testCase.id)">
-                                    <template #reference>
-                                        <el-tooltip :content="t('delete-test-case')" placement="top">
-                                            <el-button type="danger" circle @click.stop class="btn-delete">
-                                                <span class="iconfont icon-delete"></span>
-                                            </el-button>
-                                        </el-tooltip>
-                                    </template>
-                                </el-popconfirm>
+                                <el-button-group>
+                                    <el-tooltip :content="t('run-test')" placement="top">
+                                        <el-button type="primary" circle @click.stop="handleRunTest(testCase)"
+                                            :loading="testCase.status === 'running'" class="btn-run">
+                                            <span class="iconfont icon-play"></span>
+                                        </el-button>
+                                    </el-tooltip>
+                                    <el-tooltip v-if="testCase.actualOutput" :content="t('view-result')" placement="top">
+                                        <el-button circle @click.stop="selectTestCase(testCase)" class="btn-view">
+                                            <span class="iconfont icon-wendang"></span>
+                                        </el-button>
+                                    </el-tooltip>
+                                    <el-tooltip :content="t('edit-test-case')" placement="top">
+                                        <el-button circle @click.stop="handleEditTestCase(testCase)"
+                                            class="btn-edit">
+                                            <span class="iconfont icon-edit"></span>
+                                        </el-button>
+                                    </el-tooltip>
+                                    <el-popconfirm :title="t('confirm-delete-test-case')"
+                                        @confirm="handleDeleteTestCase(testCase.id)">
+                                        <template #reference>
+                                            <el-tooltip :content="t('delete-test-case')" placement="top">
+                                                <el-button type="danger" circle @click.stop class="btn-delete">
+                                                    <span class="iconfont icon-delete"></span>
+                                                </el-button>
+                                            </el-tooltip>
+                                        </template>
+                                    </el-popconfirm>
+                                </el-button-group>
                             </div>
                         </div>
                         <div class="test-case-description" v-if="testCase.description">
@@ -98,21 +104,45 @@
                 <el-form-item :label="t('input-parameters')" required>
                     <div class="json-editor">
                         <el-input v-model="inputJson" type="textarea" :rows="8" :placeholder="t('enter-json-input')" />
-                        <el-button @click="formatInputJson" class="btn-format"> {{ t('format-json') }}</el-button>
-                        <el-button @click="copyFromCurrentForm" class="btn-copy">{{ t('copy-from-executor') }}</el-button>
+                        <el-button-group>
+                            <el-tooltip :content="t('format-json')" placement="top">
+                                <el-button @click="formatInputJson" class="btn-format">
+                                    <span class="iconfont icon-refresh"></span>
+                                </el-button>
+                            </el-tooltip>
+                            <el-tooltip :content="t('copy-from-executor')" placement="top">
+                                <el-button @click="copyFromCurrentForm" class="btn-copy">
+                                    <span class="iconfont icon-copy"></span>
+                                </el-button>
+                            </el-tooltip>
+                        </el-button-group>
                     </div>
                 </el-form-item>
                 <el-form-item :label="t('expected-output')">
                     <div class="json-editor">
                         <el-input v-model="expectedJson" type="textarea" :rows="8"
                             :placeholder="t('enter-json-input')" />
-                        <el-button @click="formatExpectedJson" class="btn-format">{{ t('format-json') }}</el-button>
+                        <el-tooltip :content="t('format-json')" placement="top">
+                            <el-button @click="formatExpectedJson" class="btn-format">
+                                <span class="iconfont icon-refresh"></span>
+                            </el-button>
+                        </el-tooltip>
                     </div>
                 </el-form-item>
             </el-form>
             <template #footer>
-                <el-button @click="dialogVisible = false" class="btn-cancel">{{ t('cancel') }}</el-button>
-                <el-button @click="handleSaveTestCase" class="btn-save">{{ t('save') }}</el-button>
+                <el-button-group>
+                    <el-tooltip :content="t('cancel')" placement="top">
+                        <el-button @click="dialogVisible = false" class="btn-cancel">
+                            <span class="iconfont icon-close"></span>
+                        </el-button>
+                    </el-tooltip>
+                    <el-tooltip :content="t('save')" placement="top">
+                        <el-button @click="handleSaveTestCase" class="btn-save">
+                            <span class="iconfont icon-save"></span>
+                        </el-button>
+                    </el-tooltip>
+                </el-button-group>
             </template>
         </el-dialog>
 
@@ -133,14 +163,18 @@
                 </div>
             </div>
             <template #footer>
-                <el-button @click="resultDialogVisible = false" class="btn-close">{{ t('close') }}</el-button>
+                <el-tooltip :content="t('close')" placement="top">
+                    <el-button @click="resultDialogVisible = false" class="btn-close">
+                        <span class="iconfont icon-close"></span>
+                    </el-button>
+                </el-tooltip>
             </template>
         </el-dialog>
     </div>
 </template>
 
 <script setup lang="ts">
-import { defineProps, ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, type FormInstance } from 'element-plus';
 import { tabs } from '../../../panel';
@@ -510,23 +544,29 @@ function formatTime(timestamp: number): string {
     padding: 10px;
 }
 
+/* 与批量验证左侧列表项样式一致 */
 .test-case-item {
-    background-color: var(--background);
-    border: 1px solid transparent;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 12px;
+    background-color: var(--el-bg-color);
+    border-radius: 0.3em;
+    padding: 10px 12px;
+    margin: 3px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    user-select: none;
     transition: var(--animation-3s);
 }
 
 .test-case-item:hover {
-    background-color: var(--main-light-color-20);
+    background-color: var(--el-fill-color-light);
+}
+
+.test-case-item:active {
+    transform: scale(0.95);
 }
 
 .test-case-item.active {
-    border-color: var(--main-color);
-    box-shadow: 0 0 0 2px var(--main-light-color-20);
-    background-color: var(--main-light-color-10);
+    background-color: var(--el-fill-color-light);
+    border-left: 3px solid var(--el-color-primary-light-5);
 }
 
 .test-case-header {
@@ -634,16 +674,25 @@ function formatTime(timestamp: number): string {
     width: 100%;
 }
 
-.json-editor .el-button {
+.json-editor .el-button-group {
     margin-top: 8px;
-    margin-right: 8px;
+}
+.json-editor > .el-tooltip .el-button {
+    margin-top: 8px;
 }
 
+.json-editor .el-button-group > *:first-child .el-button {
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+}
+.json-editor .el-button-group > *:last-child .el-button {
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
 .json-editor .btn-format {
     background-color: var(--foreground) !important;
     border-color: var(--foreground) !important;
     color: var(--background) !important;
-    border-radius: 6px;
 }
 
 .json-editor .btn-format:hover {
@@ -657,7 +706,6 @@ function formatTime(timestamp: number): string {
     background-color: var(--foreground) !important;
     border-color: var(--foreground) !important;
     color: var(--background) !important;
-    border-radius: 6px;
 }
 
 .json-editor .btn-copy:hover {
@@ -668,11 +716,18 @@ function formatTime(timestamp: number): string {
 }
 
 /* 编辑/创建对话框底部按钮 */
+.test-cases-container :deep(.test-case-dialog .el-dialog__footer) .el-button-group > *:first-child .el-button {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+.test-cases-container :deep(.test-case-dialog .el-dialog__footer) .el-button-group > *:last-child .el-button {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
 .test-cases-container :deep(.test-case-dialog .el-dialog__footer) .btn-cancel {
     background-color: var(--foreground) !important;
     border-color: var(--foreground) !important;
     color: var(--background) !important;
-    border-radius: 8px;
 }
 
 .test-cases-container :deep(.test-case-dialog .el-dialog__footer) .btn-cancel:hover {
@@ -686,7 +741,6 @@ function formatTime(timestamp: number): string {
     background-color: var(--foreground) !important;
     border-color: var(--foreground) !important;
     color: var(--background) !important;
-    border-radius: 8px;
 }
 
 .test-cases-container :deep(.test-case-dialog .el-dialog__footer) .btn-save:hover {

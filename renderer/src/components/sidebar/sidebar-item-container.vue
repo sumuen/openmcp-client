@@ -45,7 +45,8 @@ function gotoOption(ident: string) {
 	gap: 4px;
 	padding: 6px 4px;
 	border-radius: 8px;
-	background-color: var(--main-light-color-10);
+    background-color: var(--sidebar);
+    border: 1px solid var(--window-button-active);
 }
 
 .sidebar-option-item {

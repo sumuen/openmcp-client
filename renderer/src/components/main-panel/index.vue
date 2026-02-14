@@ -67,7 +67,6 @@ function setActiveTab(index: number) {
 }
 
 .main-panel {
-    background-color: var(--sidebar);
     border-radius: 16px;
     width: 100%;
     height: calc(100% - 46px);

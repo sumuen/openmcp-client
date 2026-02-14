@@ -142,7 +142,6 @@ const clearSingleChat = () => {
     gap: 12px;
     padding: 10px 16px;
     font-size: var(--chat-font-size);
-    background-color: var(--sidebar);
     border-radius: 4px 4px 0 0;
     border-bottom: 1px solid var(--border);
 }

@@ -152,19 +152,18 @@ h3.resource-template .iconfont.icon-restart:hover {
     transition: var(--animation-3s);
 }
 
+/* 与批量验证左侧列表样式一致 */
 .resource-template-container > .item:hover {
-    background-color: var(--main-light-color);
-    transition: var(--animation-3s);
+    background-color: var(--el-fill-color-light);
 }
 
 .resource-template-container > .item:active {
     transform: scale(0.95);
-    transition: var(--animation-3s);
 }
 
 .resource-template-container > .item.active {
-    background-color: var(--main-light-color);
-    transition: var(--animation-3s);
+    background-color: var(--el-fill-color-light);
+    border-left: 3px solid var(--el-color-primary-light-5);
 }
 
 .resource-title {

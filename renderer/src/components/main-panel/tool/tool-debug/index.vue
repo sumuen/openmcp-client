@@ -2,22 +2,18 @@
     <el-scrollbar height="100%">
         <div class="tool-module">
             <div class="left">
-                <h2>
-                    <span class="iconfont icon-tool"></span>
-                    {{ t('tool-module') }}
-                </h2>
                 <ToolList :tab-id="props.tabId"></ToolList>
             </div>
             <div class="right">
-                    <div class="menu-bar">
-                        <el-segmented v-model="activeView" :options="menuOptions" size="default" />
-                    </div>
-                    <div class="content-area">
-                        <keep-alive>
-                            <component :is="currentView" :tab-id="props.tabId" />
-                        </keep-alive>
-                    </div>
+                <div class="menu-bar">
+                    <el-segmented v-model="activeView" :options="menuOptions" size="default" />
                 </div>
+                <div class="content-area">
+                    <keep-alive>
+                        <component :is="currentView" :tab-id="props.tabId" />
+                    </keep-alive>
+                </div>
+            </div>
         </div>
     </el-scrollbar>
 </template>
@@ -61,7 +57,6 @@ const currentView = computed(() => {
 
 <style scoped>
 .tool-module {
-    padding: 20px;
     height: 100%;
     display: flex;
     justify-content: space-around;

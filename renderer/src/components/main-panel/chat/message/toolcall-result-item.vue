@@ -164,7 +164,7 @@ const showFullImage = () => {
     position: relative;
     width: 100px;
     height: 100px;
-    background-color: var(--sidebar);
+    background-color: var(--el-input-bg-color, var(--el-fill-color-blank));
     border-radius: .5em;
     display: flex;
     justify-content: center;
@@ -251,7 +251,7 @@ const showFullImage = () => {
     white-space: pre;
     display: inline-block;
     min-width: 100%;
-    background: var(--sidebar-item-selected);
+    background: var(--el-input-bg-color, var(--el-fill-color-blank));
     border: 1px solid var(--sidebar-item-border);
     border-radius: 8px;
 }

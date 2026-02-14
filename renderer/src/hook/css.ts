@@ -2,7 +2,7 @@ import { isLightColorTheme, parseColor } from "./color";
 
 export function setDefaultCss() {
     // 改变默认颜色
-    document?.body.style.setProperty('--el-color-primary', 'var(--main-color)');
+    document?.body.style.setProperty('--el-color-primary', 'var(--main-light-color-70)');
     document?.body.style.setProperty('--el-color-primary-light-9', 'var(--main-color)');
     document?.body.style.setProperty('--el-color-primary-light-3', 'var(--main-color)');
     document?.body.style.setProperty('--el-text-color-secondary', 'var(--foreground)');
@@ -12,6 +12,7 @@ export function setDefaultCss() {
     document?.body.style.setProperty('--el-fill-color-light', 'var(--vscode-button-hoverBackground)');
     document?.body.style.setProperty('--el-switch-on-color', 'var(--main-color)');
     document?.body.style.setProperty('--el-border', 'var(--sidebar)');
+    document?.body.style.setProperty('--el-border-radius-base', '8px');
     document?.body.style.setProperty('--el-border-color-light', 'var(--sidebar)');
     document?.body.style.setProperty('--el-border-color-lighter', 'var(--sidebar)');
     document?.body.style.setProperty('--el-bg-color-overlay', 'var(--sidebar)');
