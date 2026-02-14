@@ -1,7 +1,7 @@
 <template>
     <div v-if="executor" class="executor-actions-wrapper">
         <el-button-group class="executor-actions-group">
-            <el-button class="btn-secondary btn-reset" @click="executor.resetForm">
+            <el-button class="btn-secondary btn-reset" @click="onReset">
                 {{ executor.t('reset') }}
             </el-button>
             <el-button class="btn-secondary" @click="executor.variableExtractionVisible = true">
@@ -50,6 +50,11 @@ import { ArrowDown } from '@element-plus/icons-vue';
 
 const executorRef = inject<{ value?: any }>('toolExecutorRef', { value: null });
 const executor = computed(() => executorRef?.value ?? null);
+const executorReset = inject<() => void>('toolExecutorReset', () => {});
+
+function onReset() {
+    executorReset();
+}
 </script>
 
 <style scoped>

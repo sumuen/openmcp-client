@@ -1,49 +1,67 @@
 <template>
-    <div>
-        <h3>{{ currentPrompt?.name }}</h3>
-    </div>
-    <div class="prompt-reader-container">
-        <!-- 加载已保存的测试数据 -->
-        <div v-if="currentPrompt && savedDataList.length > 0" class="saved-data-bar">
-            <span class="saved-data-label">{{ t('load-test-data') }}:</span>
-            <el-select
-                v-model="selectedSavedName"
-                :placeholder="t('choose-saved-test-data')"
-                clearable
-                class="saved-data-select"
-                @change="handleLoadSaved"
-            >
-                <el-option
-                    v-for="item in savedDataList"
-                    :key="item.name"
-                    :label="item.name"
-                    :value="item.name"
-                />
-            </el-select>
+    <div style="padding: 10px;">
+        <div class="prompt-executor-header">
+            <span v-if="props.tabId >= 0" class="prompt-executor-header-label">{{ t('select-prompt') }}</span>
+            <el-tree-select
+                v-if="props.tabId >= 0"
+                v-model="selectedPromptValue"
+                :data="promptTreeData"
+                :render-after-expand="false"
+                :placeholder="t('select-prompt')"
+                :render-content="renderPromptSelectContent"
+                popper-class="prompt-tree-select-dropdown"
+                class="prompt-tree-select"
+            />
+            <span v-else class="prompt-executor-title">{{ currentPrompt?.name || '' }}</span>
         </div>
+        <div class="prompt-executor-container">
+            <el-form :model="tabStorage.formData" :rules="formRules" ref="formRef" label-position="top">
+                <el-form-item v-for="param in currentPrompt?.arguments" :key="param.name"
+                    :label="param.name" :prop="param.name">
+                    <el-input v-model="tabStorage.formData[param.name]"
+                        :placeholder="t('enter') +' ' + param.name"
+                        @keydown.enter.prevent="handleSubmit"
+                    />
+                </el-form-item>
 
-        <el-form :model="tabStorage.formData" :rules="formRules" ref="formRef" label-position="top">
-            <el-form-item v-for="param in currentPrompt?.arguments" :key="param.name"
-                :label="param.name" :prop="param.name">
-                <el-input v-model="tabStorage.formData[param.name]"
-                    :placeholder="t('enter') +' ' + param.name"
-                    @keydown.enter.prevent="handleSubmit"
-                />
-            </el-form-item>
-
-            <el-form-item>
-                <el-button type="primary" :loading="loading" @click="handleSubmit">
-                    {{ t('read-prompt') }}
-                </el-button>
-                <el-button @click="resetForm">
-                    {{ t('reset') }}
-                </el-button>
-                <el-button @click="openSaveDialog" :disabled="!currentPrompt">
-                    {{ t('save-test-data') }}
-                </el-button>
-            </el-form-item>
-        </el-form>
-    </div>
+                <!-- 弹窗内使用（tabId < 0）时保留内联按钮，与 run-debug 的 4 个按钮逻辑一致并成组 -->
+                <el-form-item v-if="props.tabId < 0">
+                    <el-button-group class="inline-executor-actions">
+                        <el-button class="btn-secondary" @click="resetForm">{{ t('reset') }}</el-button>
+                        <el-dropdown
+                            trigger="hover"
+                            :disabled="!currentPrompt || !savedDataList.length"
+                            @command="handleLoadSaved"
+                        >
+                            <el-button
+                                class="btn-secondary inline-load-test-data-dropdown"
+                                :disabled="!currentPrompt || !savedDataList.length"
+                            >
+                                {{ t('load-test-data') }}
+                                <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                            </el-button>
+                            <template #dropdown>
+                                <el-dropdown-menu>
+                                    <el-dropdown-item
+                                        v-for="item in savedDataList"
+                                        :key="item.name"
+                                        :command="item.name"
+                                    >
+                                        {{ item.name }}
+                                    </el-dropdown-item>
+                                </el-dropdown-menu>
+                            </template>
+                        </el-dropdown>
+                        <el-button class="btn-secondary" @click="openSaveDialog" :disabled="!currentPrompt">
+                            {{ t('save-test-data') }}
+                        </el-button>
+                        <el-button type="primary" :loading="loading" @click="handleSubmit">
+                            {{ t('read-prompt') }}
+                        </el-button>
+                    </el-button-group>
+                </el-form-item>
+            </el-form>
+        </div>
 
     <!-- 保存测试数据对话框 -->
     <el-dialog
@@ -66,10 +84,12 @@
             </el-button>
         </template>
     </el-dialog>
+
+    </div>
 </template>
 
 <script setup lang="ts">
-import { defineComponent, defineProps, defineEmits, watch, ref, computed, reactive, onMounted } from 'vue';
+import { defineComponent, watch, ref, computed, reactive, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage } from 'element-plus';
@@ -78,6 +98,7 @@ import type { PromptStorage, SavedTestDataSet } from './prompts';
 import { sharedPromptTestData } from './prompt-store';
 import type { PromptsGetResponse } from '@/hook/type';
 import { mcpClientAdapter } from '@/views/connect/core';
+import { ArrowDown } from '@element-plus/icons-vue';
 
 defineComponent({ name: 'prompt-reader' });
 
@@ -138,13 +159,77 @@ const saveDialogVisible = ref(false);
 const saveFormName = ref('');
 const selectedSavedName = ref<string | null>(null);
 
-const currentPrompt = computed(() => {
+const PROMPT_VALUE_SEP = '::';
 
+/** 下拉项自定义渲染：第一行标题，第二行描述（与 tool-executor 一致） */
+function renderPromptSelectContent(h: any, { data }: { data: { label: string; description?: string } }) {
+    return h('div', { class: 'tree-select-node-content' }, [
+        h('div', { class: 'tree-select-node-label' }, data.label),
+        data.description
+            ? h('div', { class: 'tree-select-node-desc' }, data.description)
+            : null
+    ]);
+}
+
+/** 深度为 2 的树：一级 MCP 服务器，二级该服务器下提示词模板 */
+const promptTreeData = computed(() => {
+    return mcpClientAdapter.clients.map((client, index) => {
+        const templates = client.promptTemplates;
+        const children = templates
+            ? Array.from(templates.values()).map((t) => ({
+                  label: t.name,
+                  value: `${index}${PROMPT_VALUE_SEP}${t.name}`,
+                  description: t.description || ''
+              }))
+            : [];
+        return {
+            label: client.name,
+            value: `server-${index}`,
+            children
+        };
+    });
+});
+
+const selectedPromptValue = computed({
+    get() {
+        const name = tabStorage.currentPromptName;
+        if (!name) return '';
+        if (props.tabId < 0) return '';
+        const idx = tabStorage.currentClientIndex;
+        if (idx !== undefined && idx >= 0 && idx < mcpClientAdapter.clients.length) {
+            const client = mcpClientAdapter.clients[idx];
+            if (client.promptTemplates?.has(name)) return `${idx}${PROMPT_VALUE_SEP}${name}`;
+        }
+        for (let i = 0; i < mcpClientAdapter.clients.length; i++) {
+            if (mcpClientAdapter.clients[i].promptTemplates?.get(name))
+                return `${i}${PROMPT_VALUE_SEP}${name}`;
+        }
+        return '';
+    },
+    set(val: string) {
+        if (!val || !val.includes(PROMPT_VALUE_SEP)) return;
+        const sepAt = val.indexOf(PROMPT_VALUE_SEP);
+        const i = Number(val.slice(0, sepAt));
+        const promptName = val.slice(sepAt + PROMPT_VALUE_SEP.length);
+        if (!Number.isNaN(i) && promptName) {
+            tabStorage.currentClientIndex = i;
+            tabStorage.currentPromptName = promptName;
+            tabStorage.lastPromptGetResponse = undefined;
+        }
+    }
+});
+
+const currentPrompt = computed(() => {
+    if (props.tabId >= 0 && tabStorage.currentClientIndex !== undefined && tabStorage.currentClientIndex >= 0) {
+        const client = mcpClientAdapter.clients[tabStorage.currentClientIndex];
+        if (client) {
+            const prompt = client.promptTemplates?.get(tabStorage.currentPromptName);
+            if (prompt) return prompt;
+        }
+    }
     for (const client of mcpClientAdapter.clients) {
         const prompt = client.promptTemplates?.get(tabStorage.currentPromptName);
-        if (prompt) {
-            return prompt;
-        }
+        if (prompt) return prompt;
     }
 });
 
@@ -168,6 +253,18 @@ const savedDataList = computed<SavedTestDataSet[]>(() => {
     if (!name) return [];
     return sharedPromptTestData[name] || [];
 });
+
+/** 比较保存数据的 schema 与当前提示词表单是否一致，一致才允许导入 */
+function isSavedDataSchemaMatch(item: SavedTestDataSet): boolean {
+    if (!currentPrompt.value?.arguments?.length) return false;
+    const currentKeys = new Set(currentPrompt.value.arguments.map((p) => p.name));
+    const savedKeys = new Set(Object.keys(item.data || {}));
+    if (currentKeys.size !== savedKeys.size) return false;
+    for (const k of currentKeys) {
+        if (!savedKeys.has(k)) return false;
+    }
+    return true;
+}
 
 function openSaveDialog() {
     saveFormName.value = '';
@@ -207,11 +304,18 @@ function handleLoadSaved(name: string | null) {
     const list = sharedPromptTestData[currentPrompt.value.name] || [];
     const item = list.find((s) => s.name === name);
     if (!item) return;
+    if (!isSavedDataSchemaMatch(item)) {
+        ElMessage.warning(t('prompt-test-data-schema-mismatch'));
+        selectedSavedName.value = null;
+        return;
+    }
     const newForm: Record<string, any> = {};
     currentPrompt.value.arguments.forEach((param) => {
         newForm[param.name] = item.data[param.name] !== undefined ? item.data[param.name] : '';
     });
     tabStorage.formData = newForm;
+    selectedSavedName.value = name;
+    ElMessage.success(t('success-load-test-data'));
 }
 
 const initFormData = () => {
@@ -234,14 +338,20 @@ const resetForm = () => {
 }
 
 async function handleSubmit() {
-
-    const res = await mcpClientAdapter.readPromptTemplate(
-        currentPrompt.value?.name || '',
-        JSON.parse(JSON.stringify(tabStorage.formData))
-    );
-
-    tabStorage.lastPromptGetResponse = res;
-    emits('prompt-get-response', res);
+    if (!currentPrompt.value?.name) return;
+    loading.value = true;
+    try {
+        const clientIndex = props.tabId >= 0 ? tabStorage.currentClientIndex : undefined;
+        const res = await mcpClientAdapter.readPromptTemplate(
+            currentPrompt.value.name,
+            JSON.parse(JSON.stringify(tabStorage.formData)),
+            clientIndex
+        );
+        tabStorage.lastPromptGetResponse = res;
+        emits('prompt-get-response', res);
+    } finally {
+        loading.value = false;
+    }
 }
 
 if (props.tabId >= 0) {
@@ -253,34 +363,133 @@ if (props.tabId >= 0) {
 }
 
 onMounted(() => {
+    if (props.tabId >= 0 && !tabStorage.currentPromptName && promptTreeData.value.length > 0) {
+        const first = promptTreeData.value[0];
+        const firstChild = first?.children?.[0];
+        if (firstChild && typeof firstChild.value === 'string' && firstChild.value.includes(PROMPT_VALUE_SEP)) {
+            const val = firstChild.value as string;
+            const sepAt = val.indexOf(PROMPT_VALUE_SEP);
+            tabStorage.currentClientIndex = Number(val.slice(0, sepAt));
+            tabStorage.currentPromptName = val.slice(sepAt + PROMPT_VALUE_SEP.length);
+        }
+    }
     initFormData();
+});
+
+defineExpose({
+    formRef,
+    resetForm,
+    handleSubmit,
+    openSaveDialog,
+    handleLoadSaved,
+    loading,
+    currentPrompt,
+    savedDataList,
+    t
 });
 
 </script>
 
 <style>
-.prompt-reader-container {
-    background-color: var(--background);
-    padding: 10px 12px;
-    border-radius: .5em;
-    margin-bottom: 15px;
-}
-
-.saved-data-bar {
+.prompt-executor-header {
+    margin-bottom: 12px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
-.saved-data-label {
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
+.prompt-executor-header-label {
+    flex-shrink: 0;
+    font-size: 14px;
+    color: var(--el-text-color-regular);
     white-space: nowrap;
 }
 
-.saved-data-select {
+.prompt-executor-header .prompt-tree-select {
     flex: 1;
     min-width: 0;
+    max-width: 420px;
+}
+
+.prompt-executor-title {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--el-text-color-primary);
+}
+
+/* 下拉项：第一行标题，第二行描述（与 tool-executor 一致） */
+.tree-select-node-content {
+    padding: 2px 0;
+    min-width: 0;
+}
+
+.tree-select-node-label {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.tree-select-node-desc {
+    font-size: 12px;
+    color: var(--el-text-color-placeholder);
+    opacity: 0.85;
+    line-height: 1.4;
+    margin-top: 2px;
+    max-width: 320px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.prompt-tree-select-dropdown.el-select-dropdown .el-select-dropdown__item {
+    height: auto;
+    min-height: 32px;
+    padding: 6px 12px;
+    white-space: normal;
+}
+
+.prompt-executor-container {
+    margin-top: 15px;
+    background-color: var(--background);
+    border-radius: .5em;
+    padding: 10px 12px;
+    margin-bottom: 15px;
+}
+
+.prompt-executor-container .el-button:active {
+    transform: scale(0.95);
+    transition: transform 0.08s;
+}
+
+/* 弹窗内 4 个按钮成组（与 run-debug executor-actions 一致） */
+.inline-executor-actions {
+    display: inline-flex;
+}
+.inline-executor-actions .btn-secondary {
+    border-color: var(--el-border-color);
+    background-color: var(--el-fill-color-blank);
+    color: var(--el-text-color-regular);
+}
+.inline-executor-actions .btn-secondary:hover:not(:disabled) {
+    border-color: var(--el-border-color-hover);
+    background-color: var(--main-light-color-50);
+    color: var(--el-text-color-primary);
+}
+.inline-executor-actions > .el-button:first-child {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+.inline-executor-actions > .el-button:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+.inline-load-test-data-dropdown {
+    border-radius: 0 !important;
+}
+.inline-load-test-data-dropdown .el-icon--right {
+    margin-left: 4px;
 }
 </style>

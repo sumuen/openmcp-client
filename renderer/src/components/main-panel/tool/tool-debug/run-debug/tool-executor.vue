@@ -1,89 +1,78 @@
 <template>
-    <div class="tool-executor-header">
-        <el-tree-select
-            v-model="selectedToolValue"
-            :data="toolTreeData"
-            :render-after-expand="false"
-            :placeholder="t('select-tool')"
-            :render-content="renderToolSelectContent"
-            popper-class="tool-tree-select-dropdown"
-            class="tool-tree-select"
-        />
-    </div>
-    <div class="tool-executor-container">
-        <el-form :model="tabStorage.formData" :rules="formRules" ref="formRef" label-position="top">
-            <template v-if="currentTool?.inputSchema?.properties">
-                <el-form-item v-for="[name, property] in Object.entries(currentTool.inputSchema.properties)" :key="name"
-                    :label="property.title || name" :prop="name"
-                    :required="currentTool.inputSchema.required?.includes(name)">
-                    
+    <div style="padding: 10px;">
+        <div class="tool-executor-header">
+            <el-tree-select v-model="selectedToolValue" :data="toolTreeData" :render-after-expand="false"
+                :placeholder="t('select-tool')" :render-content="renderToolSelectContent"
+                popper-class="tool-tree-select-dropdown" class="tool-tree-select" />
+        </div>
+        <div class="tool-executor-container">
+            <el-form :model="tabStorage.formData" :rules="formRules" ref="formRef" label-position="top">
+                <template v-if="currentTool?.inputSchema?.properties">
+                    <el-form-item v-for="[name, property] in Object.entries(currentTool.inputSchema.properties)"
+                        :key="name" :label="property.title || name" :prop="name"
+                        :required="currentTool.inputSchema.required?.includes(name)">
+
                         <el-input v-if="property.type === 'string'" v-model="tabStorage.formData[name]" type="text"
                             :placeholder="property.description || t('enter') + ' ' + (property.title || name)"
                             @keydown.enter.prevent="handleExecute">
                             <template #append>
-                                <VariableSelector
-                                    button-text="插入变量"
-                                    :tool-name="currentTool?.name || ''"
-                                    :parameter-name="name"
-                                    expected-type="string"
-                                    @select="(variable, value) => onVariableSelected(name, variable, value)"
-                                />
+                                <VariableSelector button-text="插入变量" :tool-name="currentTool?.name || ''"
+                                    :parameter-name="name" expected-type="string"
+                                    @select="(variable, value) => onVariableSelected(name, variable, value)" />
                             </template>
                         </el-input>
 
-                    <el-input-number v-else-if="property.type === 'number' || property.type === 'integer'"
-                        v-model="tabStorage.formData[name]" controls-position="right"
-                        :placeholder="property.description || t('enter') + ' ' + (property.title || name)"
-                        @keydown.enter.prevent="handleExecute" />
+                        <el-input-number v-else-if="property.type === 'number' || property.type === 'integer'"
+                            v-model="tabStorage.formData[name]" controls-position="right"
+                            :placeholder="property.description || t('enter') + ' ' + (property.title || name)"
+                            @keydown.enter.prevent="handleExecute" />
 
-                    <el-switch v-else-if="property.type === 'boolean'" active-text="true" inactive-text="false"
-                        v-model="tabStorage.formData[name]" />
+                        <el-switch v-else-if="property.type === 'boolean'" active-text="true" inactive-text="false"
+                            v-model="tabStorage.formData[name]" />
 
-                    <k-input-object v-else-if="property.type === 'object' || property.type === 'array'" v-model="tabStorage.formData[name]"
-                        :schema="property"
-                        :placeholder="property.description || t('enter') + ' ' + (property.title || name)" />
+                        <k-input-object v-else-if="property.type === 'object' || property.type === 'array'"
+                            v-model="tabStorage.formData[name]" :schema="property"
+                            :placeholder="property.description || t('enter') + ' ' + (property.title || name)" />
 
-                </el-form-item>
-            </template>
-        </el-form>
-        <el-dialog
-            v-model="aiPromptVisible"
-            :title="t('edit-ai-mock-prompt')"
-            width="360px"
-            class="ai-mock-dialog"
-            destroy-on-close
-        >
-            <div class="ai-config-panel">
-                <el-input
-                    type="textarea"
-                    v-model="aiMookPrompt"
-                    :rows="3"
-                    :placeholder="t('enter-message-dot')"
-                    class="mb-3"
-                />
-                <div class="panel-footer">
-                    <div class="flex-center">
-                        <el-switch v-model="enableXmlWrapper" size="small" />
-                        <span class="label-text">XML</span>
+                    </el-form-item>
+                </template>
+            </el-form>
+            <el-dialog v-model="aiPromptVisible" :title="t('edit-ai-mock-prompt')" width="360px" class="ai-mock-dialog"
+                destroy-on-close>
+                <div class="ai-config-panel">
+                    <el-input type="textarea" v-model="aiMookPrompt" :rows="3" :placeholder="t('enter-message-dot')"
+                        class="mb-3" />
+                    <div class="panel-footer">
+                        <div class="flex-center">
+                            <el-switch v-model="enableXmlWrapper" size="small" />
+                            <span class="label-text">XML</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <template #footer>
-                <el-button @click="aiPromptVisible = false">{{ t('cancel') }}</el-button>
-                <el-button type="primary" :loading="aiMockLoading" @click="onAIMookConfirm">
-                    {{ t('confirm') }}
-                </el-button>
-            </template>
-        </el-dialog>
-        <el-drawer
-            v-model="variableExtractionVisible"
-            :title="t('variable-extraction')"
-            direction="rtl"
-            size="420px"
-            destroy-on-close
-        >
-            <VariableExtraction v-if="variableExtractionVisible" :tab-id="props.tabId" />
-        </el-drawer>
+                <template #footer>
+                    <el-button @click="aiPromptVisible = false">{{ t('cancel') }}</el-button>
+                    <el-button type="primary" :loading="aiMockLoading" @click="onAIMookConfirm">
+                        {{ t('confirm') }}
+                    </el-button>
+                </template>
+            </el-dialog>
+            <el-dialog v-model="saveTestCaseDialogVisible" :title="t('save-as-test-case')" width="360px"
+                class="save-test-case-dialog" destroy-on-close>
+                <div class="ai-config-panel">
+                    <el-form-item :label="t('test-case-name')">
+                        <el-input v-model="saveTestCaseName" :placeholder="t('enter-test-case-name')" clearable />
+                    </el-form-item>
+                </div>
+                <template #footer>
+                    <el-button @click="saveTestCaseDialogVisible = false">{{ t('cancel') }}</el-button>
+                    <el-button type="primary" @click="onSaveTestCaseConfirm">{{ t('confirm') }}</el-button>
+                </template>
+            </el-dialog>
+            <el-drawer v-model="variableExtractionVisible" :title="t('variable-extraction')" direction="rtl"
+                size="420px" destroy-on-close>
+                <VariableExtraction v-if="variableExtractionVisible" :tab-id="props.tabId" />
+            </el-drawer>
+        </div>
     </div>
 </template>
 
@@ -111,8 +100,8 @@ JSONSchemaFaker.extend('faker', () => faker);
 
 // 可选设置
 JSONSchemaFaker.option({
-  useDefaultValue: true,
-  alwaysFakeOptionals: true
+    useDefaultValue: true,
+    alwaysFakeOptionals: true
 });
 
 defineComponent({ name: 'tool-executor' });
@@ -121,6 +110,8 @@ const aiMockLoading = ref(false);
 const aiPromptVisible = ref(false);
 const enableXmlWrapper = ref(false);
 const variableExtractionVisible = ref(false);
+const saveTestCaseDialogVisible = ref(false);
+const saveTestCaseName = ref('');
 
 const { t } = useI18n();
 
@@ -337,7 +328,7 @@ const initFormData = () => {
 
     Object.entries(currentTool.value.inputSchema.properties).forEach(([name, property]) => {
         newSchemaDataForm[name] = getDefaultValue(property);
-        const rawType = Array.isArray(tabStorage.formData[name]) ? 'array' : typeof tabStorage.formData[name];        
+        const rawType = Array.isArray(tabStorage.formData[name]) ? 'array' : typeof tabStorage.formData[name];
         const originType = normaliseJavascriptType(rawType);
 
         if (tabStorage.formData[name] !== undefined && originType === property.type) {
@@ -348,8 +339,19 @@ const initFormData = () => {
     tabStorage.formData = newSchemaDataForm;
 };
 
+/** 将表单数据全部清空为 schema 的默认空值（不保留当前输入） */
+const clearFormData = () => {
+    if (!currentTool.value?.inputSchema?.properties) return;
+    const empty: Record<string, number | boolean | string | object> = {};
+    Object.entries(currentTool.value.inputSchema.properties).forEach(([name, property]) => {
+        empty[name] = getDefaultValue(property);
+    });
+    tabStorage.formData = empty;
+};
+
 const resetForm = () => {
-    formRef.value?.resetFields();
+    clearFormData();
+    formRef.value?.clearValidate();
 };
 
 import { TaskLoop } from '@/components/main-panel/chat/core/task-loop';
@@ -391,7 +393,7 @@ const generateAIMockData = async (prompt?: string) => {
 
         loop.registerOnToolCall(toolCall => {
             console.log(toolCall);
-            
+
             if (toolCall.function?.name === currentTool.value?.name) {
                 try {
                     const toolArgs = JSON.parse(toolCall.function?.arguments || '{}');
@@ -490,12 +492,28 @@ async function handleExecute() {
 import type { TestCase, ToolStorage as ToolStorageType } from '../../tools';
 import { initTestCasesStore, testCasesState, saveTestCases } from '../test-cases/store';
 
+/** 当前工具下保存为测试用例时的默认名称（与直接保存时生成的名字一致） */
+function getDefaultTestCaseName(): string {
+    return currentTool.value ? `${currentTool.value.name}_test_${new Date().toLocaleString()}` : '';
+}
+
 function saveAsTestCase() {
     if (!currentTool.value) return;
     if (!mcpClientAdapter.masterNode) {
         ElMessage.warning(t('preset-requires-connection'));
         return;
     }
+    saveTestCaseName.value = getDefaultTestCaseName();
+    saveTestCaseDialogVisible.value = true;
+}
+
+function onSaveTestCaseConfirm() {
+    const name = saveTestCaseName.value?.trim();
+    if (!name) {
+        ElMessage.warning(t('please-enter-test-case-name'));
+        return;
+    }
+    if (!currentTool.value) return;
     try {
         initTestCasesStore(mcpClientAdapter.masterNode);
     } catch { /* 已初始化忽略 */ }
@@ -503,7 +521,7 @@ function saveAsTestCase() {
     const now = Date.now();
     const newTestCase: TestCase = {
         id: `test_${now}_${Math.random().toString(36).substr(2, 9)}`,
-        name: `${currentTool.value.name}_test_${new Date().toLocaleString()}`,
+        name,
         toolName: currentTool.value.name,
         description: t('auto-generated-from-executor'),
         input: { ...tabStorage.formData },
@@ -511,7 +529,6 @@ function saveAsTestCase() {
         createdAt: now,
         updatedAt: now
     };
-    // 若有执行结果，一并保存为预期输出
     if (tabStorage.lastToolCallResponse !== undefined && tabStorage.lastToolCallResponse !== null) {
         newTestCase.expectedOutput = typeof tabStorage.lastToolCallResponse === 'string'
             ? { content: [{ type: 'text', text: tabStorage.lastToolCallResponse }], isError: false }
@@ -521,6 +538,7 @@ function saveAsTestCase() {
 
     testCasesState.value = [...(testCasesState.value || []), newTestCase];
     saveTestCases();
+    saveTestCaseDialogVisible.value = false;
     ElMessage.success(t('test-case-saved-successfully'));
 }
 
@@ -607,8 +625,8 @@ defineExpose({
 }
 
 .tool-executor-container {
+    margin-top: 15px;
     background-color: var(--background);
-    padding: 10px 12px;
     border-radius: .5em;
     margin-bottom: 15px;
 }
@@ -668,5 +686,4 @@ defineExpose({
 .el-tag.el-tag--info {
     background-color: var(--main-color);
 }
-
 </style>

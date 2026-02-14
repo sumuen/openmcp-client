@@ -20,7 +20,7 @@
 
         <KRichTextarea
             :ref="el => editorRef = el"
-            tab-id="-1"
+            :tab-id="-1"
             v-model="inputValue"
             :placeholder="placeholder"
             enter-inserts-newline

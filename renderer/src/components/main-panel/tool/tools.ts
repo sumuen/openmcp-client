@@ -9,7 +9,7 @@ export interface TestCase {
     input: Record<string, any>;
     expectedOutput?: ToolCallResponse;
     actualOutput?: ToolCallResponse;
-    status?: 'pending' | 'passed' | 'failed' | 'running';
+    status?: 'pending' | 'passed' | 'failed' | 'running' | 'timeout';
     createdAt: number;
     updatedAt: number;
 }

@@ -21,6 +21,12 @@ const props = defineProps({
 </script>
 
 <style scoped>
+/* 使内部 scrollbar 的 view 占满高度，run-debug-container 的 100% 才能解析 */
+:deep(.el-scrollbar__wrap),
+:deep(.el-scrollbar__view) {
+    height: 100%;
+}
+
 .tool-module {
     height: 100%;
     display: flex;
@@ -31,5 +37,7 @@ const props = defineProps({
     flex: 1;
     width: 100%;
     min-width: 0;
+    height: 100%;
+    min-height: 0;
 }
 </style>

@@ -12,6 +12,8 @@ export type SavedTestDataMap = Record<string, SavedTestDataSet[]>;
 
 export interface PromptStorage {
     activeNames: any[];
+    /** 当前选中的 MCP 客户端索引（与工具模块一致，用于 tree-select） */
+    currentClientIndex?: number;
     currentPromptName: string;
     lastPromptGetResponse?: PromptsGetResponse;
     formData: Record<string, any>;

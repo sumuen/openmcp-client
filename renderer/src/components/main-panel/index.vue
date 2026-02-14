@@ -16,7 +16,6 @@
             </el-scrollbar>
         </div>
 
-
         <div class="main-panel">
             <router-view />
         </div>

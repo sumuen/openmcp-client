@@ -47,7 +47,7 @@
 
                     <!-- 展示 json -->
                     <template v-else-if="renderMode.current === 'json'">
-                        <json-render :json="tabStorage.lastToolCallResponse"/>
+                        <json-render :json="tabStorage.lastToolCallResponse" />
                     </template>
                 </div>
 
@@ -117,6 +117,7 @@ const renderMode = reactive({
     border-radius: .5em;
     background-color: var(--background);
     padding: 10px;
+    padding-bottom: 20px;
     display: flex;
     flex-direction: column;
     height: 100%;

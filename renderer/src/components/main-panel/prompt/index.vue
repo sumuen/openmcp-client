@@ -1,32 +1,14 @@
 <template>
-    <el-scrollbar height="100%">
-        <div class="prompt-module">
-            <div class="left">
-                <h2>
-                    <span class="iconfont icon-chat"></span>
-                    {{ t('prompt-module') }}
-                </h2>
-
-                <PromptTemplates :tab-id="props.tabId"></PromptTemplates>
-
-            </div>
-            <div class="right">
-                <PromptReader :tab-id="props.tabId"></PromptReader>
-
-                <PromptLogger :tab-id="props.tabId"></PromptLogger>
-            </div>
+    <div class="prompt-module">
+        <div class="prompt-module-right">
+            <PromptRunDebug :tab-id="props.tabId" />
         </div>
-    </el-scrollbar>
+    </div>
 </template>
 
 <script setup lang="ts">
 import { defineProps } from 'vue';
-import PromptTemplates from './prompt-templates.vue';
-import PromptReader from './prompt-reader.vue';
-import PromptLogger from './prompt-logger.vue';
-import { useI18n } from 'vue-i18n';
-
-const { t } = useI18n();
+import PromptRunDebug from './run-debug/index.vue';
 
 const props = defineProps({
     tabId: {
@@ -34,7 +16,6 @@ const props = defineProps({
         required: true
     }
 });
-
 </script>
 
 <style scoped>
@@ -42,15 +23,14 @@ const props = defineProps({
     padding: 20px;
     height: 100%;
     display: flex;
-    justify-content: space-around;
+    justify-content: stretch;
 }
 
-.prompt-module .left {
-    width: 45%;
-    max-width: 410px;
-}
-
-.prompt-module .right {
-    width: 45%;
+.prompt-module-right {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    min-height: 0;
 }
 </style>

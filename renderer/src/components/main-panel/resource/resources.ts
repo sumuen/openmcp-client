@@ -3,6 +3,8 @@ import type { ResourcesReadResponse } from '@/hook/type';
 export interface ResourceStorage {
     activeNames: any[];
     templateActiveNames: any[];
+    /** 当前选中的 MCP 客户端索引（用于 tree-select 与 readResource） */
+    currentClientIndex?: number;
     currentType: 'resource' | 'template';
     currentResourceName: string;
     lastResourceReadResponse?: ResourcesReadResponse;

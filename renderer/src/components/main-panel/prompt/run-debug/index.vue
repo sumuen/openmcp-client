@@ -4,17 +4,17 @@
             <el-splitter-panel :min="180" :max="600" :size="320" class="run-debug-executor-panel">
                 <div class="run-debug-executor-wrap">
                     <el-scrollbar height="100%">
-                        <ToolExecutor ref="executorRef" :tab-id="props.tabId" />
+                        <PromptReader ref="executorRef" :tab-id="props.tabId" />
                     </el-scrollbar>
                 </div>
             </el-splitter-panel>
             <el-splitter-panel class="run-debug-logger-panel">
                 <div class="run-debug-logger-wrap">
-                    <ToolLogger :tab-id="props.tabId">
+                    <PromptLogger :tab-id="props.tabId">
                         <template #actions>
-                            <ToolExecutorActions />
+                            <PromptExecutorActions />
                         </template>
-                    </ToolLogger>
+                    </PromptLogger>
                 </div>
             </el-splitter-panel>
         </el-splitter>
@@ -23,9 +23,9 @@
 
 <script setup lang="ts">
 import { ref, provide } from 'vue';
-import ToolExecutor from './tool-executor.vue';
-import ToolLogger from './tool-logger.vue';
-import ToolExecutorActions from './tool-executor-actions.vue';
+import PromptReader from '../prompt-reader.vue';
+import PromptLogger from '../prompt-logger.vue';
+import PromptExecutorActions from './prompt-executor-actions.vue';
 
 const props = defineProps({
     tabId: {
@@ -34,9 +34,9 @@ const props = defineProps({
     }
 });
 
-const executorRef = ref<InstanceType<typeof ToolExecutor> | null>(null);
-provide('toolExecutorRef', executorRef);
-provide('toolExecutorReset', () => executorRef.value?.resetForm?.());
+const executorRef = ref<InstanceType<typeof PromptReader> | null>(null);
+provide('promptExecutorRef', executorRef);
+provide('promptExecutorReset', () => executorRef.value?.resetForm?.());
 </script>
 
 <style scoped>

@@ -6,19 +6,26 @@
                 {{ t('test-cases-management') }}
             </h3>
             <div class="header-actions">
+                <el-select v-model="statusFilter" class="header-status-filter" :placeholder="t('filter-by-status')"
+                    style="width: 110px;">
+                    <el-option :label="t('filter-all')" value="all" />
+                    <el-option :label="t('test-passed')" value="passed" />
+                    <el-option :label="t('test-failed')" value="failed" />
+                    <el-option :label="t('test-timeout')" value="timeout" />
+                </el-select>
                 <el-switch
                     v-model="tabStorage.showOnlyCurrentToolTestCases"
                     :active-text="t('show-only-current-tool')"
-                    style="margin-right: 10px;"
+                    class="header-switch"
                 />
-                <el-button-group>
+                <el-button-group class="header-button-group">
                     <el-tooltip :content="t('create-test-case')" placement="top">
-                        <el-button size="default" @click="handleCreateTestCase" class="btn-create">
+                        <el-button size="default" @click="handleCreateTestCase" class="btn-secondary btn-create">
                             <span class="iconfont icon-add"></span>
                         </el-button>
                     </el-tooltip>
                     <el-tooltip :content="t('run-all-tests')" placement="top">
-                        <el-button size="default" @click="handleRunAllTests" :loading="runningAll" class="btn-run-all">
+                        <el-button size="default" @click="handleRunAllTests" :loading="runningAll" type="primary" class="btn-run-all">
                             <span class="iconfont icon-play"></span>
                         </el-button>
                     </el-tooltip>
@@ -28,7 +35,7 @@
 
         <div class="test-cases-list">
             <el-scrollbar height="100%">
-                <el-empty v-if="testCases.length === 0" :description="t('no-test-cases')" />
+                <div v-if="testCases.length === 0" class="no-test-cases-text">{{ t('no-test-cases') }}</div>
                 <div v-else class="test-case-items">
                     <div v-for="testCase in testCases" :key="testCase.id" class="test-case-item"
                         :class="{ 'active': selectedTestCase?.id === testCase.id }">
@@ -104,14 +111,14 @@
                 <el-form-item :label="t('input-parameters')" required>
                     <div class="json-editor">
                         <el-input v-model="inputJson" type="textarea" :rows="8" :placeholder="t('enter-json-input')" />
-                        <el-button-group>
+                        <el-button-group class="json-editor-actions">
                             <el-tooltip :content="t('format-json')" placement="top">
-                                <el-button @click="formatInputJson" class="btn-format">
+                                <el-button @click="formatInputJson" class="btn-secondary btn-format">
                                     <span class="iconfont icon-refresh"></span>
                                 </el-button>
                             </el-tooltip>
                             <el-tooltip :content="t('copy-from-executor')" placement="top">
-                                <el-button @click="copyFromCurrentForm" class="btn-copy">
+                                <el-button @click="copyFromCurrentForm" class="btn-secondary btn-copy">
                                     <span class="iconfont icon-copy"></span>
                                 </el-button>
                             </el-tooltip>
@@ -122,26 +129,24 @@
                     <div class="json-editor">
                         <el-input v-model="expectedJson" type="textarea" :rows="8"
                             :placeholder="t('enter-json-input')" />
-                        <el-tooltip :content="t('format-json')" placement="top">
-                            <el-button @click="formatExpectedJson" class="btn-format">
-                                <span class="iconfont icon-refresh"></span>
-                            </el-button>
-                        </el-tooltip>
+                        <el-button-group class="json-editor-actions">
+                            <el-tooltip :content="t('format-json')" placement="top">
+                                <el-button @click="formatExpectedJson" class="btn-secondary btn-format">
+                                    <span class="iconfont icon-refresh"></span>
+                                </el-button>
+                            </el-tooltip>
+                        </el-button-group>
                     </div>
                 </el-form-item>
             </el-form>
             <template #footer>
-                <el-button-group>
-                    <el-tooltip :content="t('cancel')" placement="top">
-                        <el-button @click="dialogVisible = false" class="btn-cancel">
-                            <span class="iconfont icon-close"></span>
-                        </el-button>
-                    </el-tooltip>
-                    <el-tooltip :content="t('save')" placement="top">
-                        <el-button @click="handleSaveTestCase" class="btn-save">
-                            <span class="iconfont icon-save"></span>
-                        </el-button>
-                    </el-tooltip>
+                <el-button-group class="dialog-footer-group">
+                    <el-button @click="dialogVisible = false" class="btn-secondary btn-cancel">
+                        {{ t('cancel') }}
+                    </el-button>
+                    <el-button type="primary" @click="handleSaveTestCase" class="btn-save">
+                        {{ t('save') }}
+                    </el-button>
                 </el-button-group>
             </template>
         </el-dialog>
@@ -163,11 +168,9 @@
                 </div>
             </div>
             <template #footer>
-                <el-tooltip :content="t('close')" placement="top">
-                    <el-button @click="resultDialogVisible = false" class="btn-close">
-                        <span class="iconfont icon-close"></span>
-                    </el-button>
-                </el-tooltip>
+                <el-button @click="resultDialogVisible = false" class="btn-secondary btn-close">
+                    {{ t('close') }}
+                </el-button>
             </template>
         </el-dialog>
     </div>
@@ -180,7 +183,7 @@ import { ElMessage, type FormInstance } from 'element-plus';
 import { tabs } from '../../../panel';
 import type { ToolStorage, TestCase } from '../../tools';
 import { mcpClientAdapter } from '@/views/connect/core';
-import { initTestCasesStore, testCasesState, saveTestCases } from './store';
+import { initTestCasesStore, testCasesState, saveTestCases, updateTestCase } from './store';
 
 const { t } = useI18n();
 
@@ -197,12 +200,18 @@ const tabStorage = tab.storage as ToolStorage;
 // 初始化 server 级测试用例存储
 try { initTestCasesStore(mcpClientAdapter.masterNode); } catch { /* 已初始化忽略 */ }
 
+/** 状态筛选：全部 | 成功 | 失败 | 超时 */
+const statusFilter = ref<'all' | 'passed' | 'failed' | 'timeout'>('all');
+
 const testCases = computed(() => {
-    const list = testCasesState.value || [];
+    let list = testCasesState.value || [];
     const onlyCurrent = !!tabStorage.showOnlyCurrentToolTestCases;
     const current = tabStorage.currentToolName;
     if (onlyCurrent && current) {
-        return list.filter(tc => tc.toolName === current);
+        list = list.filter(tc => tc.toolName === current);
+    }
+    if (statusFilter.value !== 'all') {
+        list = list.filter(tc => tc.status === statusFilter.value);
     }
     return list;
 });
@@ -397,40 +406,65 @@ function handleDeleteTestCase(id: string) {
 }
 
 async function handleRunTest(testCase: TestCase) {
-    testCase.status = 'running';
+    updateTestCase(testCase.id, { status: 'running' });
     try {
         const response = await mcpClientAdapter.callTool(testCase.toolName, testCase.input);
-        testCase.actualOutput = response;
 
         // 无预期输出时，工具调用成功即视为通过；有预期输出时进行比对
         const hasExpected = testCase.expectedOutput !== undefined && testCase.expectedOutput !== null;
-        const isMatch = !hasExpected || JSON.stringify(response) === JSON.stringify(testCase.expectedOutput);
-        testCase.status = isMatch ? 'passed' : 'failed';
+        const isMatch = !hasExpected || isToolCallResponseEqual(response, testCase.expectedOutput);
+        const newStatus = isMatch ? 'passed' : 'failed';
 
-
-        testCase.updatedAt = Date.now();
-    // 持久化单次执行结果
-    saveTestCases();
+        updateTestCase(testCase.id, {
+            status: newStatus,
+            actualOutput: response,
+            updatedAt: Date.now()
+        });
+        saveTestCases();
         ElMessage.success(t('test-executed-successfully'));
 
-        // 单个执行时自动展示结果详情
         if (!runningAll.value) {
-            selectedTestCase.value = testCase;
+            selectedTestCase.value = testCasesState.value.find(tc => tc.id === testCase.id) ?? testCase;
             resultDialogVisible.value = true;
         }
-    } catch (e) {
-        testCase.status = 'failed';
-        testCase.actualOutput = {
-            content: [{ type: 'text', text: `Error: ${e}` }],
-            isError: true
-        };
+    } catch (e: any) {
+        const errMsg = e?.message ?? String(e);
+        const isTimeout = /timeout|timed out|ETIMEDOUT/i.test(errMsg);
+        updateTestCase(testCase.id, {
+            status: isTimeout ? 'timeout' : 'failed',
+            actualOutput: {
+                content: [{ type: 'text', text: `Error: ${errMsg}` }],
+                isError: true
+            },
+            updatedAt: Date.now()
+        });
+        saveTestCases();
         ElMessage.error(t('test-execution-failed'));
 
         if (!runningAll.value) {
-            selectedTestCase.value = testCase;
+            selectedTestCase.value = testCasesState.value.find(tc => tc.id === testCase.id) ?? testCase;
             resultDialogVisible.value = true;
         }
     }
+}
+
+/** 比较两次工具调用结果是否等价（忽略键序等差异） */
+function isToolCallResponseEqual(a: any, b: any): boolean {
+    if (a === b) return true;
+    if (a == null || b == null) return false;
+    const aStr = JSON.stringify(normalizeToolCallResponse(a));
+    const bStr = JSON.stringify(normalizeToolCallResponse(b));
+    return aStr === bStr;
+}
+
+function normalizeToolCallResponse(r: any): any {
+    if (!r || typeof r !== 'object') return r;
+    return {
+        isError: !!r.isError,
+        content: Array.isArray(r.content)
+            ? r.content.map((c: any) => ({ type: c?.type ?? 'text', text: c?.text ?? '' }))
+            : []
+    };
 }
 
 async function handleRunAllTests() {
@@ -440,15 +474,13 @@ async function handleRunAllTests() {
 
     for (const testCase of testCasesState.value) {
         await handleRunTest(testCase);
-        if (testCase.status === 'passed') {
-            passed++;
-        } else if (testCase.status === 'failed') {
-            failed++;
-        }
+        const updated = testCasesState.value.find(tc => tc.id === testCase.id);
+        const status = updated?.status ?? testCase.status;
+        if (status === 'passed') passed++;
+        else if (status === 'failed' || status === 'timeout') failed++;
     }
 
     runningAll.value = false;
-    // 批量执行后统一保存
     saveTestCases();
     ElMessage.success(`${t('all-tests-completed')}: ${passed} ${t('passed')}, ${failed} ${t('failed')}`);
 }
@@ -457,6 +489,7 @@ function getStatusTagType(status?: string): '' | 'success' | 'warning' | 'danger
     switch (status) {
         case 'passed': return 'success';
         case 'failed': return 'danger';
+        case 'timeout': return 'warning';
         case 'running': return 'warning';
         default: return 'info';
     }
@@ -466,6 +499,7 @@ function getStatusText(status?: string): string {
     switch (status) {
         case 'passed': return t('test-passed');
         case 'failed': return t('test-failed');
+        case 'timeout': return t('test-timeout');
         case 'running': return t('test-running');
         default: return t('test-pending');
     }
@@ -483,16 +517,20 @@ function formatTime(timestamp: number): string {
     height: 100%;
     display: flex;
     flex-direction: column;
-    margin-top: 20px;
+    padding: 10px;
+    padding-bottom: 20px;
+    border-radius: 0.5em;
+    background-color: var(--background);
+    min-height: 0;
 }
 
 .test-cases-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid var(--main-light-color);
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .test-cases-header h3 {
@@ -504,35 +542,57 @@ function formatTime(timestamp: number): string {
 
 .header-actions {
     display: flex;
-    gap: 10px;
+    align-items: center;
+    gap: 12px;
 }
 
-.header-actions .btn-create {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
-    border-radius: 8px;
+.header-switch {
+    margin-right: 4px;
 }
 
-.header-actions .btn-create:hover {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
-    opacity: 0.9;
+.test-cases-container .header-switch .el-switch__core {
+    border: 1px solid var(--main-color) !important;
+    width: 60px !important;
 }
 
-.header-actions .btn-run-all {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
-    border-radius: 8px;
+.test-cases-container .header-switch .el-switch .el-switch__action {
+    background-color: var(--main-color);
 }
 
-.header-actions .btn-run-all:hover {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
-    opacity: 0.9;
+.test-cases-container .header-switch .el-switch.is-checked .el-switch__action {
+    background-color: var(--sidebar);
+}
+
+/* 与工具调试 run-debug 按钮组一致：次要按钮 + 主按钮，首尾 8px 圆角 */
+.header-button-group {
+    display: inline-flex;
+}
+
+.header-button-group .btn-secondary {
+    border-radius: 0;
+    border-color: var(--el-border-color);
+    background-color: var(--el-fill-color-blank);
+    color: var(--el-text-color-regular);
+}
+
+.header-button-group .btn-secondary:hover:not(:disabled) {
+    border-color: var(--el-border-color-hover);
+    background-color: var(--main-light-color-50);
+    color: var(--el-text-color-primary);
+}
+
+.header-button-group > *:first-child .el-button {
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
+}
+
+.header-button-group .btn-run-all {
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+    padding-left: 16px;
+    padding-right: 16px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .test-cases-list {
@@ -540,20 +600,28 @@ function formatTime(timestamp: number): string {
     overflow: hidden;
 }
 
-.test-case-items {
-    padding: 10px;
+.no-test-cases-text {
+    padding: 24px 16px;
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+    text-align: center;
 }
 
-/* 与批量验证左侧列表项样式一致 */
+.test-case-items {
+    padding: 8px 0;
+}
+
+/* 与 tool-logger output-content / tool-call-block 风格一致 */
 .test-case-item {
-    background-color: var(--el-bg-color);
-    border-radius: 0.3em;
+    background-color: var(--sidebar);
+    border-radius: 0.5em;
     padding: 10px 12px;
-    margin: 3px;
-    margin-bottom: 6px;
+    margin-bottom: 10px;
     cursor: pointer;
     user-select: none;
-    transition: var(--animation-3s);
+    transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    border: 1px solid transparent;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .test-case-item:hover {
@@ -561,12 +629,13 @@ function formatTime(timestamp: number): string {
 }
 
 .test-case-item:active {
-    transform: scale(0.95);
+    transform: scale(0.98);
+    transition: transform 0.08s;
 }
 
 .test-case-item.active {
     background-color: var(--el-fill-color-light);
-    border-left: 3px solid var(--el-color-primary-light-5);
+    border-left: 3px solid var(--el-text-color-regular);
 }
 
 .test-case-header {
@@ -602,60 +671,42 @@ function formatTime(timestamp: number): string {
 }
 
 .test-case-actions {
-    margin-left: 5px;
+    margin-left: 8px;
     display: flex;
-    gap: 5px;
+    align-items: center;
+    gap: 4px;
 }
 
-.test-case-actions .btn-edit {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
+.test-case-actions .el-button-group {
+    display: inline-flex;
 }
 
-.test-case-actions .btn-edit:hover {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
-    opacity: 0.9;
+/* 与工具调试 executor-actions 次要按钮风格一致 */
+.test-case-actions .btn-edit,
+.test-case-actions .btn-view {
+    border-color: var(--el-border-color);
+    background-color: var(--el-fill-color-blank);
+    color: var(--el-text-color-regular);
+}
+
+.test-case-actions .btn-edit:hover,
+.test-case-actions .btn-view:hover {
+    border-color: var(--el-border-color-hover);
+    background-color: var(--main-light-color-50);
+    color: var(--el-text-color-primary);
 }
 
 .test-case-actions .btn-run {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
+    border-color: var(--main-color);
+    background-color: var(--main-color);
+    color: var(--sidebar);
 }
 
-.test-case-actions .btn-run:hover {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
+.test-case-actions .btn-run:hover:not(:disabled) {
     opacity: 0.9;
-}
-
-.test-case-actions .btn-view {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
-}
-
-.test-case-actions .btn-view:hover {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
-    opacity: 0.9;
-}
-
-.test-case-actions .btn-delete {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
 }
 
 .test-case-actions .btn-delete:hover {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
     opacity: 0.9;
 }
 
@@ -674,94 +725,78 @@ function formatTime(timestamp: number): string {
     width: 100%;
 }
 
-.json-editor .el-button-group {
+.json-editor-actions {
     margin-top: 8px;
-}
-.json-editor > .el-tooltip .el-button {
-    margin-top: 8px;
+    display: inline-flex;
 }
 
-.json-editor .el-button-group > *:first-child .el-button {
-    border-top-left-radius: 6px;
-    border-bottom-left-radius: 6px;
-}
-.json-editor .el-button-group > *:last-child .el-button {
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
-}
-.json-editor .btn-format {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
+/* 与工具调试 executor-actions 次要按钮组一致 */
+.json-editor .btn-secondary {
+    border-radius: 0;
+    border-color: var(--el-border-color);
+    background-color: var(--el-fill-color-blank);
+    color: var(--el-text-color-regular);
 }
 
-.json-editor .btn-format:hover {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
-    opacity: 0.9;
+.json-editor .btn-secondary:hover:not(:disabled) {
+    border-color: var(--el-border-color-hover);
+    background-color: var(--main-light-color-50);
+    color: var(--el-text-color-primary);
 }
 
-.json-editor .btn-copy {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
+.json-editor-actions > *:first-child .el-button {
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
 }
 
-.json-editor .btn-copy:hover {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
-    opacity: 0.9;
+.json-editor-actions > *:last-child .el-button {
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
 }
 
-/* 编辑/创建对话框底部按钮 */
-.test-cases-container :deep(.test-case-dialog .el-dialog__footer) .el-button-group > *:first-child .el-button {
-    border-top-left-radius: 8px;
-    border-bottom-left-radius: 8px;
-}
-.test-cases-container :deep(.test-case-dialog .el-dialog__footer) .el-button-group > *:last-child .el-button {
-    border-top-right-radius: 8px;
-    border-bottom-right-radius: 8px;
-}
-.test-cases-container :deep(.test-case-dialog .el-dialog__footer) .btn-cancel {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
+/* 编辑/创建对话框底部：与工具调试 footer 按钮组一致 */
+.test-cases-container :deep(.test-case-dialog .el-dialog__footer) .dialog-footer-group {
+    display: inline-flex;
 }
 
-.test-cases-container :deep(.test-case-dialog .el-dialog__footer) .btn-cancel:hover {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
-    opacity: 0.9;
+.test-cases-container :deep(.test-case-dialog .el-dialog__footer) .btn-secondary {
+    border-radius: 0;
+    border-color: var(--el-border-color);
+    background-color: var(--el-fill-color-blank);
+    color: var(--el-text-color-regular);
+}
+
+.test-cases-container :deep(.test-case-dialog .el-dialog__footer) .btn-secondary:hover:not(:disabled) {
+    border-color: var(--el-border-color-hover);
+    background-color: var(--main-light-color-50);
+    color: var(--el-text-color-primary);
+}
+
+.test-cases-container :deep(.test-case-dialog .el-dialog__footer) .dialog-footer-group > *:first-child .el-button {
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
 }
 
 .test-cases-container :deep(.test-case-dialog .el-dialog__footer) .btn-save {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
-}
-
-.test-cases-container :deep(.test-case-dialog .el-dialog__footer) .btn-save:hover {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
-    opacity: 0.9;
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+    padding-left: 20px;
+    padding-right: 20px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .test-cases-container :deep(.test-result-dialog .el-dialog__footer) .btn-close {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
     border-radius: 8px;
+    border-color: var(--el-border-color);
+    background-color: var(--el-fill-color-blank);
+    color: var(--el-text-color-regular);
 }
 
-.test-cases-container :deep(.test-result-dialog .el-dialog__footer) .btn-close:hover {
-    background-color: var(--foreground) !important;
-    border-color: var(--foreground) !important;
-    color: var(--background) !important;
-    opacity: 0.9;
+.test-cases-container :deep(.test-result-dialog .el-dialog__footer) .btn-close:hover:not(:disabled) {
+    border-color: var(--el-border-color-hover);
+    background-color: var(--main-light-color-50);
+    color: var(--el-text-color-primary);
 }
 
 .test-result-container {
@@ -772,17 +807,20 @@ function formatTime(timestamp: number): string {
 
 .result-section h4 {
     margin-bottom: 10px;
-    color: var(--main-color);
+    font-size: 13px;
+    color: var(--el-text-color-regular);
 }
 
 .json-display {
-    background-color: var(--background);
-    padding: 12px;
+    background-color: var(--sidebar);
+    padding: 12px 15px;
     border-radius: 0.5em;
     overflow-x: auto;
     font-size: 13px;
+    font-family: var(--code-font-family, monospace);
     max-height: 300px;
     overflow-y: auto;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 :deep(.el-button) {

@@ -6,7 +6,11 @@
                 {{ copied ? t('copied') : t('copy') }}
             </button>
         </div>
-        <el-scrollbar class="json-render-scrollbar" max-height="400px">
+        <el-scrollbar
+            class="json-render-scrollbar"
+            :class="{ 'json-render-scrollbar--no-horizontal': !scrollbarHorizontal }"
+            max-height="400px"
+        >
             <div class="json-render-body" ref="jsonBodyRef" v-html="renderJson(json)">
             </div>
         </el-scrollbar>
@@ -14,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, type PropType, ref } from 'vue';
+import { type PropType, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { renderJson } from '../main-panel/chat/markdown/markdown';
 
@@ -27,8 +31,10 @@ const props = withDefaults(
         json: any;
         showCopy?: boolean;
         label?: string;
+        /** 是否在内部渲染横向滚动条，默认 true；设为 false 时由外部滚动容器负责横向滚动 */
+        scrollbarHorizontal?: boolean;
     }>(),
-    { showCopy: false, label: '' }
+    { showCopy: false, label: '', scrollbarHorizontal: true }
 );
 
 function getRawText(): string {
@@ -94,6 +100,13 @@ async function handleCopy() {
 .json-render-scrollbar {
     flex: 1;
     --el-scrollbar-opacity: 0.3;
+}
+
+.json-render-scrollbar--no-horizontal :deep(.el-scrollbar__wrap) {
+    overflow-x: hidden;
+}
+.json-render-scrollbar--no-horizontal :deep(.el-scrollbar__bar.is-horizontal) {
+    display: none;
 }
 
 .json-render-body {

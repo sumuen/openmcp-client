@@ -1,6 +1,8 @@
 <template>
     <div class="batch-validation-container">
-        <div class="batch-list-panel">
+        <el-splitter class="batch-validation-splitter">
+            <el-splitter-panel :min="180" :max="480" :size="300" class="batch-splitter-panel-left">
+                <div class="batch-list-panel">
             <div class="list-header">
                 <div class="list-add-btn-wrap">
                     <el-button class="list-add-btn" @click="addTestCaseFromList">
@@ -13,7 +15,7 @@
                 <el-scrollbar>
                     <div class="list-inner">
                         <div v-for="item in listItems" :key="item.tabIndex" class="list-item"
-                            :class="{ active: selectedTabIndex === item.tabIndex }"
+                            :class="{ active: tabStorage.selectedTabIndex === item.tabIndex }"
                             @click="selectTestCase(item.tabIndex)">
                             <div class="list-item-content">
                                 <div class="item-title">
@@ -36,8 +38,10 @@
                     </div>
                 </el-scrollbar>
             </div>
-        </div>
-        <div class="batch-detail-panel">
+                </div>
+            </el-splitter-panel>
+            <el-splitter-panel class="batch-splitter-panel-right">
+                <div class="batch-detail-panel">
             <el-scrollbar>
                 <div v-if="listItems.length === 0" class="no-selection">
                     <el-empty :description="t('batch-validation-no-chat-tabs')" />
@@ -94,7 +98,7 @@
                                 <div class="result-header">
                                     <span class="result-index">#{{ r.testCaseIndex + 1 }}-{{ r.criterionIndex + 1
                                     }}</span>
-                                    <span v-if="evaluationMode === 'pass-fail'" class="result-badge"
+                                    <span v-if="tabStorage.evaluationMode === 'pass-fail'" class="result-badge"
                                         :class="r.pass === true ? 'pass' : r.pass === false ? 'fail' : 'unknown'">
                                         {{ r.pass === true ? t('batch-validation-pass') : r.pass === false ?
                                             t('batch-validation-fail') : '?' }}
@@ -115,6 +119,9 @@
                     <el-empty />
                 </div>
             </el-scrollbar>
+                </div>
+            </el-splitter-panel>
+        </el-splitter>
             <!-- 从右往左拉出的配置抽屉：当前测试样例的 pass/score、描述等 -->
             <Teleport to="body">
                 <Transition name="settings-drawer">
@@ -132,7 +139,7 @@
                                 <div class="settings-drawer-section">
                                     <label class="detail-section-label">{{ t('batch-validation-evaluation-mode')
                                         }}</label>
-                                    <el-radio-group v-model="evaluationMode" class="settings-drawer-radio">
+                                    <el-radio-group v-model="tabStorage.evaluationMode" class="settings-drawer-radio">
                                         <el-radio-button label="pass-fail">{{ t('batch-validation-mode-pass-fail')
                                             }}</el-radio-button>
                                         <el-radio-button label="score">{{ t('batch-validation-mode-score')
@@ -150,7 +157,6 @@
                     </div>
                 </Transition>
             </Teleport>
-        </div>
     </div>
 </template>
 
@@ -166,19 +172,15 @@ import type { ChatMessage, ChatStorage } from '../chat/chat-box/chat';
 import { TaskLoop } from '../chat/core/task-loop';
 import { mcpClientAdapter } from '@/views/connect/core';
 import BatchValidationInput from './batch-validation-input.vue';
+import type { BatchValidationStorage, BatchValidationTestCase } from './storage';
+import { ensureBatchValidationStorage } from './storage';
 
 const { t } = useI18n();
-defineProps({
+const props = defineProps({
     tabId: { type: Number, required: true }
 });
 
-interface TestCase {
-    id: string;
-    name?: string;
-    description?: string;
-    input: string;
-    criteria: string[];
-}
+type TestCase = BatchValidationTestCase;
 
 const tcInputRefs = new Map<string, InstanceType<typeof BatchValidationInput>>();
 
@@ -199,10 +201,10 @@ interface ValidationResult {
     error?: string;
 }
 
-const selectedTabIndex = ref<number>(0);
-const evaluationMode = ref<'pass-fail' | 'score'>('pass-fail');
-/** 每个交互测试标签页对应一个测试案例 */
-const testCasesByTabIndex = ref<Record<number, TestCase>>({});
+/** 当前 tab 的持久化数据（绑定到 tab.storage，与 chat/index.vue 一致） */
+const tab = tabs.content[props.tabId];
+const tabStorage = tab.storage as BatchValidationStorage;
+ensureBatchValidationStorage(tab.storage);
 const isRunning = ref(false);
 const runStatusText = ref('');
 const results = ref<ValidationResult[]>([]);
@@ -216,7 +218,7 @@ const chatTabs = computed(() => {
 });
 
 const sourceStorage = computed((): ChatStorage | null => {
-    const item = chatTabs.value[selectedTabIndex.value];
+    const item = chatTabs.value[tabStorage.selectedTabIndex];
     if (!item) return null;
     return item.tab.storage as ChatStorage;
 });
@@ -228,13 +230,14 @@ function getTabLabel(tab: { name: string; icon: string }, idx: number) {
 
 /** 当前测试用例的默认名称（与左侧列表一致：交互测试 #1） */
 const defaultTestCaseName = computed(() => {
-    const tabItem = chatTabs.value[selectedTabIndex.value];
-    return tabItem ? getTabLabel(tabItem.tab, selectedTabIndex.value) : '';
+    const idx = tabStorage.selectedTabIndex;
+    const tabItem = chatTabs.value[idx];
+    return tabItem ? getTabLabel(tabItem.tab, idx) : '';
 });
 
 /** 列表项标题：优先显示测试用例名称，否则显示标签页名（含草稿，用于 Vue 响应式追踪） */
 function getListItemTitle(tabIndex: number) {
-    const tc = testCasesByTabIndex.value[tabIndex] ?? (tabIndex === selectedTabIndex.value ? draftTestCase.value : null);
+    const tc = tabStorage.testCasesByTabIndex[tabIndex] ?? (tabIndex === tabStorage.selectedTabIndex ? draftTestCase.value : null);
     const tabItem = chatTabs.value[tabIndex];
     if (tc?.name?.trim()) return tc.name;
     return tabItem ? getTabLabel(tabItem.tab, tabIndex) : '';
@@ -242,7 +245,7 @@ function getListItemTitle(tabIndex: number) {
 
 /** 列表项预览：描述或输入摘要（含草稿，用于 Vue 响应式追踪） */
 function getListItemPreview(tabIndex: number) {
-    const tc = testCasesByTabIndex.value[tabIndex] ?? (tabIndex === selectedTabIndex.value ? draftTestCase.value : null);
+    const tc = tabStorage.testCasesByTabIndex[tabIndex] ?? (tabIndex === tabStorage.selectedTabIndex ? draftTestCase.value : null);
     if (!tc) return '';
     if (tc.description?.trim()) return tc.description;
     if (tc.input?.trim()) return tc.input.substring(0, 40) + (tc.input.length > 40 ? '...' : '');
@@ -251,7 +254,7 @@ function getListItemPreview(tabIndex: number) {
 
 /** 当前选中标签页对应的测试案例（已持久化） */
 const currentTestCase = computed(() => {
-    return testCasesByTabIndex.value[selectedTabIndex.value] ?? null;
+    return tabStorage.testCasesByTabIndex[tabStorage.selectedTabIndex] ?? null;
 });
 
 /** 当前表单数据：持久化的测试案例 或 未保存的草稿（选中无表单的标签页时） */
@@ -270,19 +273,16 @@ function createEmptyTestCase(): TestCase {
 function commitDraftToTab(tabIndex: number) {
     const draft = draftTestCase.value;
     if (draft) {
-        testCasesByTabIndex.value = {
-            ...testCasesByTabIndex.value,
-            [tabIndex]: { ...draft }
-        };
+        tabStorage.testCasesByTabIndex[tabIndex] = { ...draft };
         draftTestCase.value = null;
     }
 }
 
-watch(selectedTabIndex, (newIdx, oldIdx) => {
+watch(() => tabStorage.selectedTabIndex, (newIdx, oldIdx) => {
     if (oldIdx !== undefined && draftTestCase.value) {
         commitDraftToTab(oldIdx);
     }
-    if (chatTabs.value[newIdx] && !testCasesByTabIndex.value[newIdx]) {
+    if (chatTabs.value[newIdx] && !tabStorage.testCasesByTabIndex[newIdx]) {
         draftTestCase.value = createEmptyTestCase();
     } else {
         draftTestCase.value = null;
@@ -298,7 +298,8 @@ const currentResultItems = computed(() => {
 
 const validTestCases = computed(() => {
     const cases: Array<{ tabIndex: number; tc: TestCase }> = [];
-    Object.entries(testCasesByTabIndex.value).forEach(([tabIdxStr, tc]) => {
+    const byIndex = tabStorage.testCasesByTabIndex;
+    Object.entries(byIndex).forEach(([tabIdxStr, tc]) => {
         const tabIndex = Number(tabIdxStr);
         if (tc.input.trim() && tc.criteria.some((c) => c.trim())) {
             cases.push({ tabIndex, tc });
@@ -324,28 +325,26 @@ const runDisabledReason = computed(() => {
 });
 
 function addTestCaseForCurrentTab() {
-    const idx = selectedTabIndex.value;
-    testCasesByTabIndex.value = {
-        ...testCasesByTabIndex.value,
-        [idx]: { id: uuidv4(), input: '', criteria: [''] }
-    };
+    const idx = tabStorage.selectedTabIndex;
+    tabStorage.testCasesByTabIndex[idx] = { id: uuidv4(), input: '', criteria: [''] };
 }
 
 /** 左侧列表数据：所有交互测试标签页（含无测试案例的） */
 const listItems = computed(() => {
+    const byIndex = tabStorage.testCasesByTabIndex;
     return chatTabs.value.map((item, idx) => ({
         tabIndex: idx,
         tab: item.tab,
-        tc: testCasesByTabIndex.value[idx] ?? null
+        tc: byIndex[idx] ?? null
     }));
 });
 
 function selectTestCase(tabIndex: number) {
-    if (tabIndex === selectedTabIndex.value) return;
+    if (tabIndex === tabStorage.selectedTabIndex) return;
     if (draftTestCase.value) {
-        commitDraftToTab(selectedTabIndex.value);
+        commitDraftToTab(tabStorage.selectedTabIndex);
     }
-    selectedTabIndex.value = tabIndex;
+    tabStorage.selectedTabIndex = tabIndex;
 }
 
 /** 切换到指定测试用例并打开配置抽屉（列表项右侧齿轮点击） */
@@ -356,24 +355,20 @@ function openSettingsForTab(tabIndex: number) {
 
 /** 从列表头添加：保存当前表单（含草稿），为第一个无测试案例的标签页创建新表单并切换 */
 function addTestCaseFromList() {
-    const current = selectedTabIndex.value;
+    const current = tabStorage.selectedTabIndex;
     if (draftTestCase.value) {
         commitDraftToTab(current);
     }
-    const target = chatTabs.value.findIndex((_, i) => !testCasesByTabIndex.value[i]);
+    const byIndex = tabStorage.testCasesByTabIndex;
+    const target = chatTabs.value.findIndex((_, i) => !byIndex[i]);
     const nextIdx = target >= 0 ? target : 0;
-    testCasesByTabIndex.value = {
-        ...testCasesByTabIndex.value,
-        [nextIdx]: createEmptyTestCase()
-    };
-    selectedTabIndex.value = nextIdx;
+    byIndex[nextIdx] = createEmptyTestCase();
+    tabStorage.selectedTabIndex = nextIdx;
 }
 
 function removeCurrentTestCase() {
-    const idx = selectedTabIndex.value;
-    const next = { ...testCasesByTabIndex.value };
-    delete next[idx];
-    testCasesByTabIndex.value = next;
+    const idx = tabStorage.selectedTabIndex;
+    delete tabStorage.testCasesByTabIndex[idx];
 }
 
 function addCriterion() {
@@ -401,7 +396,7 @@ function messagesToTrace(messages: ChatMessage[]): Array<{ role: string; content
 
 async function runValidation() {
     if (draftTestCase.value) {
-        commitDraftToTab(selectedTabIndex.value);
+        commitDraftToTab(tabStorage.selectedTabIndex);
     }
     if (!canRun.value) return;
 
@@ -436,7 +431,7 @@ async function runValidation() {
             const { tabIndex, tc } = casesToRun[i];
             const tabItem = chatTabs.value[tabIndex];
             if (!tabItem) continue;
-            const tabStorage = tabItem.tab.storage as ChatStorage;
+            const chatStorage = tabItem.tab.storage as ChatStorage;
             const input = tc.input.trim();
             const criteria = tc.criteria.filter((c) => c.trim());
 
@@ -450,7 +445,7 @@ async function runValidation() {
                     messages: []
                 }))
                 : JSON.parse(JSON.stringify({
-                    ...tabStorage,
+                    ...chatStorage,
                     id: uuidv4(),
                     messages: []
                 }));
@@ -497,7 +492,7 @@ async function runValidation() {
                 {
                     messages: trace,
                     testCases: testCasesForApi,
-                    evaluationMode: evaluationMode.value,
+                    evaluationMode: tabStorage.evaluationMode,
                     llmConfig
                 }
             );
@@ -551,25 +546,44 @@ async function runValidation() {
 }
 
 watch(chatTabs, (val) => {
-    if (val.length > 0 && selectedTabIndex.value >= val.length) selectedTabIndex.value = 0;
+    if (val.length > 0 && tabStorage.selectedTabIndex >= val.length) tabStorage.selectedTabIndex = 0;
 }, { immediate: true });
 </script>
 
 <style scoped>
-/* 仿 reflux：全屏布局，无 padding，无 max-width */
+/* 仿 reflux：全屏布局，无 padding，无 max-width；左右用 splitter 可拖拽调整 */
 .batch-validation-container {
-    display: flex;
     height: 100%;
+}
+
+.batch-validation-splitter {
+    height: 100%;
+}
+
+.batch-validation-splitter :deep(.el-splitter__panel) {
+    overflow: hidden;
+}
+
+.batch-splitter-panel-left {
+    display: flex;
+    flex-direction: column;
+}
+
+.batch-splitter-panel-right {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
 }
 
 /* 左侧列表 */
 .batch-list-panel {
-    width: 300px;
+    width: 100%;
+    height: 100%;
     border-right: 1px solid var(--el-border-color-light);
     background-color: var(--el-bg-color);
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
+    overflow: hidden;
 }
 
 .batch-list-panel .list-header {
@@ -693,9 +707,14 @@ watch(chatTabs, (val) => {
 
 /* 右侧详情 */
 .batch-detail-panel {
-    flex: 1;
+    width: 100%;
+    height: 100%;
     min-width: 0;
+    flex: 1;
     background-color: var(--el-bg-color);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .batch-detail-panel .detail-actions-top {

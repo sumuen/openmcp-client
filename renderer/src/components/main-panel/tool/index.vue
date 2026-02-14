@@ -26,9 +26,9 @@
                 <div class="tool-detail-panel">
                     <el-scrollbar>
                         <div class="detail-content">
-                            <keep-alive>
-                                <component :is="currentView" :tab-id="props.tabId" />
-                            </keep-alive>
+                                <keep-alive>
+                                    <component :is="currentView" :tab-id="props.tabId" />
+                                </keep-alive>
                         </div>
                     </el-scrollbar>
                 </div>
@@ -190,8 +190,15 @@ onBeforeUnmount(() => {
     height: 100%;
 }
 
+/* 确保滚动区域内的 view 占满高度，使内部 run-debug 的 splitter 能正确计算百分比 */
+.tool-detail-panel :deep(.el-scrollbar__wrap),
+.tool-detail-panel :deep(.el-scrollbar__view) {
+    height: 100%;
+}
+
 .tool-detail-panel .detail-content {
-    padding: 20px;
     min-height: 100%;
+    height: 100%;
+    box-sizing: border-box;
 }
 </style>

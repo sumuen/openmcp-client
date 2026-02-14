@@ -774,21 +774,23 @@ class McpClientAdapter {
         }
     }
 
-    public async readResource(resourceUri?: string) {
+    public async readResource(resourceUri?: string, clientIndex?: number) {
         if (!resourceUri) {
             return undefined;
         }
 
-        // TODO: 如果遇到不同服务器的同名 tool，请拓展解决方案
-        // 目前只找到第一个匹配 toolName 的工具进行调用
-        let clientId = this.clients[0].clientId;
-
-        for (const client of this.clients) {
-            const resources = await client.getResources();
-            const resource = resources.get(resourceUri);
-            if (resource) {
-                clientId = client.clientId;
-                break;
+        let clientId: string;
+        if (clientIndex !== undefined && clientIndex >= 0 && clientIndex < this.clients.length) {
+            clientId = this.clients[clientIndex].clientId;
+        } else {
+            clientId = this.clients[0].clientId;
+            for (const client of this.clients) {
+                const resources = await client.getResources();
+                const resource = Array.from(resources.values()).find(r => r.uri === resourceUri || r.name === resourceUri);
+                if (resource) {
+                    clientId = client.clientId;
+                    break;
+                }
             }
         }
 
@@ -798,20 +800,21 @@ class McpClientAdapter {
         return msg;
     }
 
-    public async readPromptTemplate(promptId: string, args?: Record<string, any>) {
-        // TODO: 如果遇到不同服务器的同名 tool，请拓展解决方案
-        // 目前只找到第一个匹配 toolName 的工具进行调用
-        let clientId = this.clients[0].clientId;
-
-        for (const client of this.clients) {
-            const promptTemplates = await client.getPromptTemplates();
-            const promptTemplate = promptTemplates.get(promptId);
-            if (promptTemplate) {
-                clientId = client.clientId;
-                break;
+    public async readPromptTemplate(promptId: string, args?: Record<string, any>, clientIndex?: number) {
+        let clientId: string;
+        if (clientIndex !== undefined && clientIndex >= 0 && clientIndex < this.clients.length) {
+            clientId = this.clients[clientIndex].clientId;
+        } else {
+            clientId = this.clients[0].clientId;
+            for (const client of this.clients) {
+                const promptTemplates = await client.getPromptTemplates();
+                const promptTemplate = promptTemplates.get(promptId);
+                if (promptTemplate) {
+                    clientId = client.clientId;
+                    break;
+                }
             }
         }
-
         const bridge = useMessageBridge();
         const { code, msg } = await bridge.commandRequest<PromptsGetResponse>('prompts/get', { clientId, promptId, args });
         return msg;

@@ -6,7 +6,7 @@
     </el-tooltip>
 
     <!-- 上下文长度设置 - 改为滑块形式 -->
-    <el-dialog v-model="showChoosePrompt" :title="t('prompts')" width="400px">
+    <el-dialog v-model="showChoosePrompt" :title="t('prompts')" width="560px">
 
         <div class="prompt-template-container-scrollbar" v-if="!selectPrompt">
             <PromptTemplates :tab-id="-1" @prompt-selected="prompt => selectPrompt = prompt" />
