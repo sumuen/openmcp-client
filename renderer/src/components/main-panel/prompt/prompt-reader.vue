@@ -1,9 +1,8 @@
 <template>
     <div style="padding: 10px;">
         <div class="prompt-executor-header">
-            <span v-if="props.tabId >= 0" class="prompt-executor-header-label">{{ t('select-prompt') }}</span>
+            <span class="prompt-executor-header-label">{{ t('select-prompt') }}</span>
             <el-tree-select
-                v-if="props.tabId >= 0"
                 v-model="selectedPromptValue"
                 :data="promptTreeData"
                 :render-after-expand="false"
@@ -12,7 +11,6 @@
                 popper-class="prompt-tree-select-dropdown"
                 class="prompt-tree-select"
             />
-            <span v-else class="prompt-executor-title">{{ currentPrompt?.name || '' }}</span>
         </div>
         <div class="prompt-executor-container">
             <el-form :model="tabStorage.formData" :rules="formRules" ref="formRef" label-position="top">
@@ -125,6 +123,7 @@ if (props.tabId >= 0) {
     tabStorage = reactive({
         activeNames: [0],
         currentPromptName: props.currentPromptName || '',
+        currentClientIndex: undefined as number | undefined,
         formData: {},
         lastPromptGetResponse: undefined
     });
@@ -194,7 +193,6 @@ const selectedPromptValue = computed({
     get() {
         const name = tabStorage.currentPromptName;
         if (!name) return '';
-        if (props.tabId < 0) return '';
         const idx = tabStorage.currentClientIndex;
         if (idx !== undefined && idx >= 0 && idx < mcpClientAdapter.clients.length) {
             const client = mcpClientAdapter.clients[idx];
@@ -348,22 +346,24 @@ async function handleSubmit() {
             clientIndex
         );
         tabStorage.lastPromptGetResponse = res;
-        emits('prompt-get-response', res);
+        const meta = {
+            promptName: currentPrompt.value.name,
+            args: JSON.parse(JSON.stringify(tabStorage.formData)) as Record<string, string>
+        };
+        emits('prompt-get-response', res, meta);
     } finally {
         loading.value = false;
     }
 }
 
-if (props.tabId >= 0) {
-    watch(() => tabStorage.currentPromptName, () => {
-        initFormData();
-        resetForm();
-        selectedSavedName.value = null;
-    }, { immediate: true });
-}
+watch(() => tabStorage.currentPromptName, () => {
+    initFormData();
+    resetForm();
+    selectedSavedName.value = null;
+}, { immediate: true });
 
 onMounted(() => {
-    if (props.tabId >= 0 && !tabStorage.currentPromptName && promptTreeData.value.length > 0) {
+    if (!tabStorage.currentPromptName && promptTreeData.value.length > 0) {
         const first = promptTreeData.value[0];
         const firstChild = first?.children?.[0];
         if (firstChild && typeof firstChild.value === 'string' && firstChild.value.includes(PROMPT_VALUE_SEP)) {

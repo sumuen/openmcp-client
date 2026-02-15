@@ -19,7 +19,9 @@
             </div>
         </template>
 
-        <span class="chat-prompt-item" contenteditable="false">
+        <span class="chat-prompt-item" contenteditable="false"
+            :data-rich-type="'resource'"
+            :data-full-text="resourceText">
             <span class="iconfont icon-file"></span>
             <span class="real-text">{{ resourceText }}</span>
             <el-progress v-if="!finishProcess" class="progress" style="width: 100px;" :percentage="progress"

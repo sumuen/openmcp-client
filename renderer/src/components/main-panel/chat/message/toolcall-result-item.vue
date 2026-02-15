@@ -1,7 +1,9 @@
 <template>
     <el-scrollbar width="100%" max-height="300px">
-        <div v-if="props.item.type === 'text'" class="tool-text">
-            {{ props.item.text }}
+        <div v-if="props.item.type === 'text'" class="tool-text tool-text--print">
+            <div class="tool-text-body tool-text-body--json">
+                <JsonRender :json="props.item.text" :show-copy="false" />
+            </div>
         </div>
 
         <div v-else-if="props.item.type === 'image'" class="tool-image">
@@ -44,6 +46,7 @@ import { useMessageBridge } from '@/api/message-bridge';
 import type { ToolCallContent } from '@/hook/type';
 import { getBlobUrlByFilename } from '@/hook/util';
 import { defineComponent, type PropType, defineProps, ref, defineEmits } from 'vue';
+import JsonRender from '@/components/json-render/index.vue';
 
 defineComponent({ name: 'toolcall-result-item' });
 const emits = defineEmits(['update:item', 'update:ocr-done']);
@@ -236,6 +239,47 @@ const showFullImage = () => {
 
 .media-item:hover {
     opacity: 0.9;
+}
+
+/* 文本类型结果：以“打印”形式展示 value（JSON/代码块），便于调试 */
+.tool-text--print {
+    font-family: var(--font-monospace-family, var(--code-font-family, monospace));
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.tool-text--print .tool-text-body {
+    padding: 10px 12px;
+    background: var(--sidebar-item-selected);
+    border: 1px solid var(--sidebar-item-border);
+    border-radius: 8px;
+    overflow: auto;
+}
+
+/* 响应文本使用 JsonRender，与参数区一致，支持含 \n 等转义字符串的悬停高亮与点击展开 */
+.tool-text-body--json :deep(.json-render) {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+}
+.tool-text-body--json :deep(.json-render .json-render-scrollbar) {
+    max-height: 300px;
+}
+.tool-text-body--json :deep(.json-render .json-render-body) {
+    padding: 0;
+}
+
+.tool-text--print .tool-text-body :deep(pre) {
+    margin: 0;
+    padding: 0;
+    background: transparent !important;
+}
+
+.tool-text--print .tool-text-body :deep(code) {
+    font-family: inherit;
+    font-size: inherit;
+    white-space: pre;
+    display: block;
 }
 
 /* 其他类型结果 - 开发者可读的 JSON 展示 */

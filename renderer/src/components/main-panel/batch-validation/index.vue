@@ -14,26 +14,26 @@
             <div class="list-container">
                 <el-scrollbar>
                     <div class="list-inner">
-                        <div v-for="item in listItems" :key="item.tabIndex" class="list-item"
-                            :class="{ active: tabStorage.selectedTabIndex === item.tabIndex }"
-                            @click="selectTestCase(item.tabIndex)">
+                        <div v-for="item in listItems" :key="item.tc.id" class="list-item"
+                            :class="{ active: tabStorage.selectedCaseIndex === item.caseIndex }"
+                            @click="selectTestCase(item.caseIndex)">
                             <div class="list-item-content">
                                 <div class="item-title">
-                                    {{ getListItemTitle(item.tabIndex) }}
+                                    {{ getListItemTitle(item.caseIndex) }}
                                 </div>
-                                <div v-if="getListItemPreview(item.tabIndex)" class="item-preview">
-                                    {{ getListItemPreview(item.tabIndex) }}
+                                <div v-if="getListItemPreview(item.caseIndex)" class="item-preview">
+                                    {{ getListItemPreview(item.caseIndex) }}
                                 </div>
                                 <div v-else class="item-empty">-</div>
                             </div>
                             <el-button type="default" circle class="list-item-setting-btn"
                                 :title="t('batch-validation-settings-drawer-title')"
-                                @click.stop="openSettingsForTab(item.tabIndex)">
+                                @click.stop="openSettingsForTab(item.caseIndex)">
                                 <span class="iconfont icon-setting"></span>
                             </el-button>
                         </div>
                         <div v-if="listItems.length === 0" class="list-empty">
-                            {{ t('batch-validation-no-chat-tabs') }}
+                            {{ t('batch-validation-no-cases-hint') }}
                         </div>
                     </div>
                 </el-scrollbar>
@@ -44,7 +44,7 @@
                 <div class="batch-detail-panel">
             <el-scrollbar>
                 <div v-if="listItems.length === 0" class="no-selection">
-                    <el-empty :description="t('batch-validation-no-chat-tabs')" />
+                    <el-empty :description="t('batch-validation-no-cases-hint')" />
                 </div>
                 <div v-else-if="formModel" class="detail-content">
                     <div class="detail-section detail-actions-top">
@@ -70,7 +70,7 @@
                     </div>
                     <div class="detail-section">
                         <label class="detail-section-label">{{ t('batch-validation-test-input') }}</label>
-                        <BatchValidationInput :ref="el => setTcInputRef(formModel.id, el)" :tab-id="props.tabId" v-model="formModel.input"
+                        <BatchValidationInput :ref="el => setTcInputRef(formModel?.id ?? '', el)" :tab-id="props.tabId" v-model="formModel.input"
                             :source-storage="sourceStorage"
                             :placeholder="t('batch-validation-test-input-placeholder')" />
                     </div>
@@ -220,7 +220,8 @@ const chatTabs = computed(() => {
 });
 
 const sourceStorage = computed((): ChatStorage | null => {
-    const item = chatTabs.value[tabStorage.selectedTabIndex];
+    const idx = tabStorage.sourceTabIndex ?? 0;
+    const item = chatTabs.value[idx];
     if (!item) return null;
     return item.tab.storage as ChatStorage;
 });
@@ -230,33 +231,35 @@ function getTabLabel(tab: { name: string; icon: string }, idx: number) {
     return `${name || t('batch-validation-default-case-name')} #${idx + 1}`;
 }
 
-/** 当前测试用例的默认名称（与左侧列表一致：交互测试 #1） */
+/** 当前测试用例的默认名称（与左侧列表一致：测试 #n） */
 const defaultTestCaseName = computed(() => {
-    const idx = tabStorage.selectedTabIndex;
-    const tabItem = chatTabs.value[idx];
-    return tabItem ? getTabLabel(tabItem.tab, idx) : '';
+    const idx = tabStorage.selectedCaseIndex;
+    return t('batch-validation-default-case-name') + ' #' + (idx + 1);
 });
 
-/** 列表项标题：优先显示测试用例名称，否则显示标签页名（含草稿，用于 Vue 响应式追踪） */
-function getListItemTitle(tabIndex: number) {
-    const tc = tabStorage.testCasesByTabIndex[tabIndex] ?? (tabIndex === tabStorage.selectedTabIndex ? draftTestCase.value : null);
-    const tabItem = chatTabs.value[tabIndex];
+/** 列表项标题：优先显示测试用例名称，否则显示默认名（含草稿） */
+function getListItemTitle(caseIndex: number) {
+    const arr = tabStorage.testCases || [];
+    const tc = arr[caseIndex] ?? (caseIndex === tabStorage.selectedCaseIndex ? draftTestCase.value : null);
     if (tc?.name?.trim()) return tc.name;
-    return tabItem ? getTabLabel(tabItem.tab, tabIndex) : '';
+    return t('batch-validation-default-case-name') + ' #' + (caseIndex + 1);
 }
 
-/** 列表项预览：描述或输入摘要（含草稿，用于 Vue 响应式追踪） */
-function getListItemPreview(tabIndex: number) {
-    const tc = tabStorage.testCasesByTabIndex[tabIndex] ?? (tabIndex === tabStorage.selectedTabIndex ? draftTestCase.value : null);
+/** 列表项预览：描述或输入摘要（含草稿） */
+function getListItemPreview(caseIndex: number) {
+    const arr = tabStorage.testCases || [];
+    const tc = arr[caseIndex] ?? (caseIndex === tabStorage.selectedCaseIndex ? draftTestCase.value : null);
     if (!tc) return '';
     if (tc.description?.trim()) return tc.description;
     if (tc.input?.trim()) return tc.input.substring(0, 40) + (tc.input.length > 40 ? '...' : '');
     return '';
 }
 
-/** 当前选中标签页对应的测试案例（已持久化） */
+/** 当前选中的测试用例（已持久化） */
 const currentTestCase = computed(() => {
-    return tabStorage.testCasesByTabIndex[tabStorage.selectedTabIndex] ?? null;
+    const arr = tabStorage.testCases;
+    const idx = tabStorage.selectedCaseIndex;
+    return arr && arr[idx] ? arr[idx] : null;
 });
 
 /** 当前表单数据：持久化的测试案例 或 未保存的草稿（选中无表单的标签页时） */
@@ -271,13 +274,19 @@ function createEmptyTestCase(): TestCase {
     return { id: uuidv4(), name: '', description: '', input: '', criteria: [''] };
 }
 
-/** 将草稿持久化到指定标签页 */
-function commitDraftToTab(tabIndex: number) {
+/** 将草稿持久化到当前选中的测试用例位 */
+function commitDraftToCase() {
     const draft = draftTestCase.value;
-    if (draft) {
-        tabStorage.testCasesByTabIndex[tabIndex] = { ...draft };
-        draftTestCase.value = null;
+    if (!draft) return;
+    const idx = tabStorage.selectedCaseIndex;
+    const arr = tabStorage.testCases;
+    if (arr && idx >= 0 && idx < arr.length) {
+        arr[idx] = { ...draft };
+    } else {
+        tabStorage.testCases = [...(arr || []), { ...draft }];
+        tabStorage.selectedCaseIndex = tabStorage.testCases.length - 1;
     }
+    draftTestCase.value = null;
 }
 
 /** 当前表单对应测试案例的验证结果 */
@@ -288,15 +297,13 @@ const currentResultItems = computed(() => {
 });
 
 const validTestCases = computed(() => {
-    const cases: Array<{ tabIndex: number; tc: TestCase }> = [];
-    const byIndex = tabStorage.testCasesByTabIndex;
-    Object.entries(byIndex).forEach(([tabIdxStr, tc]) => {
-        const tabIndex = Number(tabIdxStr);
+    const cases: Array<{ caseIndex: number; tc: TestCase }> = [];
+    const arr = tabStorage.testCases || [];
+    arr.forEach((tc, caseIndex) => {
         if (tc.input.trim() && tc.criteria.some((c) => c.trim())) {
-            cases.push({ tabIndex, tc });
+            cases.push({ caseIndex, tc });
         }
     });
-    cases.sort((a, b) => a.tabIndex - b.tabIndex);
     return cases;
 });
 
@@ -315,41 +322,35 @@ const runDisabledReason = computed(() => {
     return '';
 });
 
-/** 左侧列表数据：所有交互测试标签页（含无测试案例的） */
+/** 左侧列表数据：测试用例列表（一行一个） */
 const listItems = computed(() => {
-    const byIndex = tabStorage.testCasesByTabIndex;
-    return chatTabs.value.map((item, idx) => ({
-        tabIndex: idx,
-        tab: item.tab,
-        tc: byIndex[idx] ?? null
-    }));
+    const arr = tabStorage.testCases || [];
+    return arr.map((tc, caseIndex) => ({ caseIndex, tc }));
 });
 
-function selectTestCase(tabIndex: number) {
-    if (tabIndex === tabStorage.selectedTabIndex) return;
+function selectTestCase(caseIndex: number) {
+    if (caseIndex === tabStorage.selectedCaseIndex) return;
     if (draftTestCase.value) {
-        commitDraftToTab(tabStorage.selectedTabIndex);
+        commitDraftToCase();
     }
-    tabStorage.selectedTabIndex = tabIndex;
+    tabStorage.selectedCaseIndex = caseIndex;
 }
 
 /** 切换到指定测试用例并打开配置抽屉（列表项右侧齿轮点击） */
-function openSettingsForTab(tabIndex: number) {
-    selectTestCase(tabIndex);
+function openSettingsForTab(caseIndex: number) {
+    selectTestCase(caseIndex);
     settingsDrawerVisible.value = true;
 }
 
-/** 从列表头添加：保存当前表单（含草稿），为第一个无测试案例的标签页创建新表单并切换 */
+/** 从列表头添加：保存当前表单（含草稿），在列表末尾新增一条测试用例并选中 */
 function addTestCaseFromList() {
-    const current = tabStorage.selectedTabIndex;
     if (draftTestCase.value) {
-        commitDraftToTab(current);
+        commitDraftToCase();
     }
-    const byIndex = tabStorage.testCasesByTabIndex;
-    const target = chatTabs.value.findIndex((_, i) => !byIndex[i]);
-    const nextIdx = target >= 0 ? target : 0;
-    byIndex[nextIdx] = createEmptyTestCase();
-    tabStorage.selectedTabIndex = nextIdx;
+    const arr = tabStorage.testCases || [];
+    const next = createEmptyTestCase();
+    tabStorage.testCases = [...arr, next];
+    tabStorage.selectedCaseIndex = tabStorage.testCases.length - 1;
 }
 
 function addCriterion() {
@@ -377,7 +378,7 @@ function messagesToTrace(messages: ChatMessage[]): Array<{ role: string; content
 
 async function runValidation() {
     if (draftTestCase.value) {
-        commitDraftToTab(tabStorage.selectedTabIndex);
+        commitDraftToCase();
     }
     if (!canRun.value) return;
 
@@ -408,11 +409,17 @@ async function runValidation() {
     try {
         const allResults: ValidationResult[] = [];
 
+        const sourceTab = tabStorage.sourceTabIndex ?? 0;
+        const tabItem = chatTabs.value[sourceTab];
+        if (!tabItem) {
+            ElMessage.warning(t('batch-validation-no-chat-tabs'));
+            isRunning.value = false;
+            return;
+        }
+        const chatStorage = tabItem.tab.storage as ChatStorage;
+
         for (let i = 0; i < casesToRun.length; i++) {
-            const { tabIndex, tc } = casesToRun[i];
-            const tabItem = chatTabs.value[tabIndex];
-            if (!tabItem) continue;
-            const chatStorage = tabItem.tab.storage as ChatStorage;
+            const { tc } = casesToRun[i];
             const input = tc.input.trim();
             const criteria = tc.criteria.filter((c) => c.trim());
 
@@ -527,11 +534,16 @@ async function runValidation() {
 }
 
 watch(chatTabs, (val) => {
-    if (val.length > 0 && tabStorage.selectedTabIndex >= val.length) tabStorage.selectedTabIndex = 0;
-    // 刚创建或尚无任何测试用例时，至少创建一个空交互测试用例
-    if (val.length > 0 && Object.keys(tabStorage.testCasesByTabIndex).length === 0) {
-        tabStorage.testCasesByTabIndex[0] = createEmptyTestCase();
-        tabStorage.selectedTabIndex = 0;
+    if (val.length > 0) {
+        const src = tabStorage.sourceTabIndex ?? 0;
+        if (src >= val.length) tabStorage.sourceTabIndex = 0;
+    }
+}, { immediate: true });
+
+watch(() => tabStorage.testCases?.length ?? 0, (len) => {
+    const idx = tabStorage.selectedCaseIndex;
+    if (len > 0 && (idx < 0 || idx >= len)) {
+        tabStorage.selectedCaseIndex = Math.max(0, len - 1);
     }
 }, { immediate: true });
 </script>

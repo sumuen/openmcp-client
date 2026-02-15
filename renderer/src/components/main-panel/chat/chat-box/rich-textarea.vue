@@ -21,9 +21,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, defineEmits, computed, provide } from 'vue';
+import { ref, computed, provide } from 'vue';
 
 import Setting from './options/setting.vue';
+import type { RichTextItem } from './chat';
 
 const props = defineProps({
     tabId: {
@@ -81,10 +82,20 @@ function handleBackspace(event: KeyboardEvent) {
     const range = selection.getRangeAt(0);
     const startContainer = range.startContainer;
 
-    // 如果光标在 rich-item 元素中，阻止默认行为并删除整个元素
-    if (startContainer.parentElement?.classList.contains('rich-item')) {
+    // 如果光标在 rich-item 或 chat-prompt-item 元素中，阻止默认行为并删除整个块
+    const parent = startContainer.parentElement;
+    const inRichItem = parent?.classList.contains('rich-item');
+    const inChatPrompt = parent?.closest('.chat-prompt-item');
+    if (inRichItem || inChatPrompt) {
         event.preventDefault();
-        startContainer.parentElement.remove();
+        let toRemove: HTMLElement | null = inRichItem ? parent : inChatPrompt as HTMLElement;
+        if (toRemove) {
+            // 找到 editor 的直接子节点（整块）并移除
+            while (toRemove.parentElement && toRemove.parentElement !== editorElement) {
+                toRemove = toRemove.parentElement;
+            }
+            toRemove?.remove();
+        }
     }
 }
 
@@ -114,11 +125,48 @@ function handleInput(event: Event) {
 
 function extractTextFromCollection(collection: HTMLCollection) {
     const texts = [];
-    for (let i = 0; i < collection.length; i++) {        
+    for (let i = 0; i < collection.length; i++) {
         texts.push(collection[i].textContent); // 或 .innerText
     }
-
     return texts.join('');
+}
+
+/** 从 editor DOM 提取富文本结构，用于历史记录持久化 */
+function extractRichContentFromEditor(editorElement: HTMLDivElement | null): RichTextItem[] {
+    const items: RichTextItem[] = [];
+    if (!editorElement) return items;
+
+    editorElement.childNodes.forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const text = (node.textContent || '').trim();
+            if (text) items.push({ type: 'text', text });
+        } else {
+            const el = node as HTMLElement;
+            const promptItem = el.classList?.contains('chat-prompt-item') ? el : el.querySelector?.('.chat-prompt-item');
+            if (promptItem) {
+                const richType = (promptItem as HTMLElement).getAttribute?.('data-rich-type');
+                const fullText = (promptItem as HTMLElement).getAttribute?.('data-full-text')
+                    || promptItem.querySelector?.('.real-text')?.textContent || '';
+                if (richType === 'prompt') {
+                    const name = (promptItem as HTMLElement).getAttribute?.('data-prompt-name') ?? undefined;
+                    let args: Record<string, string> | undefined;
+                    try {
+                        const argsStr = (promptItem as HTMLElement).getAttribute?.('data-prompt-args');
+                        if (argsStr) args = JSON.parse(argsStr) as Record<string, string>;
+                    } catch { /* ignore */ }
+                    items.push({ type: 'prompt', text: fullText, ...(name && { name }), ...(args && Object.keys(args).length > 0 && { args }) });
+                } else if (richType === 'resource') {
+                    items.push({ type: 'resource', text: fullText });
+                } else {
+                    if (fullText) items.push({ type: 'text', text: fullText });
+                }
+            } else {
+                const realText = el.querySelector?.('.real-text')?.textContent?.trim();
+                if (realText) items.push({ type: 'text', text: realText });
+            }
+        }
+    });
+    return items;
 }
 
 const isComposing = ref(false);
@@ -127,6 +175,7 @@ defineExpose({
     editor,
     handleBackspace,
     handleInput,
+    extractRichContent: () => extractRichContentFromEditor(editor.value),
 });
 
 function handleKeydown(event: KeyboardEvent) {

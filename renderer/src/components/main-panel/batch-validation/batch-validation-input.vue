@@ -70,8 +70,9 @@ const inputValue = computed({
     get: () => {
         const st = tabStorage.value;
         if (!st) return props.modelValue;
-        const idx = st.selectedTabIndex;
-        const tc = st.testCasesByTabIndex[idx];
+        const idx = st.selectedCaseIndex;
+        const arr = st.testCases || [];
+        const tc = arr[idx];
         return tc ? tc.input : props.modelValue;
     },
     set: (v: string) => {
@@ -80,8 +81,9 @@ const inputValue = computed({
             emit('update:modelValue', v);
             return;
         }
-        const idx = st.selectedTabIndex;
-        const tc = st.testCasesByTabIndex[idx];
+        const idx = st.selectedCaseIndex;
+        const arr = st.testCases || [];
+        const tc = arr[idx];
         if (tc) {
             tc.input = v;
         } else {

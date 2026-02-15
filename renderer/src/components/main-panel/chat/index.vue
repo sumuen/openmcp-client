@@ -430,6 +430,7 @@ async function updateChatRenderMessages(chat: ParallelChatInstance & { renderMes
                 newRenderMessages.push({
                     role: 'user',
                     content: message.content,
+                    ...(message.richContent && message.richContent.length > 0 && { richContent: message.richContent }),
                     extraInfo: message.extraInfo
                 });
             }
@@ -566,6 +567,7 @@ watchEffect(async () => {
                 renderMessages.value.push({
                     role: 'user',
                     content: message.content,
+                    ...(message.richContent && message.richContent.length > 0 && { richContent: message.richContent }),
                     extraInfo: message.extraInfo
                 });
             }

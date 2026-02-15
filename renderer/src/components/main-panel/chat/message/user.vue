@@ -3,28 +3,36 @@
     <div class="message-text">
         <div v-if="!isEditing" class="message-content">
             <span>
-                {{ props.message.content.trim() }}
-            
-                <!-- <span v-if="props.message.pes.length > 0"
-                    v-for="(c, index) in props.message.pes" :key="index"
-                >
-                    <span v-if="c.type === 'prompt'">
-                        <el-tooltip :content="c.text">
-                            <span>
-                                <span class="iconfont icon-prompt"></span>
-                                <span>{{ c.name }}</span>
-                            </span>
-                        </el-tooltip>
-                    </span>
-                    <span v-else>
-                        <el-tooltip :content="c.text">
-                            <span>
-                                <span class="iconfont icon-resource"></span>
-                                <span>{{ c.name }}</span>
-                            </span>
-                        </el-tooltip>
-                    </span>
-                </span> -->
+                <template v-if="hasRichContent">
+                    <template v-for="(item, index) in richContentItems" :key="index">
+                        <!-- 与输入框 prompt 卡片同一套悬停弹窗：el-popover + RichCardPromptPopoverContent -->
+                        <el-popover
+                            v-if="item.type === 'prompt'"
+                            placement="top"
+                            :width="420"
+                            trigger="hover"
+                            :show-after="100"
+                            popper-class="rich-card-prompt-popover"
+                            persistent
+                        >
+                            <template #default>
+                                <RichCardPromptPopoverContent
+                                    :item="item"
+                                    @update:item="(newItem) => updateRichContentItem(index, newItem)"
+                                />
+                            </template>
+                            <template #reference>
+                                <span class="rich-card-prompt rich-card-prompt--readonly">
+                                    <span class="iconfont icon-chat"></span>
+                                    <span class="rich-card-prompt__label">{{ item.text }}</span>
+                                </span>
+                            </template>
+                        </el-popover>
+                        <RichCardResource v-else-if="item.type === 'resource'" :item="item" readonly />
+                        <span v-else class="message-plain-text">{{ item.text }}</span>
+                    </template>
+                </template>
+                <template v-else>{{ props.message.content.trim() }}</template>
             </span>
         </div>
         
@@ -56,13 +64,16 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, ref, type PropType, inject, watch, type Ref } from 'vue';
+import { ref, type PropType, inject, watch, type Ref, computed } from 'vue';
 import { tabs } from '../../panel';
-import type { ChatStorage, IRenderMessage } from '../chat-box/chat';
-import { MessageState } from '../chat-box/chat';
+import type { ChatStorage, IRenderMessage, ICommonRenderMessage } from '../chat-box/chat';
+import { MessageState, richContentToPlainText } from '../chat-box/chat';
+import type { RichTextItem, TextMessage } from '../chat-box/chat';
 
 import KCuteTextarea from '@/components/k-cute-textarea/index.vue';
 import { ElMessage } from 'element-plus';
+import RichCardPromptPopoverContent from './rich-card-prompt-popover-content.vue';
+import RichCardResource from './rich-card-resource.vue';
 
 import { useI18n } from 'vue-i18n';
 import { v4 as uuidv4 } from 'uuid';
@@ -83,6 +94,15 @@ const props = defineProps({
 const tab = tabs.content[props.tabId];
 const tabStorage = tab.storage as ChatStorage;
 const isEditing = ref(false);
+
+const hasRichContent = computed(() => {
+    const msg = props.message as ICommonRenderMessage;
+    return !!msg.richContent && msg.richContent.length > 0;
+});
+const richContentItems = computed(() => {
+    const msg = props.message as ICommonRenderMessage;
+    return msg.richContent || [];
+});
 const userInput = ref('');
 
 const chatContext = inject('chatContext') as any;
@@ -91,6 +111,36 @@ const chatContext = inject('chatContext') as any;
 const chatMode = inject('chatMode') as Ref<string>;
 const parallelChats = inject('parallelChats') as Ref<any[]>;
 const updateChatRenderMessages = inject('updateChatRenderMessages') as any;
+
+/** 更新当前消息中指定下标的 richContent 项，并同步 content；兼容单聊与并行聊天的 storage */
+function updateRichContentItem(itemIndex: number, newItem: RichTextItem) {
+    const msg = props.message as ICommonRenderMessage;
+    if (!msg.richContent || itemIndex < 0 || itemIndex >= msg.richContent.length) return;
+
+    if (chatMode.value === 'parallel-chat' && parallelChats?.value?.length) {
+        const serverName = msg.extraInfo?.serverName;
+        const chat = parallelChats.value.find((c: any) => c.modelId === serverName);
+        if (chat) {
+            const msgIndex = chat.messages.findIndex((m: any) => m.extraInfo === msg.extraInfo);
+            if (msgIndex !== -1) {
+                const m = chat.messages[msgIndex] as TextMessage;
+                m.richContent = m.richContent || [];
+                m.richContent[itemIndex] = newItem;
+                m.content = richContentToPlainText(m.richContent);
+                if (updateChatRenderMessages) updateChatRenderMessages(chat);
+                tabStorage.parallelChats = parallelChats.value.map((c: any) => ({ modelId: c.modelId, messages: c.messages }));
+            }
+        }
+    } else {
+        const msgIndex = tabStorage.messages.findIndex((m: any) => m.extraInfo === msg.extraInfo);
+        if (msgIndex !== -1) {
+            const m = tabStorage.messages[msgIndex] as TextMessage;
+            m.richContent = m.richContent || [];
+            m.richContent[itemIndex] = newItem;
+            m.content = richContentToPlainText(m.richContent);
+        }
+    }
+}
 
 const toggleEdit = () => {
     isEditing.value = !isEditing.value;
@@ -158,15 +208,16 @@ const copy = async () => {
     }
 };
 
-// 单个聊天实例重试函数
-const retrySingleChat = async (chat: any, userMessage: string) => {
+// 单个聊天实例重试函数（保留 richContent 以便重新回答后仍以卡片展示 prompt/资源）
+const retrySingleChat = async (chat: any, userMessage: string, richContent?: import('../chat-box/chat').RichTextItem[]) => {
     console.log('开始单实例重试，聊天实例:', chat.modelId);
     console.log('重试消息:', userMessage);
     
-    // 添加用户消息到这个聊天实例
+    // 添加用户消息到这个聊天实例（含富文本）
     chat.messages.push({
         role: 'user',
         content: userMessage,
+        ...(richContent && richContent.length > 0 && { richContent }),
         extraInfo: {
             created: Date.now(),
             state: MessageState.Success,
@@ -302,8 +353,9 @@ const reload = async () => {
             }
             
             console.log('调用单实例重试');
-            // 只对这个特定的聊天实例重新发送消息
-            retrySingleChat(targetChat, props.message.content);
+            // 只对这个特定的聊天实例重新发送消息（保留富文本以便仍以卡片展示）
+            const richContent = (props.message as ICommonRenderMessage).richContent;
+            retrySingleChat(targetChat, props.message.content, richContent?.length ? richContent : undefined);
         } else {
             console.log('未找到目标聊天实例，不执行重试');
             console.error('无法找到匹配的聊天实例进行重试');
@@ -319,7 +371,8 @@ const reload = async () => {
         }
         
         if (chatContext.handleSend) {
-            chatContext.handleSend(props.message.content);
+            const richContent = (props.message as ICommonRenderMessage).richContent;
+            chatContext.handleSend(props.message.content, richContent?.length ? richContent : undefined);
         }
     }
 };
@@ -346,10 +399,13 @@ const reload = async () => {
 }
 
 .message-actions .el-button:not(.el-button--primary) {
-    border-radius: 16px !important;
+    border-radius: 8px !important;
+    padding: 5px 10px !important;
+    height: fit-content !important;
     background-color: var(--foreground) !important;
     color: var(--background) !important;
     border-color: var(--foreground) !important;
+    opacity: 0.7;
 }
 
 .message-actions .el-button:not(.el-button--primary):hover {
@@ -379,6 +435,39 @@ const reload = async () => {
     white-space: pre-wrap;
     word-break: break-word;
     text-align: left;
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 6px;
+}
+
+/* 与输入框、RichCardPrompt 一致的 prompt 卡片样式（含默认光标、悬停即弹窗） */
+.user .rich-card-prompt {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 6px;
+    border-radius: 0.3em;
+    font-size: var(--chat-font-size-sm, 13px);
+    margin: 0 2px;
+    user-select: none;
+    cursor: default;
+    background-color: #373839;
+    border: 1px solid var(--foreground);
+    max-width: 120px;
+}
+.user .rich-card-prompt .iconfont {
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+.user .rich-card-prompt__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.message-plain-text {
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 </style>

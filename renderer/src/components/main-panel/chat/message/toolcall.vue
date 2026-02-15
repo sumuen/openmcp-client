@@ -45,27 +45,37 @@
                         </div>
                     </div>
 
-                    <!-- Arguments 区块：带标题 + 复制 -->
+                    <!-- 参数区块：参数 + 复制图标同一行，布局紧凑 -->
                     <div class="tool-section">
                         <div class="tool-section-label">
                             <span class="iconfont icon-variable"></span>
-                            {{ t('arguments') }}
+                            <span class="tool-section-label-text">{{ t('arguments') }}</span>
+                            <el-tooltip :content="t('copy')" placement="top">
+                                <button type="button" class="tool-section-copy-btn" @click="copyArguments(toolIndex)">
+                                    <span class="iconfont icon-copy"></span>
+                                </button>
+                            </el-tooltip>
                         </div>
                         <div class="tool-arguments">
                             <json-render
                                 :json="parseArguments(props.message.tool_calls[toolIndex].function!.arguments)"
-                                :show-copy="true"
-                                label="arguments"
+                                :show-copy="false"
+                                label=""
                             />
                         </div>
                     </div>
 
-                    <!-- 工具调用结果 -->
+                    <!-- 工具调用结果：响应 + 复制图标同一行 -->
                     <div v-if="toolResult.length > 0" class="tool-section">
                         <div class="tool-section-label tool-section-label--result" :class="{ 'tool-section-label--error': !isValid(toolResult) }">
                             <span v-if="isValid(toolResult)" class="iconfont icon-dui"></span>
                             <span v-else :class="`iconfont icon-${currentMessageLevel}`"></span>
-                            {{ isValid(toolResult) ? t('response') : t('error') }}
+                            <span class="tool-section-label-text">{{ t('response') }}</span>
+                            <el-tooltip :content="t('copy')" placement="top">
+                                <button type="button" class="tool-section-copy-btn" @click="copyResponse(toolIndex)">
+                                    <span class="iconfont icon-copy"></span>
+                                </button>
+                            </el-tooltip>
                             <el-button v-if="!isValid(toolResult)" class="tool-feedback-btn" @click="gotoIssue()">
                                 {{ t('feedback') }}
                             </el-button>
@@ -83,8 +93,8 @@
                             <div v-if="showJsons[toolIndex]" class="tool-result-content">
                                 <json-render
                                     :json="props.message.toolResults[toolIndex]"
-                                    :show-copy="true"
-                                    label="response"
+                                    :show-copy="false"
+                                    label=""
                                 />
                             </div>
                             <div v-else class="tool-result-items">
@@ -134,6 +144,7 @@ import { createTest } from '@/views/setting/llm';
 import { type IToolRenderMessage, MessageState } from '../chat-box/chat';
 import type { ToolCallContent } from '@/hook/type';
 
+import { ElMessage } from 'element-plus';
 import ToolcallResultItem from './toolcall-result-item.vue';
 import JsonRender from '@/components/json-render/index.vue';
 
@@ -268,6 +279,34 @@ function parseArguments(args: string | undefined): object {
         return JSON.parse(args || '{}');
     } catch {
         return { rawArgs: args || '' };
+    }
+}
+
+async function copyArguments(toolIndex: number) {
+    const args = props.message.tool_calls?.[toolIndex]?.function?.arguments;
+    const parsed = parseArguments(args);
+    const text = typeof args === 'string' ? args : JSON.stringify(parsed, null, 2);
+    try {
+        await navigator.clipboard.writeText(text);
+        ElMessage.success(t('copied'));
+    } catch {
+        ElMessage.error(t('copy-failed'));
+    }
+}
+
+async function copyResponse(toolIndex: number) {
+    const toolResult = props.message.toolResults[toolIndex];
+    let text: string;
+    if (!isValid(toolResult)) {
+        text = collectErrors(toolResult).join('\n');
+    } else {
+        text = JSON.stringify(toolResult, null, 2);
+    }
+    try {
+        await navigator.clipboard.writeText(text);
+        ElMessage.success(t('copied'));
+    } catch {
+        ElMessage.error(t('copy-failed'));
     }
 }
 
@@ -465,6 +504,28 @@ function parseArguments(args: string | undefined): object {
 .tool-section-label .iconfont {
     font-size: var(--chat-font-size-sm);
     opacity: 0.9;
+}
+
+.tool-section-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 4px;
+    padding: 2px 4px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--el-text-color-secondary);
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+}
+.tool-section-copy-btn:hover {
+    color: var(--foreground);
+    background: var(--sidebar-item-hover);
+}
+.tool-section-copy-btn .iconfont {
+    font-size: 12px;
 }
 
 .tool-section-label--result {

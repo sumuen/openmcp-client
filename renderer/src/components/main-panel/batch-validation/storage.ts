@@ -9,30 +9,52 @@ export interface BatchValidationTestCase {
 
 /** 批量验证面板绑定到 tab.storage 的可持久化数据结构 */
 export interface BatchValidationStorage {
-    /** 每个交互测试标签页索引对应的测试用例 */
-    testCasesByTabIndex: Record<number, BatchValidationTestCase>;
-    /** 当前选中的标签页索引 */
-    selectedTabIndex: number;
+    /** 测试用例列表（左侧一行一个，可任意添加） */
+    testCases: BatchValidationTestCase[];
+    /** 当前选中的测试用例索引 */
+    selectedCaseIndex: number;
+    /** 运行批量验证时使用的交互测试标签页索引（取该 tab 的配置） */
+    sourceTabIndex: number;
     /** 评估模式：通过/失败 或 分数 */
     evaluationMode: 'pass-fail' | 'score';
+    /** @deprecated 仅用于从旧数据迁移，迁移后不再使用 */
+    testCasesByTabIndex?: Record<number, BatchValidationTestCase>;
+    /** @deprecated 请使用 selectedCaseIndex */
+    selectedTabIndex?: number;
 }
 
 const DEFAULT_STORAGE: BatchValidationStorage = {
-    testCasesByTabIndex: {},
-    selectedTabIndex: 0,
+    testCases: [],
+    selectedCaseIndex: 0,
+    sourceTabIndex: 0,
     evaluationMode: 'pass-fail'
 };
 
-/** 确保 storage 具备 BatchValidationStorage 形状（就地补全缺失字段） */
+/** 确保 storage 具备 BatchValidationStorage 形状（就地补全缺失字段，并从旧结构迁移） */
 export function ensureBatchValidationStorage(storage: Record<string, any>): storage is BatchValidationStorage {
-    if (typeof storage.testCasesByTabIndex !== 'object' || storage.testCasesByTabIndex === null) {
-        storage.testCasesByTabIndex = {};
+    const oldByTab = storage.testCasesByTabIndex;
+    const hasOld = typeof oldByTab === 'object' && oldByTab !== null && Object.keys(oldByTab).length > 0;
+    if (!Array.isArray(storage.testCases)) {
+        if (hasOld) {
+            const indices = Object.keys(oldByTab)
+                .map(Number)
+                .filter((n) => Number.isInteger(n))
+                .sort((a, b) => a - b);
+            storage.testCases = indices.map((i) => ({ ...oldByTab[i] }));
+            storage.selectedCaseIndex = typeof storage.selectedTabIndex === 'number' ? Math.min(storage.selectedTabIndex, storage.testCases.length - 1) : 0;
+        } else {
+            storage.testCases = [];
+        }
     }
-    if (typeof storage.selectedTabIndex !== 'number') {
-        storage.selectedTabIndex = DEFAULT_STORAGE.selectedTabIndex;
+    if (typeof storage.selectedCaseIndex !== 'number') {
+        storage.selectedCaseIndex = typeof storage.selectedTabIndex === 'number' ? storage.selectedTabIndex : DEFAULT_STORAGE.selectedCaseIndex;
+    }
+    if (typeof storage.sourceTabIndex !== 'number') {
+        storage.sourceTabIndex = DEFAULT_STORAGE.sourceTabIndex;
     }
     if (storage.evaluationMode !== 'pass-fail' && storage.evaluationMode !== 'score') {
         storage.evaluationMode = DEFAULT_STORAGE.evaluationMode;
     }
+    storage.selectedCaseIndex = Math.max(0, Math.min(storage.selectedCaseIndex, Math.max(0, storage.testCases.length - 1)));
     return true;
 }

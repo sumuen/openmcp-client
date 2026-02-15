@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { provide, onMounted, onUnmounted, ref, defineEmits, defineProps, type PropType, inject, type Ref, watch, computed } from 'vue';
+import { provide, onMounted, onUnmounted, ref, type PropType, inject, type Ref, watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import KRichTextarea from './rich-textarea.vue';
@@ -182,10 +182,8 @@ function clearErrorMessage(errorMessage: string) {
     }
 }
 
-function handleSend(newMessage?: string) {
-    
+function handleSend(newMessage?: string, richContentOverride?: import('./chat').RichTextItem[]) {
     let userMessage = newMessage || userInput.value;
-
 
     if (!userMessage || isLoading.value) {
         return;
@@ -198,6 +196,9 @@ function handleSend(newMessage?: string) {
         userMessage = slashParsed.actualMessage || userMessage;
     }
 
+    // 重新回答时传入的 richContent 优先，否则从输入框提取（用于历史记录渲染）
+    const richContent = richContentOverride ?? editorRef.value?.extractRichContent?.() ?? [];
+
     // 清空文本
     userInput.value = '';
     showSlashMenu.value = false;
@@ -207,9 +208,9 @@ function handleSend(newMessage?: string) {
     }
 
     if (chatMode.value === 'parallel-chat' && parallelChats.value.length > 0) {
-        handleParallelSend(userMessage);
+        handleParallelSend(userMessage, richContent);
     } else {
-        handleSingleSend(userMessage);
+        handleSingleSend(userMessage, richContent);
     }
 }
 
@@ -220,17 +221,30 @@ function testReflux() {
 }
 
 
-function handleSingleSend(userMessage: string) {
+function handleSingleSend(userMessage: string, richContent: import('./chat').RichTextItem[] = []) {
     isLoading.value = true;
     autoScroll.value = true;
-    
+
+    // 先推送用户消息（含富文本），再让 TaskLoop 使用 __SKIP_USER_MESSAGE__
+    tabStorage.messages.push({
+        role: 'user',
+        content: userMessage,
+        ...(richContent.length > 0 && { richContent }),
+        extraInfo: {
+            created: Date.now(),
+            state: MessageState.Success,
+            serverName: llms[llmManager.currentModelIndex].id || 'unknown',
+            enableXmlWrapper: tabStorage.settings.enableXmlWrapper
+        }
+    });
+
     loop = new TaskLoop();
     loop.bindStreaming(streamingContent, streamingToolCalls);
 
     loop.registerOnError((error) => {
         const errorMessage = clearErrorMessage(error.msg);
         ElMessage.error(errorMessage);
-        
+
         if (error.state === MessageState.ReceiveChunkError) {
             tabStorage.messages.push({
                 role: 'assistant',
@@ -258,26 +272,26 @@ function handleSingleSend(userMessage: string) {
         scrollToBottom();
     });
 
-    loop.start(tabStorage, userMessage, { mode: 'single-chat' }).then(() => {
+    loop.start(tabStorage, '__SKIP_USER_MESSAGE__', { mode: 'single-chat' }).then(() => {
         isLoading.value = false;
         delete (tabStorage as any)._skillOverrideForNextMessage;
     });
 }
 
-function handleParallelSend(userMessage: string) {
+function handleParallelSend(userMessage: string, richContent: import('./chat').RichTextItem[] = []) {
     isLoading.value = true;
-    
+
     // 解析 /skillname 用于并行模式
     const slashParsed = parseSlashCommand(userMessage);
     const actualUserMessage = slashParsed ? slashParsed.actualMessage || userMessage : userMessage;
 
     // 为每个并行聊天实例启动独立的对话
     const parallelPromises = parallelChats.value.map(async (chat, index) => {
-        
-        // 添加用户消息到这个聊天实例
+        // 添加用户消息到这个聊天实例（含富文本）
         chat.messages.push({
             role: 'user',
             content: actualUserMessage,
+            ...(richContent.length > 0 && { richContent }),
             extraInfo: {
                 created: Date.now(),
                 state: MessageState.Success,
@@ -506,7 +520,14 @@ onUnmounted(() => {
     min-width: 32px;
     padding: 6px 12px;
     font-size: var(--chat-font-size);
-    border-radius: 16px !important;
+    border-radius: 8px !important;
+    background-color: var(--main-light-color-20) !important;
+    border: 1px solid var(--main-light-color-50) !important;
+    color: var(--main-color) !important;
+}
+.send-button:hover {
+    background-color: var(--main-light-color-40) !important;
+    border-color: var(--main-light-color-70) !important;
 }
 
 :deep(.chat-settings) {

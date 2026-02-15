@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { ref, type Ref } from "vue";
-import { type ToolCall, type ChatStorage, getToolSchema, MessageState, type ChatMessage, type ChatSetting, type EnableToolItem } from "../chat-box/chat";
+import { type ToolCall, type ChatStorage, getToolSchema, MessageState, type ChatMessage, type ChatSetting, type EnableToolItem, richContentToPlainText } from "../chat-box/chat";
 import { useMessageBridge, MessageBridge, createMessageBridge } from "@/api/message-bridge";
 import type { OpenAI } from 'openai';
 import { llmManager, llms, type BasicLlmDescription } from "@/views/setting/llm";
@@ -360,7 +360,27 @@ export class TaskLoop {
 
         // 如果超出了 tabStorage.settings.contextLength, 则删除最早的消息
         const loadMessages = tabStorage.messages.slice(- tabStorage.settings.contextLength);
-        userMessages.push(...loadMessages);
+        // 预处理：只去掉 richContent/extraInfo 等渲染用字段，保留 API 要求的 role/content/tool_calls 等
+        const apiMessages = loadMessages.map((m: ChatMessage) => {
+            if (m.role === 'user' || m.role === 'system') {
+                const textMsg = m as { content: string; richContent?: import('../chat-box/chat').RichTextItem[] };
+                const content = textMsg.content || (textMsg.richContent && richContentToPlainText(textMsg.richContent)) || '';
+                return { role: m.role, content };
+            }
+            if (m.role === 'assistant') {
+                const textMsg = m as { content: string; tool_calls?: any[]; reasoning_content?: string; richContent?: import('../chat-box/chat').RichTextItem[] };
+                const content = textMsg.content || (textMsg.richContent && richContentToPlainText(textMsg.richContent)) || '';
+                const out: any = { role: 'assistant' as const, content };
+                if (textMsg.tool_calls?.length) out.tool_calls = textMsg.tool_calls;
+                if (textMsg.reasoning_content) out.reasoning_content = textMsg.reasoning_content;
+                return out;
+            }
+            if (m.role === 'tool') {
+                return { role: 'tool', content: m.content, tool_call_id: m.tool_call_id, name: m.name };
+            }
+            return m as any;
+        });
+        userMessages.push(...apiMessages);
 
         // 增加一个id用于锁定状态
         const id = uuidv4();

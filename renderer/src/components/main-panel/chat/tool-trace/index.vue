@@ -113,6 +113,7 @@ watch(() => tabStorage.messages, async () => {
                 renderMessages.value.push({
                     role: 'user',
                     content: message.content,
+                    ...(message.richContent && message.richContent.length > 0 && { richContent: message.richContent }),
                     extraInfo: message.extraInfo
                 });
             }

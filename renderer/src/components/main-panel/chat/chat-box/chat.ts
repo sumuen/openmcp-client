@@ -41,6 +41,8 @@ export interface ToolMessage {
 export interface TextMessage {
     role: 'user' | 'assistant' | 'system';
     content: string;
+    /** 富文本内容（提示词块、资源块等），用于历史记录渲染，需持久化 */
+    richContent?: RichTextItem[];
     /** DeepSeek thinking 模式的推理内容，多轮 tool calls 时必须回传 */
     reasoning_content?: string;
     tool_call_id?: string
@@ -88,30 +90,37 @@ export interface ChatStorage {
 
 export type ToolCall = OpenAI.Chat.Completions.ChatCompletionChunk.Choice.Delta.ToolCall;
 
-interface PromptTextItem {
+export interface PromptTextItem {
     type: 'prompt'
     text: string
-    name: string
+    name?: string
     args?: Record<string, string>
 }
 
-interface ResourceTextItem {
+export interface ResourceTextItem {
     type: 'resource'
     text: string
-    name: string
+    name?: string
     args?: Record<string, string>
 }
 
-interface TextItem {
+export interface TextItem {
     type: 'text'
     text: string
 }
 
 export type RichTextItem = PromptTextItem | ResourceTextItem | TextItem;
 
+/** 将富文本数组转换为纯文本（用于发送给大模型） */
+export function richContentToPlainText(items: RichTextItem[]): string {
+    return items.map(item => item.text).join(' ');
+}
+
 export interface ICommonRenderMessage {
     role: 'user' | 'assistant/content';
     content: string;
+    /** 富文本内容（提示词块、资源块等），用于历史记录渲染 */
+    richContent?: RichTextItem[];
     showJson?: any;
     extraInfo: IExtraInfo;
 }

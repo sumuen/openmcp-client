@@ -32,27 +32,31 @@ export const copyToClipboard = (text: string) => {
     return navigator.clipboard.writeText(text);
 };
 
-const tryParseJson = (text: string) => {
+const tryParseJson = (text: string): { ok: true; value: object } | { ok: false; raw: string } => {
     try {
-        return JSON.parse(text);
-    } catch (error) {
-        return text;
+        const value = JSON.parse(text);
+        return typeof value === 'object' && value !== null ? { ok: true, value } : { ok: false, raw: text };
+    } catch {
+        return { ok: false, raw: text };
     }
-}
+};
 
-
-const prettifyObj = (obj: object | string) => {
-    const rawObj = typeof obj === 'string' ? tryParseJson(obj) : obj;
-    return JSON.stringify(rawObj, null, 2);
-}
-
-export const renderJson = (obj: object | string | undefined) => {
-    if (!obj) {
+/** 将对象或字符串渲染为“打印风格”的代码块，便于调试：JSON 自动格式化高亮，非 JSON 字符串用通用代码块展示 */
+export const renderJson = (obj: object | string | undefined): string => {
+    if (obj === undefined || obj === null) {
         return '<span>Invalid JSON</span>';
     }
 
-    const jsonString = prettifyObj(obj);
-    const md = "```json\n" + jsonString + "\n```";
-    const html = pureHighLightMd.render(md);
-    return html;
+    let md: string;
+    if (typeof obj === 'string') {
+        const parsed = tryParseJson(obj);
+        if (parsed.ok) {
+            md = '```json\n' + JSON.stringify(parsed.value, null, 2) + '\n```';
+        } else {
+            md = '```\n' + parsed.raw + '\n```';
+        }
+    } else {
+        md = '```json\n' + JSON.stringify(obj, null, 2) + '\n```';
+    }
+    return pureHighLightMd.render(md);
 }

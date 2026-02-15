@@ -42,13 +42,18 @@
 
         <!-- 单聊天模式下显示清空对话按钮 -->
         <div>
-            <el-popconfirm 
-                v-if="chatMode === 'single-chat'" 
+            <el-popconfirm
+                v-if="chatMode === 'single-chat'"
                 :title="t('dialog-delete-confirm')"
+                :confirm-button-text="t('dialog-delete-confirm-button')"
+                :cancel-button-text="t('cancel')"
+                confirm-button-type="danger"
+                :width="280"
+                popper-class="chat-delete-popconfirm"
                 @confirm="clearSingleChat"
             >
                 <template #reference>
-                    <el-button>
+                    <el-button :title="t('dialog-delete-confirm')">
                         <span class="iconfont icon-delete"></span>
                     </el-button>
                 </template>
@@ -167,5 +172,25 @@ const clearSingleChat = () => {
     background-color: var(--foreground) !important;
     color: var(--background) !important;
     opacity: 0.9;
+}
+</style>
+
+<!-- 删除确认 Popconfirm 挂载在 body，需全局样式 -->
+<style>
+.chat-delete-popconfirm.el-popper {
+    padding: 14px 16px;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+.chat-delete-popconfirm .el-popconfirm__main {
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--el-text-color-primary);
+}
+.chat-delete-popconfirm .el-popconfirm__action {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
 }
 </style>

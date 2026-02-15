@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { createApp, inject, ref } from 'vue';
+import { createApp, inject, ref, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { ChatStorage, EditorContext } from '../chat';
 import type { Resources, ResourcesReadResponse, ResourceTemplate } from '@/hook/type';
@@ -40,11 +40,11 @@ const tabStorage = inject('tabStorage') as ChatStorage;
 let selectResource = ref<ResourceTemplate | undefined>(undefined);
 const showChooseResource = ref(false);
 
-const editorContext = inject('editorContext') as EditorContext;
+const editorContext = inject<EditorContext | undefined>('editorContext', undefined);
 let savedSelection: Range | null = null;
 
 function saveCursorPosition() {
-    const editor = editorContext.editor.value;
+    const editor = editorContext?.editor?.value;
     if (editor) {
         const selection = window.getSelection();
         if (selection && selection.rangeCount > 0) {
@@ -73,12 +73,16 @@ async function whenGetResourceResponse(msg: ResourcesReadResponse) {
     }
 
     try {
-        console.log(msg);
-
         selectResource.value = undefined;
-        const editor = editorContext.editor.value;
+        await nextTick();
 
-        if (msg.contents.length === 0 || !editor) {
+        const editor = editorContext?.editor?.value;
+
+        if (msg.contents.length === 0) {
+            return;
+        }
+        if (!editor) {
+            ElMessage.error(t('prompt-fill-no-editor') || '无法获取输入框，请确保焦点在输入区域内');
             return;
         }
 
@@ -94,24 +98,32 @@ async function whenGetResourceResponse(msg: ResourcesReadResponse) {
 
         const firstElement = container.firstElementChild!;
 
+        await nextTick();
+
         if (savedSelection) {
-            savedSelection.deleteContents();
-            savedSelection.insertNode(firstElement);
+            try {
+                savedSelection.deleteContents();
+                savedSelection.insertNode(firstElement);
+            } catch {
+                editor.appendChild(firstElement);
+            }
         } else {
             editor.appendChild(firstElement);
         }
 
-        const newRange = document?.createRange();
+        const newRange = document.createRange();
         newRange.setStartAfter(firstElement);
         newRange.collapse(true);
         const selection = window.getSelection();
-
-        selection?.removeAllRanges();
-        selection?.addRange(newRange);
+        if (selection) {
+            selection.removeAllRanges();
+            selection.addRange(newRange);
+        }
 
         editor.dispatchEvent(new Event('input'));
         editor.focus();
 
+        await nextTick();
         showChooseResource.value = false;
     } catch (error) {
         ElMessage.error((error as Error).message);
