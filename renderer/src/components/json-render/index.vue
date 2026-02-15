@@ -229,6 +229,10 @@ onUpdated(() => {
     nextTick(() => {
         if (jsonBodyRef.value) attachExpandableStrings(jsonBodyRef.value);
     });
+    // 延迟再绑定一次，解决从其他 tab 切换到 JSON 时 DOM 尚未就绪导致不生效的问题（如工具调试页）
+    setTimeout(() => {
+        if (jsonBodyRef.value) attachExpandableStrings(jsonBodyRef.value);
+    }, 150);
 });
 
 function getRawText(): string {

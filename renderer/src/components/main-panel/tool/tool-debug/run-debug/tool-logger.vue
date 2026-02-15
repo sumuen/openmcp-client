@@ -45,9 +45,15 @@
                         <div class="markdown" v-html="resultMarkdown"></div>
                     </template>
 
-                    <!-- 展示 json -->
+                    <!-- 展示 json：与聊天区一致，JSON 中字符串 value 可点击展开弹窗 -->
                     <template v-else-if="renderMode.current === 'json'">
-                        <json-render :json="tabStorage.lastToolCallResponse" />
+                        <div class="tool-logger-json-wrap tool-text-body tool-text-body--json">
+                            <json-render
+                                :key="'tool-logger-json-' + props.tabId"
+                                :json="tabStorage.lastToolCallResponse"
+                                :show-copy="true"
+                            />
+                        </div>
                     </template>
                 </div>
 
@@ -58,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineComponent, defineProps, computed, ref, reactive } from 'vue';
+import { defineComponent, computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { tabs } from '../../../panel';
 import type { ToolStorage } from '../../tools';
@@ -220,5 +226,28 @@ const renderMode = reactive({
     word-break: break-all;
     margin: 0;
     color: var(--el-text-color-primary, #222);
+}
+
+/* JSON 输出与聊天区一致：字符串 value 可点击展开弹窗 */
+.tool-logger-json-wrap.tool-text-body--json :deep(.json-render) {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+}
+.tool-logger-json-wrap.tool-text-body--json :deep(.json-render .json-render-scrollbar) {
+    max-height: 360px;
+}
+.tool-logger-json-wrap.tool-text-body--json :deep(.json-render .json-render-body) {
+    padding: 0;
+}
+.tool-logger-json-wrap.tool-text-body--json :deep(.token.string.json-render-string-expandable) {
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 1px 2px;
+    margin: -1px -2px;
+}
+.tool-logger-json-wrap.tool-text-body--json :deep(.token.string.json-render-string-expandable:hover) {
+    background: var(--el-fill-color-light);
+    outline: 1px solid var(--el-border-color-lighter);
 }
 </style>
