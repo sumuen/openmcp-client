@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, computed } from 'vue';
+import { ref, watch, nextTick, computed, onUpdated } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import { renderJson } from '../main-panel/chat/markdown/markdown';
@@ -160,7 +160,15 @@ async function copyPopoverContent() {
     }
 }
 
+function clearExpandableStrings(root: HTMLElement) {
+    root.querySelectorAll('.json-render-string-expandable').forEach((el) => {
+        el.classList.remove('json-render-string-expandable');
+        (el as HTMLElement).removeAttribute('title');
+    });
+}
+
 function attachExpandableStrings(root: HTMLElement) {
+    clearExpandableStrings(root);
     const tokens = root.querySelectorAll('.token.string');
     tokens.forEach((el) => {
         const text = (el as HTMLElement).textContent || '';
@@ -210,17 +218,18 @@ watch(
     () => props.json,
     () => {
         nextTick(() => {
-            if (jsonBodyRef.value) {
-                jsonBodyRef.value.querySelectorAll('.json-render-string-expandable').forEach((el) => {
-                    el.classList.remove('json-render-string-expandable');
-                    (el as HTMLElement).removeAttribute('title');
-                });
-                attachExpandableStrings(jsonBodyRef.value);
-            }
+            if (jsonBodyRef.value) attachExpandableStrings(jsonBodyRef.value);
         });
     },
     { immediate: true }
 );
+
+// 每次 DOM 更新后重新绑定可点击展开（解决响应区等异步内容或父组件重渲染后不生效的问题）
+onUpdated(() => {
+    nextTick(() => {
+        if (jsonBodyRef.value) attachExpandableStrings(jsonBodyRef.value);
+    });
+});
 
 function getRawText(): string {
     if (!jsonBodyRef.value) return '';

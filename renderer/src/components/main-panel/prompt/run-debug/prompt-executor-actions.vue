@@ -43,7 +43,9 @@
                 @click="executor.handleSubmit"
                 class="btn-execute"
             >
-                {{ executor.t('read-prompt') }}
+                <span>{{ executor.t('read-prompt') }}</span>
+                <span class="ctrl">CTRL</span>
+                <span class="iconfont icon-enter"></span>
             </el-button>
         </el-button-group>
     </div>
@@ -115,4 +117,22 @@ function onReset() {
     font-weight: 600;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.run-shortcut-hint {
+    margin-left: 10px;
+    font-size: 12px;
+    color: var(--el-text-color-placeholder);
+    opacity: 0.75;
+}
+
+.btn-execute .ctrl {
+    margin-left: 5px;
+    opacity: 0.6;
+    font-weight: 100;
+}
+
+.btn-execute .iconfont {
+    color: var(--main-light-color-70);
+}
+
 </style>

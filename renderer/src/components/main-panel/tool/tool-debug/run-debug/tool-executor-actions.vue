@@ -38,7 +38,9 @@
                 @click="executor.handleExecute"
                 class="btn-execute"
             >
-                {{ executor.t('execute-tool') }}
+                <span>{{ executor.t('execute-tool') }}</span>
+                <span class="ctrl">CTRL</span>
+                <span class="iconfont icon-enter"></span>
             </el-button>
         </el-button-group>
     </div>
@@ -127,9 +129,23 @@ function onReset() {
 
 .btn-execute {
     border-radius: 8px;
-    padding-left: 20px;
-    padding-right: 20px;
     font-weight: 600;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: var(--main-light-color-50);
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.btn-execute:hover {
+    background-color: var(--main-light-color-70);
+}
+
+.btn-execute .ctrl {
+    margin-left: 5px;
+    opacity: 0.6;
+    font-weight: 100;
+}
+
+.btn-execute .iconfont {
+    color: var(--main-light-color-70);
+}
+
 </style>

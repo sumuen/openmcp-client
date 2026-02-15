@@ -116,6 +116,7 @@
     "response": "Response",
     "refresh": "Refresh",
     "read-prompt": "Read Prompt",
+    "run-shortcut": "Ctrl + Enter",
     "save-test-data": "Save Test Data",
     "load-test-data": "Load Test Data",
     "choose-saved-test-data": "Choose saved test data",

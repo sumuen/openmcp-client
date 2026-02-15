@@ -2,6 +2,7 @@ import { reactive } from 'vue';
 import { createTab, tabs } from '@/components/main-panel/panel';
 import type { ToolStorage } from '@/components/main-panel/tool/tools';
 import type { ToolCall } from '@/components/main-panel/chat/chat-box/chat';
+import { mcpClientAdapter } from '@/views/connect/core';
 
 import I18n from '@/i18n';
 const { t } = I18n.global;
@@ -43,11 +44,21 @@ export function createTest(call: ToolCall) {
 	tab.componentIndex = 2;
 	tab.icon = 'icon-tool';
 	tab.name = t("tools");
-	
+
+	const toolName = call.function!.name!;
+	let currentClientIndex: number | undefined;
+	for (let i = 0; i < mcpClientAdapter.clients.length; i++) {
+		if (mcpClientAdapter.clients[i].tools?.has(toolName)) {
+			currentClientIndex = i;
+			break;
+		}
+	}
+
 	const storage: ToolStorage = {
 		activeNames: [0],
-		currentToolName: call.function!.name!,
-		formData: JSON.parse(call.function!.arguments!),
+		currentClientIndex,
+		currentToolName: toolName,
+		formData: JSON.parse(call.function!.arguments ?? '{}'),
 		testCases: [],
 	};
 

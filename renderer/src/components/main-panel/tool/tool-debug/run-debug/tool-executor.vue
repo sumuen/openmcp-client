@@ -12,15 +12,14 @@
                         :key="name" :label="property.title || name" :prop="name"
                         :required="currentTool.inputSchema.required?.includes(name)">
 
-                        <el-input v-if="property.type === 'string'" v-model="tabStorage.formData[name]" type="text"
-                            :placeholder="property.description || t('enter') + ' ' + (property.title || name)"
-                            @keydown.enter.prevent="handleExecute">
-                            <template #append>
-                                <VariableSelector button-text="插入变量" :tool-name="currentTool?.name || ''"
-                                    :parameter-name="name" expected-type="string"
-                                    @select="(variable, value) => onVariableSelected(name, variable, value)" />
-                            </template>
-                        </el-input>
+                        <template v-if="property.type === 'string'">
+                            <el-input v-model="tabStorage.formData[name]" type="textarea" :rows="3"
+                                :placeholder="property.description || t('enter') + ' ' + (property.title || name)"
+                                @keydown.enter.ctrl.prevent="handleExecute" />
+                            <VariableSelector button-text="插入变量" :tool-name="currentTool?.name || ''"
+                                :parameter-name="name" expected-type="string"
+                                @select="(variable, value) => onVariableSelected(name, variable, value)" />
+                        </template>
 
                         <el-input-number v-else-if="property.type === 'number' || property.type === 'integer'"
                             v-model="tabStorage.formData[name]" controls-position="right"
@@ -548,7 +547,7 @@ watch(currentTool, (tool) => {
 
 watch(() => tabStorage.currentToolName, () => {
     initFormData();
-    resetForm();
+    formRef.value?.clearValidate?.();
 }, { immediate: true });
 
 defineExpose({
