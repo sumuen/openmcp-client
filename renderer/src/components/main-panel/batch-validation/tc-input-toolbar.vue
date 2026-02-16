@@ -1,14 +1,5 @@
 <template>
     <div class="tc-input-toolbar">
-        <el-tooltip :content="t('system-prompt')" placement="top" effect="light">
-            <div
-                class="setting-button"
-                :class="{ 'active': !!modelValue.systemPrompt }"
-                @click="showPromptDialog = true"
-            >
-                <span class="iconfont icon-prompt"></span>
-            </div>
-        </el-tooltip>
         <el-tooltip :content="t('skill-path')" placement="top" effect="light">
             <div
                 class="setting-button"
@@ -19,73 +10,49 @@
             </div>
         </el-tooltip>
 
-        <!-- System Prompt 对话框 -->
-        <el-dialog v-model="showPromptDialog" :title="t('system-prompt')" width="600px" class="chat-option-dialog">
-            <el-select
-                v-model="localSystemPrompt"
-                :placeholder="t('choose-presetting')"
-                clearable
-                style="width: 100%; margin-bottom: 12px"
-            >
-                <el-option
-                    v-for="prompt in systemPrompts"
-                    :key="prompt.name"
-                    :value="prompt.name"
-                    :label="prompt.name"
-                />
-            </el-select>
-            <el-input
-                v-if="localSystemPrompt"
-                :model-value="currentPromptContent"
-                type="textarea"
-                :rows="6"
-                :placeholder="t('system-prompt.placeholder')"
-                readonly
-            />
-            <template #footer>
-                <el-button @click="showPromptDialog = false">{{ t('cancel') }}</el-button>
-                <el-button type="primary" @click="confirmPrompt">{{ t('confirm') }}</el-button>
-            </template>
-        </el-dialog>
-
-        <!-- Skill 对话框 -->
+        <!-- Skill 对话框：无取消按钮，确认右对齐，与提示词调试按钮组一致 + Ctrl+Enter -->
         <el-dialog v-model="showSkillDialog" :title="t('skill-path')" width="480px" class="chat-option-dialog">
-            <el-select
-                v-model="localSkillName"
-                :placeholder="t('batch-validation-choose-skill')"
-                clearable
-                filterable
-                style="width: 100%"
-            >
-                <el-option
-                    v-for="skill in skills"
-                    :key="skill.name"
-                    :value="skill.name"
-                    :label="skill.name"
+            <div @keydown.ctrl.enter.prevent="confirmSkill">
+                <el-select
+                    v-model="localSkillName"
+                    :placeholder="t('batch-validation-choose-skill')"
+                    clearable
+                    filterable
+                    style="width: 100%"
                 >
-                    <span>{{ skill.name }}</span>
-                    <span v-if="skill.description" class="skill-option-desc"> — {{ skill.description }}</span>
-                </el-option>
-            </el-select>
-            <div v-if="skills.length === 0" class="skill-empty">{{ t('skill-no-available') || 'No skills configured' }}</div>
+                    <el-option
+                        v-for="skill in skills"
+                        :key="skill.name"
+                        :value="skill.name"
+                        :label="skill.name"
+                    >
+                        <span>{{ skill.name }}</span>
+                        <span v-if="skill.description" class="skill-option-desc"> — {{ skill.description }}</span>
+                    </el-option>
+                </el-select>
+                <div v-if="skills.length === 0" class="skill-empty">{{ t('skill-no-available') || 'No skills configured' }}</div>
+            </div>
             <template #footer>
-                <el-button @click="showSkillDialog = false">{{ t('cancel') }}</el-button>
-                <el-button type="primary" @click="confirmSkill">{{ t('confirm') }}</el-button>
+                <div class="dialog-footer-right">
+                    <el-button type="primary" class="btn-execute" @click="confirmSkill">
+                        <span>{{ t('confirm') }}</span>
+                        <span class="ctrl">CTRL</span>
+                        <span class="iconfont icon-enter"></span>
+                    </el-button>
+                </div>
             </template>
         </el-dialog>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { systemPrompts, getSystemPrompt, loadSystemPrompts } from '../chat/chat-box/options/system-prompt';
 import { listSkills, type SkillMetadata } from '@/api/skill';
 
 const { t } = useI18n();
 
 interface TcOverrides {
-    systemPrompt?: string;
     skillName?: string;
 }
 
@@ -97,24 +64,9 @@ const emit = defineEmits<{
     (e: 'update:modelValue', v: TcOverrides): void;
 }>();
 
-const showPromptDialog = ref(false);
 const showSkillDialog = ref(false);
-const localSystemPrompt = ref('');
 const localSkillName = ref('');
 const skills = ref<SkillMetadata[]>([]);
-
-const currentPromptContent = computed(() => {
-    if (!localSystemPrompt.value) return '';
-    return getSystemPrompt(localSystemPrompt.value) || '';
-});
-
-function confirmPrompt() {
-    emit('update:modelValue', {
-        ...props.modelValue,
-        systemPrompt: localSystemPrompt.value || undefined
-    });
-    showPromptDialog.value = false;
-}
 
 function confirmSkill() {
     emit('update:modelValue', {
@@ -125,23 +77,14 @@ function confirmSkill() {
 }
 
 watch(() => props.modelValue, (v) => {
-    localSystemPrompt.value = v.systemPrompt || '';
     localSkillName.value = v.skillName || '';
 }, { immediate: true });
-
-watch(showPromptDialog, (v) => {
-    if (v) localSystemPrompt.value = props.modelValue.systemPrompt || '';
-});
 
 watch(showSkillDialog, async (v) => {
     if (v) {
         localSkillName.value = props.modelValue.skillName || '';
         skills.value = await listSkills();
     }
-});
-
-onMounted(async () => {
-    await loadSystemPrompts();
 });
 </script>
 
@@ -199,5 +142,34 @@ onMounted(async () => {
     margin-top: 12px;
     font-size: 13px;
     color: var(--el-text-color-secondary);
+}
+
+/* 与提示词调试 executor-actions 一致的确认按钮：右对齐 + 快捷键说明 */
+.dialog-footer-right {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+.dialog-footer-right .btn-execute {
+    border-radius: 8px;
+    border: 1px solid var(--main-light-color-70);
+    background-color: var(--main-light-color-20);
+    color: var(--el-text-color-primary);
+    font-weight: 600;
+    padding: 8px 18px;
+    font-size: 14px;
+}
+.dialog-footer-right .btn-execute:hover:not(:disabled),
+.dialog-footer-right .btn-execute:focus {
+    background-color: var(--main-light-color-50);
+    border-color: var(--main-light-color-90);
+}
+.dialog-footer-right .btn-execute .ctrl {
+    margin-left: 5px;
+    opacity: 0.6;
+    font-weight: 100;
+}
+.dialog-footer-right .btn-execute .iconfont {
+    color: var(--main-color);
 }
 </style>

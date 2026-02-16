@@ -4,6 +4,10 @@ import { tabs } from "@/components/main-panel/panel";
 import { ref, type Reactive } from "vue";
 import { v4 as uuidv4 } from 'uuid';
 import { mcpClientAdapter, type McpClient } from "@/views/connect/core";
+import type { BatchValidationStorage } from "@/components/main-panel/batch-validation/storage";
+import { ensureBatchValidationStorage } from "@/components/main-panel/batch-validation/storage";
+
+const BATCH_VALIDATION_COMPONENT_INDEX = 5;
 
 interface SaveTabItem {
 	name: string;
@@ -55,7 +59,21 @@ export async function loadPanels(client: McpClient | Reactive<McpClient>) {
 			});
 		}
 
-		tabs.activeIndex = persistTab.currentIndex;				
+		tabs.activeIndex = persistTab.currentIndex;
+
+		// 批量验证：从 DuckDB 加载同一份数据，同步到所有批量验证 tab，使左侧列表一致
+		const bvRes = await bridge.commandRequest<{ storage: BatchValidationStorage }>('batch-validation/load', {
+			clientId: client.clientId
+		});
+		if (bvRes.code === 200 && bvRes.msg?.storage) {
+			const loaded = bvRes.msg.storage;
+			for (const tab of tabs.content) {
+				if (tab.componentIndex === BATCH_VALIDATION_COMPONENT_INDEX) {
+					Object.assign(tab.storage, loaded);
+					ensureBatchValidationStorage(tab.storage);
+				}
+			}
+		}
 	}
 
 	panelLoaded.value = true;

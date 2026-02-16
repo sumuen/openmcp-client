@@ -1,30 +1,44 @@
 <template>
-	<el-scrollbar height="100%">
-		<div class="setting-container">
-			<div class="setting-tabs-wrapper">
-				<el-segmented
-                    v-model="settingSections.current"
-                    :options="settingSections.data" size="default"
-					class="setting-segmented"
-                >
-					<template #default="scope">
-						<div class="setting-section-option">
-							{{ scope.item.label }}
+	<div class="setting-module-container">
+		<el-splitter class="setting-splitter">
+			<el-splitter-panel :min="120" :max="400" size="200" class="splitter-panel-left">
+				<div class="setting-list-panel">
+					<div class="list-container">
+						<el-scrollbar>
+							<div class="list-inner">
+								<div
+									v-for="opt in settingSections.data"
+									:key="opt.value"
+									class="list-item"
+									:class="{ active: settingSections.current === opt.value }"
+									@click="settingSections.current = opt.value"
+								>
+									<div class="list-item-content">
+										<div class="item-title">{{ opt.label }}</div>
+									</div>
+								</div>
+							</div>
+						</el-scrollbar>
+					</div>
+				</div>
+			</el-splitter-panel>
+			<el-splitter-panel class="splitter-panel-right">
+				<div class="setting-detail-panel">
+					<el-scrollbar height="100%">
+						<div class="setting-content">
+							<General v-show="settingSections.current === 'general'" />
+							<Api v-show="settingSections.current === 'api'" />
+							<Appearance v-show="settingSections.current === 'appearance'" />
 						</div>
-					</template>
-				</el-segmented>
-			</div>
-			<div class="setting-content">
-				<General v-show="settingSections.current === 'general'"></General>
-				<Api v-show="settingSections.current === 'api'"></Api>
-				<Appearance v-show="settingSections.current === 'appearance'"></Appearance>
-			</div>
-		</div>
-	</el-scrollbar>
+					</el-scrollbar>
+				</div>
+			</el-splitter-panel>
+		</el-splitter>
+	</div>
 </template>
 
 <script setup lang="ts">
-import { defineComponent, ref, onMounted } from 'vue';
+import { defineComponent, onMounted } from 'vue';
 
 import { colorManager } from './color';
 
@@ -44,71 +58,127 @@ onMounted(() => {
 </script>
 
 <style>
-.setting-container {
-	position: relative;
-	width: 100%;
-	max-width: 720px;
-	padding: 24px 32px;
-	height: fit-content;
+/* 与工具调用测试页一致的左右分栏布局 */
+.setting-module-container {
+	height: 100%;
+}
+
+.setting-splitter {
+	height: 100%;
+}
+
+.setting-splitter :deep(.el-splitter__panel) {
+	overflow: hidden;
+}
+
+.splitter-panel-left {
 	display: flex;
 	flex-direction: column;
-	gap: 24px;
-	margin: 0 auto;
 }
 
-.setting-tabs-wrapper {
-	background-color: var(--background);
-	border-radius: 16px;
-	padding: 6px;
-	border: 1px solid var(--sidebar-border);
-}
-
-.setting-segmented {
-	background-color: transparent !important;
-	border: none !important;
-}
-
-.setting-segmented :deep(.el-segmented__group) {
+.splitter-panel-right {
 	display: flex;
-	gap: 6px;
+	flex-direction: column;
+	min-width: 0;
 }
 
-.setting-segmented :deep(.el-segmented__item) {
-	border-radius: 16px;
-	border: none;
-	background: transparent;
+.setting-list-panel {
+	width: 100%;
+	height: 100%;
+	border-right: 1px solid var(--el-border-color-light);
+	background-color: var(--el-bg-color);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
 }
 
-.setting-segmented :deep(.el-segmented__item-selected) {
-	border-radius: 16px !important;
+.setting-list-panel .list-container {
+	flex: 1;
+	min-height: 0;
 }
 
-.setting-section-option {
-	padding: 10px 24px;
-	border-radius: 16px;
+.setting-list-panel .list-container .el-scrollbar {
+	height: 100%;
+}
+
+.setting-list-panel .list-inner {
+	padding: 10px;
+}
+
+.setting-list-panel .list-item {
+	margin: 3px;
+	padding: 10px 12px;
+	border-radius: 0.3em;
+	user-select: none;
+	cursor: pointer;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 8px;
 	transition: var(--animation-3s);
-	font-size: 14px;
-	color: var(--foreground);
 }
 
-.setting-container :deep(.el-segmented__item.is-selected) .setting-section-option {
-	background-color: var(--foreground) !important;
-	color: var(--background) !important;
+.setting-list-panel .list-item:hover {
+	background-color: var(--el-fill-color-light);
+}
+
+.setting-list-panel .list-item.active {
+	background-color: var(--el-fill-color-light);
+	border-left: 3px solid var(--el-color-primary-light-5);
+}
+
+.setting-list-panel .list-item-content {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.setting-list-panel .item-title {
+	font-weight: bold;
+	font-size: 13px;
+	max-width: 100%;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.setting-detail-panel {
+	flex: 1;
+	min-width: 0;
+	width: 100%;
+	height: 100%;
+	background-color: var(--el-bg-color);
+	overflow: hidden;
+}
+
+.setting-detail-panel .el-scrollbar {
+	height: 100%;
+}
+
+.setting-detail-panel :deep(.el-scrollbar__wrap),
+.setting-detail-panel :deep(.el-scrollbar__view) {
+	height: 100%;
 }
 
 .setting-content {
 	display: flex;
 	flex-direction: column;
+    align-items: center;
 	gap: 8px;
+	padding: 24px 32px;
+	height: fit-content;
+	min-height: 100%;
+	box-sizing: border-box;
 }
 
 .setting-section {
 	padding: 20px 24px;
 	margin: 0;
+    width: 550px;
 	border-radius: 16px;
 	min-height: 50px;
-	background-color: var(--sidebar);
-	border: 1px solid var(--sidebar-border);
 }
 
 .setting-section h2 {
@@ -120,29 +190,40 @@ onMounted(() => {
 	color: var(--foreground);
 }
 
+/* 选项列表包装器：仅包含 .setting-option，便于首尾圆角与边框 */
+.setting-section .setting-options .setting-option {
+	border-top: 1px solid var(--window-button-active);
+	border-left: 1px solid var(--window-button-active);
+	border-right: 1px solid var(--window-button-active);
+    background-color: var(--sidebar);
+}
+
+.setting-section .setting-options .setting-option .el-input__wrapper,
+.setting-section .setting-options .setting-option .el-select__wrapper {
+    border: 1px solid var(--window-button-active);
+}
+
+.setting-section .setting-options .setting-option:first-child {
+	border-top-left-radius: 16px;
+	border-top-right-radius: 16px;
+}
+
+.setting-section .setting-options .setting-option:last-child {
+	border-bottom: 1px solid var(--window-button-active);
+	border-bottom-left-radius: 16px;
+	border-bottom-right-radius: 16px;
+}
+
 .setting-option {
-	margin: 10px 0;
 	padding: 14px 18px;
 	min-height: 44px;
-	border-radius: 16px;
 	background-color: var(--background);
-	border: 1px solid var(--sidebar-border);
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	font-size: 14px;
 	gap: 16px;
 	transition: var(--animation-3s);
-}
-
-.setting-option:hover {
-	border-color: var(--main-color);
-}
-
-.setting-option .iconfont {
-	margin-right: 10px;
-	font-size: 18px;
-	color: var(--main-color);
 }
 
 .option-group {

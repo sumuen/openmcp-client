@@ -1,6 +1,7 @@
 <template>
     <div style="padding: 10px;">
         <div class="tool-executor-header">
+            <span class="tool-executor-header-label">{{ t('select-tool-to-debug') }}</span>
             <el-tree-select v-model="selectedToolValue" :data="toolTreeData" :render-after-expand="false"
                 :placeholder="t('select-tool')" :render-content="renderToolSelectContent"
                 popper-class="tool-tree-select-dropdown" class="tool-tree-select" />
@@ -9,16 +10,21 @@
             <el-form :model="tabStorage.formData" :rules="formRules" ref="formRef" label-position="top">
                 <template v-if="currentTool?.inputSchema?.properties">
                     <el-form-item v-for="[name, property] in Object.entries(currentTool.inputSchema.properties)"
-                        :key="name" :label="property.title || name" :prop="name"
+                        :key="name" :label="property.type === 'string' ? undefined : (property.title || name)" :prop="name"
                         :required="currentTool.inputSchema.required?.includes(name)">
 
+                        <template v-if="property.type === 'string'" #label>
+                            <div class="param-label-row">
+                                <span class="param-label-text">{{ property.title || name }}</span>
+                                <VariableSelector button-text="插入变量" size="small" :tool-name="currentTool?.name || ''"
+                                    :parameter-name="name" expected-type="string"
+                                    @select="(variable, value) => onVariableSelected(name, variable, value)" />
+                            </div>
+                        </template>
                         <template v-if="property.type === 'string'">
                             <el-input v-model="tabStorage.formData[name]" type="textarea" :rows="3"
                                 :placeholder="property.description || t('enter') + ' ' + (property.title || name)"
                                 @keydown.enter.ctrl.prevent="handleExecute" />
-                            <VariableSelector button-text="插入变量" :tool-name="currentTool?.name || ''"
-                                :parameter-name="name" expected-type="string"
-                                @select="(variable, value) => onVariableSelected(name, variable, value)" />
                         </template>
 
                         <el-input-number v-else-if="property.type === 'number' || property.type === 'integer'"
@@ -582,10 +588,20 @@ defineExpose({
 
 .tool-executor-header {
     margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.tool-executor-header-label {
+    font-size: 14px;
+    color: var(--el-text-color-regular);
+    white-space: nowrap;
 }
 
 .tool-executor-header .tool-tree-select {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     max-width: 420px;
 }
 
@@ -630,6 +646,28 @@ defineExpose({
     margin-bottom: 15px;
 }
 
+/* 必填星号与 label 内容同一行（避免使用 #label 插槽时星号跑到上侧） */
+.tool-executor-container .el-form-item .el-form-item__label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+}
+
+/* 参数 label 与「插入变量」按钮同一行：描述名左侧、按钮右侧 */
+.param-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+    min-width: 0;
+    gap: 8px;
+}
+
+.param-label-row .param-label-text {
+    flex: 0 1 auto;
+    min-width: 0;
+}
 
 .tool-executor-container .el-switch .el-switch__action {
     background-color: var(--main-color);

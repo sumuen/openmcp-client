@@ -1,7 +1,6 @@
 <template>
     <div class="setting-option">
         <span>
-            <span class="iconfont icon-llm"></span>
             <span class="option-title">{{ t('model') }}</span>
         </span>
         <div style="width: 240px;">
@@ -46,7 +45,6 @@
 
     <div class="setting-option">
         <span>
-            <span class="iconfont icon-url-line"></span>
             <span class="option-title">{{ t('api-root-url') }}</span>
         </span>
         <div style="width: 240px;">
@@ -57,7 +55,6 @@
 
     <div class="setting-option">
         <span>
-            <span class="iconfont icon-token"></span>
             <span class="option-title">{{ t('api-token') }}</span>
         </span>
         <div style="width: 240px;">

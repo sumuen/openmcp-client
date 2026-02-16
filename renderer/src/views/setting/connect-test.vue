@@ -40,13 +40,6 @@ console.log(llms[llmManager.currentModelIndex]);
 </script>
 
 <style scoped>
-.connect-test {
-    margin-top: 20px;
-    padding: 16px;
-    border-radius: 16px;
-    background-color: var(--sidebar);
-    border: 1px solid var(--sidebar-border);
-}
 
 .test-result {
     display: flex;

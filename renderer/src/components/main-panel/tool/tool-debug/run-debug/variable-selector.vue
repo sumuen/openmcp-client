@@ -1,7 +1,7 @@
 <template>
     <el-popover placement="bottom-start" :width="400" trigger="click" v-model:visible="visible" @hide="onPopoverHide">
         <template #reference>
-            <el-button :disabled="disabled">
+            <el-button :size="size" :disabled="disabled">
                 <span class="iconfont icon-variable"></span>
                 {{ buttonText }}
             </el-button>
@@ -105,6 +105,11 @@ const props = defineProps({
     disabled: {
         type: Boolean,
         default: false
+    },
+    /** 按钮尺寸 */
+    size: {
+        type: String as () => 'default' | 'small' | undefined,
+        default: 'default'
     }
 });
 

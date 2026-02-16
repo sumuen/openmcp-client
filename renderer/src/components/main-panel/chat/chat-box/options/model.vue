@@ -27,8 +27,12 @@
             </el-radio-group>
         </el-scrollbar>
         <template #footer>
-            <el-button @click="showModelDialog = false">{{ t("cancel") }}</el-button>
-            <el-button type="primary" @click="confirmModelChange">{{ t("confirm") }}</el-button>
+            <div class="model-dialog-footer">
+                <el-button-group class="executor-actions-group">
+                    <el-button class="btn-secondary" @click="showModelDialog = false">{{ t("cancel") }}</el-button>
+                    <el-button type="primary" class="btn-execute" @click="confirmModelChange">{{ t("confirm") }}</el-button>
+                </el-button-group>
+            </div>
         </template>
     </el-dialog>
 </template>
@@ -120,5 +124,58 @@ const onRadioGroupChange = (index: number) => {
 
 .model-item:hover {
     background-color: var(--el-fill-color-light);
+}
+
+/* Footer 按钮组：与导出/提示词/Skill 对话框一致 */
+.model-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+.executor-actions-group {
+    display: inline-flex;
+}
+.executor-actions-group .el-button:first-child {
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
+}
+.executor-actions-group .el-button:last-child {
+    border: 1px solid var(--main-light-color-50) !important;
+    border-bottom-right-radius: 8px !important;
+    border-top-right-radius: 8px !important;
+}
+.executor-actions-group .el-button {
+    border-radius: 0 !important;
+    border-color: var(--window-button-active) !important;
+    border-top: 1px solid var(--window-button-active);
+    border-bottom: 1px solid var(--window-button-active);
+    border-left: 1px solid var(--window-button-active);
+    border-right: 1px solid var(--window-button-active);
+    background-color: var(--el-fill-color-blank);
+    color: var(--el-text-color-regular);
+    padding: 8px 18px;
+    font-size: 14px;
+    transition: var(--animation-3s);
+}
+.executor-actions-group .el-button:hover:not(:disabled):not(.btn-execute) {
+    border-color: var(--el-border-color-hover);
+    background-color: var(--main-light-color-50);
+    color: var(--el-text-color-primary);
+}
+.executor-actions-group > *:last-child .el-button {
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+    border: 1px solid var(--main-light-color-70) !important;
+}
+.btn-execute {
+    background-color: var(--main-light-color-20) !important;
+    color: var(--el-text-color-primary) !important;
+    border-color: var(--main-light-color-50) !important;
+    font-weight: 600;
+}
+.btn-execute:hover:not(:disabled),
+.btn-execute:focus {
+    background-color: var(--main-light-color-50) !important;
+    border-color: var(--main-light-color-90) !important;
 }
 </style>

@@ -1,12 +1,12 @@
 <template>
     <div class="setting-section">
         <h2>{{ t('general-setting') }}</h2>
+        <div class="setting-options">
         <div class="setting-option">
             <span>
-                <span class="iconfont icon-i18n"></span>
                 <span class="option-title">{{ t('language-setting') }}</span>
             </span>
-            <div style="width: 100px;">
+            <div style="width: 160px;">
                 <el-select name="language-setting" class="language-setting" v-model="locale" @change="onlanguagechange">
                     <el-option v-for="option in languageSetting.options" :value="option.value" :label="option.text"
                         :key="option.value">
@@ -17,19 +17,23 @@
 
         <div class="setting-option">
             <span>
-                <span class="iconfont icon-timeout"></span>
                 <span class="option-title">{{ t('mcp-server-timeout') }} (s)</span>
             </span>
-            <div style="width: 200px;">
-                <el-slider v-model="mcpSetting.timeout" :min="0" :max="600" :step="60" show-stops
-                    @change="safeSaveSetting" />
+            <div style="width: 160px;">
+                <el-input-number
+                    v-model="mcpSetting.timeout"
+                    :min="0"
+                    :max="600"
+                    :step="60"
+                    controls-position="right"
+                    @change="safeSaveSetting"
+                />
             </div>
         </div>
 
         <div class="setting-option" style="flex-direction: column; height: fit-content; gap: 10px;">
             <div class="sub-item">
                 <span>
-                    <span class="iconfont icon-dataset"></span>
                     <span class="option-title">{{ '是否开启数据回流' }}</span>
                 </span>
                 <div>
@@ -38,7 +42,6 @@
             </div>
             <div class="sub-item" v-if="mcpSetting.enableDatasetReflux">
                 <span>
-                    <span class="iconfont icon-filepath"></span>
                     <el-tooltip
                         content="存储在项目目录的 .openmcp 文件夹中"
                     >
@@ -58,7 +61,6 @@
 
         <div class="setting-option">
             <span>
-                <span class="iconfont icon-proxy"></span>
                 <span class="option-title">{{ t('proxy-server') }}</span>
             </span>
             <div style="width: 200px;">
@@ -69,7 +71,6 @@
 
         <div class="setting-option">
             <span>
-                <span class="iconfont icon-filepath"></span>
                 <el-tooltip content="Path to SKILL.md file or skill directory (e.g. .cursor/skills/code-review). When set, skill content is added to system prompt and read_skill_file tool is enabled.">
                     <span class="option-title">{{ t('skill-path') }}</span>
                 </el-tooltip>
@@ -78,6 +79,7 @@
                 <el-input v-model="mcpSetting.skillPath" :placeholder="'.cursor/skills or path to SKILL.md'"
                     clearable @input="safeSaveSetting" />
             </div>
+        </div>
         </div>
     </div>
 </template>

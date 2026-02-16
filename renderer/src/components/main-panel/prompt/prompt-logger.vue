@@ -144,21 +144,12 @@ const showRawJson = ref(false);
     min-height: 100%;
     height: fit-content;
     font-family: var(--code-font-family);
-    background-color: var(--sidebar);
 }
 
 .error-tool-call {
     background-color: rgba(245, 108, 108, 0.5);
     padding: 5px 9px;
     border-radius: .5em;
-}
-
-.tool-call-block {
-    margin-bottom: 12px;
-    padding: 10px 12px;
-    background: rgba(0, 0, 0, 0.04);
-    border-radius: 6px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .tool-call-text {

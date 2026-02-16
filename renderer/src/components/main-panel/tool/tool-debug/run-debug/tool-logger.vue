@@ -45,15 +45,9 @@
                         <div class="markdown" v-html="resultMarkdown"></div>
                     </template>
 
-                    <!-- 展示 json：与聊天区一致，JSON 中字符串 value 可点击展开弹窗 -->
+                    <!-- 展示 json：与提示词模块调试的 JSON 输出样式一致 -->
                     <template v-else-if="renderMode.current === 'json'">
-                        <div class="tool-logger-json-wrap tool-text-body tool-text-body--json">
-                            <json-render
-                                :key="'tool-logger-json-' + props.tabId"
-                                :json="tabStorage.lastToolCallResponse"
-                                :show-copy="true"
-                            />
-                        </div>
+                        <json-render :json="tabStorage.lastToolCallResponse" />
                     </template>
                 </div>
 
@@ -202,21 +196,12 @@ const renderMode = reactive({
     min-height: 100%;
     height: fit-content;
     font-family: var(--code-font-family);
-    background-color: var(--sidebar);
 }
 
 .error-tool-call {
     background-color: rgba(245, 108, 108, 0.5);
     padding: 5px 9px;
     border-radius: .5em;
-}
-
-.tool-call-block {
-    margin-bottom: 12px;
-    padding: 10px 12px;
-    background: rgba(0,0,0,0.04);
-    border-radius: 6px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
 
 .tool-call-text {
@@ -226,28 +211,5 @@ const renderMode = reactive({
     word-break: break-all;
     margin: 0;
     color: var(--el-text-color-primary, #222);
-}
-
-/* JSON 输出与聊天区一致：字符串 value 可点击展开弹窗 */
-.tool-logger-json-wrap.tool-text-body--json :deep(.json-render) {
-    border: none;
-    border-radius: 0;
-    background: transparent;
-}
-.tool-logger-json-wrap.tool-text-body--json :deep(.json-render .json-render-scrollbar) {
-    max-height: 360px;
-}
-.tool-logger-json-wrap.tool-text-body--json :deep(.json-render .json-render-body) {
-    padding: 0;
-}
-.tool-logger-json-wrap.tool-text-body--json :deep(.token.string) {
-    cursor: pointer;
-    border-radius: 3px;
-    padding: 1px 2px;
-    margin: -1px -2px;
-}
-.tool-logger-json-wrap.tool-text-body--json :deep(.token.string:hover) {
-    background: var(--el-fill-color-light);
-    outline: 1px solid var(--el-border-color-lighter);
 }
 </style>

@@ -1,7 +1,6 @@
 <template>
 	<div class="chat-settings">
 		<Model />
-		<SystemPrompt />
 		<Skill />
 		<ToolUse />
 		<Prompt />
@@ -22,7 +21,6 @@ import { tabs } from '@/components/main-panel/panel';
 import type { ChatSetting, ChatStorage } from '../chat';
 
 import Model from './model.vue';
-import SystemPrompt from './system-prompt.vue';
 import Skill from './skill.vue';
 import ToolUse from './tool-use.vue';
 import Prompt from './prompt.vue';

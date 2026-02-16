@@ -20,7 +20,7 @@ export class RefluxDB {
             fs.mkdirSync(dbDir, { recursive: true });
         }
 
-        this.dbPath = path.join(dbDir, `${tableName}.omdb`);
+        this.dbPath = path.join(dbDir, `${tableName}.reflux.omdb`);
         this.db = new duckdb.Database(this.dbPath);
         console.log(
             chalk.gray(`${logTimeStampString()} |`),

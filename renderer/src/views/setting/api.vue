@@ -5,9 +5,9 @@
 		<h2 class="api-title">
 			{{ "API" }}
 		</h2>
+		<div class="setting-options">
 		<div class="setting-option">
 			<span>
-				<span class="iconfont icon-company"></span>
 				<span class="option-title">{{ t('server-provider') }}</span>
 			</span>
 			<div style="width: 160px;">
@@ -39,81 +39,80 @@
 		</div>
 
 		<!-- TODO: 根据不同模型展示不同的接入点 -->
-		<div v-if="false">
+		<template v-if="false"></template>
+		<ConnectInterfaceOpenai v-else />
 
-		</div>
-		<div v-else>
-			<ConnectInterfaceOpenai />
-		</div>
+		<div class="setting-option setting-option-actions">
+			<div class="setting-option-actions-row">
+				<span class="option-title"></span>
+				<div class="setting-save-container">
+				<el-button-group>
+					<el-button
+						id="add-new-server-button"
+						@click="addNewServer"
+					>
+						{{ t("add-new-server") }}
+					</el-button>
 
-		<br>
+					<el-button
+						id="update-model-list-button"
+						@click="updateModels"
+						:loading="updateModelLoading"
+					>
+						{{ t('update-model-list') }}
+					</el-button>
 
-		<div class="setting-save-container">
-			<el-button
-				id="add-new-server-button"
-				type="success"
-				@click="addNewServer"
-			>
-				{{ t("add-new-server") }}
-			</el-button>
+					<el-popover
+						placement="top"
+						width="400"
+						trigger="click"
+						popper-class="setting-popover"
+						v-model:visible="testPromptPopoverVisible"
+					>
+						<template #reference>
+							<el-button
+								id="test-llm-button"
+								class="btn-test"
+								:loading="simpleTestResult.start"
+							>
+								<span>{{ t('test') }}</span>
+								<span class="ctrl">CTRL</span>
+								<span class="pink-color iconfont icon-enter"></span>
+							</el-button>
+						</template>
+						<div style="margin-bottom: 8px; font-weight: bold;">
+							{{ t('prompts') }}
+						</div>
+						<el-input
+							type="textarea"
+							v-model="testPrompt"
+							:rows="3"
+							:placeholder="t('test-prompt-placeholder') || '输入测试内容...'"
+							style="margin-bottom: 8px;"
+							clearable
+						/>
+						<div style="text-align: right;">
+							<el-button @click="testPromptPopoverVisible = false">{{ t('cancel') }}</el-button>
+							<el-button type="primary" @click="testPromptPopoverVisible = false; makeSimpleTalk()">{{ t('confirm') }}</el-button>
+						</div>
+					</el-popover>
 
-			<el-button
-				id="add-new-server-button"
-				type="success"
-				@click="updateModels"
-				:loading="updateModelLoading"
-			>
-				{{ t('update-model-list') }}
-			</el-button>
-
-			<!-- 新增：测试 prompt 下拉输入 -->
-			<el-popover
-				placement="top"
-				width="400"
-				trigger="click"
-				popper-class="setting-popover"
-				v-model:visible="testPromptPopoverVisible"
-			>
-				<template #reference>
-                    <el-button
-                        type="primary"
-                        id="test-llm-button"
-                        :loading="simpleTestResult.start"
-                    >
-                        <span v-show="!simpleTestResult.start" class="iconfont icon-test"></span>
-                        {{ t('test') }}
-                    </el-button>
-				</template>
-				<div style="margin-bottom: 8px; font-weight: bold;">
-                        {{ t('prompts') }}
+					<el-button
+						type="primary"
+						id="save-llm-button"
+						class="btn-save"
+						@click="saveLlmSetting"
+					>
+						<span>{{ t('save') }}</span>
+						<span class="ctrl">CTRL</span>
+						<span class="pink-color shortcut-key">S</span>
+					</el-button>
+				</el-button-group>
 				</div>
-				<el-input
-					type="textarea"
-					v-model="testPrompt"
-					:rows="3"
-					:placeholder="t('test-prompt-placeholder') || '输入测试内容...'"
-					style="margin-bottom: 8px;"
-					clearable
-				/>
-				<div style="text-align: right;">
-					<el-button @click="testPromptPopoverVisible = false">{{ t('cancel') }}</el-button>
-					<el-button type="primary" @click="testPromptPopoverVisible = false; makeSimpleTalk()">{{ t('confirm') }}</el-button>
-				</div>
-			</el-popover>
-
-			<el-button
-				type="primary"
-				id="save-llm-button"
-				@click="saveLlmSetting"
-			>
-				<span class="iconfont icon-save"></span>
-				{{ t('save') }}
-			</el-button>
+			</div>
+			<ConnectTest />
 		</div>
-
-
-		<!-- 测试连通性的地方 -->
-		<ConnectTest />
+		</div>
 
 		<!-- 当前页面的聊天框 -->
 		<el-dialog v-model="dialogVisible" width="50%" class="api-man-dialog">
@@ -146,7 +145,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, onMounted, onBeforeUnmount } from 'vue';
 import { llmManager, llms } from './llm';
 import { useI18n } from 'vue-i18n';
 import { saveSetting } from '@/hook/setting';
@@ -388,6 +387,28 @@ function handleCommand(command: {type: string, index: number}) {
         deleteModel(command.index);
     }
 }
+
+function onKeydown(e: KeyboardEvent) {
+	if (e.ctrlKey && e.key === 'Enter') {
+		e.preventDefault();
+		if (!simpleTestResult.start) {
+			makeSimpleTalk();
+		}
+		return;
+	}
+	if (e.ctrlKey && (e.key === 's' || e.key === 'S')) {
+		e.preventDefault();
+		saveLlmSetting();
+	}
+}
+
+onMounted(() => {
+	window.addEventListener('keydown', onKeydown);
+});
+
+onBeforeUnmount(() => {
+	window.removeEventListener('keydown', onKeydown);
+});
 </script>
 
 <style>
@@ -432,35 +453,118 @@ function handleCommand(command: {type: string, index: number}) {
 	opacity: 0.9;
 }
 
+/* 与工具调试页 executor-actions 一致：右对齐 + 按钮组样式 */
 .setting-save-container {
 	margin: 16px 0;
 	display: flex;
-	gap: 12px;
+	justify-content: flex-end;
+	align-items: center;
 	flex-wrap: wrap;
 }
 
-.setting-save-container .el-button {
-	border-radius: 16px !important;
-	padding: 8px 18px;
-	font-size: 14px;
+/* 按钮组 + 测试结果纵向排列：先一行按钮，下方为测试结果 */
+.setting-option-actions {
+	flex-direction: column;
+	align-items: stretch;
+	gap: 0;
+}
+
+.setting-option-actions-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	min-height: 44px;
+}
+
+.setting-option-actions .setting-save-container {
+	margin: 0;
+	flex: 1;
+	justify-content: flex-end;
+}
+
+.setting-save-container .el-button-group {
+	display: inline-flex;
+}
+
+.setting-save-container .el-button-group .el-button {
+	border-radius: 0 !important;
+	border-color: var(--el-border-color);
+	background-color: var(--el-fill-color-blank);
+	color: var(--el-text-color-regular);
+	padding: 8px 10px;
+	font-size: 13px;
 	transition: var(--animation-3s);
 }
 
-.setting-save-container .el-button--primary,
-.setting-save-container .el-button--success {
-	background-color: var(--foreground) !important;
-	color: var(--background) !important;
-	border-color: var(--foreground) !important;
+.setting-save-container .el-button-group .el-button:hover:not(:disabled):not(.btn-save) {
+	border-color: var(--el-border-color-hover);
+	background-color: var(--main-light-color-50);
+	color: var(--el-text-color-primary);
 }
 
-.setting-save-container .el-button--primary:hover,
-.setting-save-container .el-button--primary:focus,
-.setting-save-container .el-button--success:hover,
-.setting-save-container .el-button--success:focus {
-	opacity: 0.9;
-	background-color: var(--foreground) !important;
-	color: var(--background) !important;
-	border-color: var(--foreground) !important;
+.setting-save-container .el-button-group .el-button:first-child {
+	border-top-left-radius: 8px !important;
+	border-bottom-left-radius: 8px !important;
+}
+
+.setting-save-container .el-button-group .el-button:last-child {
+	border-top-right-radius: 8px !important;
+	border-bottom-right-radius: 8px !important;
+}
+
+.setting-save-container .el-button-group .el-button:only-child {
+	border-radius: 8px !important;
+}
+
+
+.setting-save-container .el-button-group button {
+    border-top: 1px solid var(--window-button-active);
+    border-bottom: 1px solid var(--window-button-active);
+    border-left: 1px solid var(--window-button-active);
+}
+
+.setting-save-container .el-button-group .el-button {
+    border-color: var(--window-button-active) !important;
+    border-right: 1px solid var(--window-button-active);
+}
+
+
+.setting-save-container .el-button-group button:last-child {
+    border: 1px solid var(--main-light-color-70);
+}
+
+/* 保存按钮与工具调试页「执行」按钮一致：强调色 */
+.setting-save-container .el-button-group .btn-save {
+	background-color: var(--main-light-color-20) !important;
+	color: var(--el-text-color-primary) !important;
+	border-color: var(--main-light-color-50) !important;
+	font-weight: 600;
+}
+
+.setting-save-container .el-button-group .btn-save:hover,
+.setting-save-container .el-button-group .btn-save:focus {
+	background-color: var(--main-light-color-50) !important;
+	color: var(--el-text-color-primary) !important;
+	border-color: var(--main-light-color-90) !important;
+}
+
+/* 测试/保存按钮右侧快捷键提示，与工具调试执行按钮一致 */
+.setting-save-container .el-button-group .btn-test .ctrl,
+.setting-save-container .el-button-group .btn-save .ctrl {
+	margin-left: 5px;
+	opacity: 0.6;
+	font-weight: 100;
+}
+
+.setting-save-container .el-button-group .btn-test .iconfont {
+	opacity: 0.8;
+}
+
+.setting-save-container .el-button-group .btn-save .shortcut-key {
+	margin-left: 2px;
+	opacity: 0.6;
+	font-weight: 100;
 }
 
 .setting-save-container .iconfont {
@@ -503,5 +607,9 @@ function handleCommand(command: {type: string, index: number}) {
 
 .delete-icon:hover {
     opacity: 0.8;
+}
+
+.pink-color {
+    color: var(--main-color);
 }
 </style>

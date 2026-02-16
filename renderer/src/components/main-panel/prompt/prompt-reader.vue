@@ -22,42 +22,7 @@
                     />
                 </el-form-item>
 
-                <!-- 弹窗内使用（tabId < 0）时保留内联按钮，与 run-debug 的 4 个按钮逻辑一致并成组 -->
-                <el-form-item v-if="props.tabId < 0">
-                    <el-button-group class="inline-executor-actions">
-                        <el-button class="btn-secondary" @click="resetForm">{{ t('reset') }}</el-button>
-                        <el-dropdown
-                            trigger="hover"
-                            :disabled="!currentPrompt || !savedDataList.length"
-                            @command="handleLoadSaved"
-                        >
-                            <el-button
-                                class="btn-secondary inline-load-test-data-dropdown"
-                                :disabled="!currentPrompt || !savedDataList.length"
-                            >
-                                {{ t('load-test-data') }}
-                                <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                            </el-button>
-                            <template #dropdown>
-                                <el-dropdown-menu>
-                                    <el-dropdown-item
-                                        v-for="item in savedDataList"
-                                        :key="item.name"
-                                        :command="item.name"
-                                    >
-                                        {{ item.name }}
-                                    </el-dropdown-item>
-                                </el-dropdown-menu>
-                            </template>
-                        </el-dropdown>
-                        <el-button class="btn-secondary" @click="openSaveDialog" :disabled="!currentPrompt">
-                            {{ t('save-test-data') }}
-                        </el-button>
-                        <el-button type="primary" :loading="loading" @click="handleSubmit">
-                            {{ t('read-prompt') }}
-                        </el-button>
-                    </el-button-group>
-                </el-form-item>
+                <!-- 弹窗内（tabId < 0）时按钮组由父组件放在 dialog footer，此处不渲染 -->
             </el-form>
         </div>
 
@@ -464,32 +429,4 @@ defineExpose({
     transition: transform 0.08s;
 }
 
-/* 弹窗内 4 个按钮成组（与 run-debug executor-actions 一致） */
-.inline-executor-actions {
-    display: inline-flex;
-}
-.inline-executor-actions .btn-secondary {
-    border-color: var(--el-border-color);
-    background-color: var(--el-fill-color-blank);
-    color: var(--el-text-color-regular);
-}
-.inline-executor-actions .btn-secondary:hover:not(:disabled) {
-    border-color: var(--el-border-color-hover);
-    background-color: var(--main-light-color-50);
-    color: var(--el-text-color-primary);
-}
-.inline-executor-actions > .el-button:first-child {
-    border-top-left-radius: 8px;
-    border-bottom-left-radius: 8px;
-}
-.inline-executor-actions > .el-button:last-child {
-    border-top-right-radius: 8px;
-    border-bottom-right-radius: 8px;
-}
-.inline-load-test-data-dropdown {
-    border-radius: 0 !important;
-}
-.inline-load-test-data-dropdown .el-icon--right {
-    margin-left: 4px;
-}
 </style>

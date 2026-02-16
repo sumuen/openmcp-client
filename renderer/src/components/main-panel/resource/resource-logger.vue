@@ -165,14 +165,6 @@ const formattedJson = computed(() => {
     background-color: var(--sidebar);
 }
 
-.tool-call-block {
-    margin-bottom: 12px;
-    padding: 10px 12px;
-    background: rgba(0, 0, 0, 0.04);
-    border-radius: 6px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-}
-
 .tool-call-text {
     font-family: var(--code-font-family, monospace);
     font-size: 15px;

@@ -26,24 +26,14 @@ export default function highlight(option: HighlightOption = {}) {
     return (str: string, lang: string) => {
 
         if (needTools) {
-            // 创建代码块容器
+            // 代码块容器（无 header，复制按钮为右上角图标、悬停显示）
             let container = `<div class="openmcp-code-block">`;
-
-            // 添加复制按钮（右上角）
-            container += `
-        <div class="code-header">
-        <div class="code-language">${lang || ''}</div>
-        <button class="copy-button" onclick="copyCode(this)">${t("copy")}</button>
-        </div>
-        `;
+            container += `<button type="button" class="copy-button copy-button--icon" onclick="copyCode(this)" title="${escapeHtml(t('copy'))}"><span class="iconfont icon-copy"></span></button>`;
 
             if (lang && Prism.languages[lang]) {
-                // 使用 Prism 高亮代码
                 const highlightedCode = Prism.highlight(str, Prism.languages[lang], lang);
-                // 添加代码区域
                 container += `<pre class="language-${lang}"><code class="language-${lang}">${highlightedCode}</code></pre>`;
             } else {
-                // 普通代码块
                 container += `<pre class="language-none"><code>${escapeHtml(str)}</code></pre>`;
             }
 
@@ -56,6 +46,10 @@ export default function highlight(option: HighlightOption = {}) {
 }
 
 
+// 图标复制按钮的原始内容，用于复制成功后恢复
+const COPY_ICON_HTML = '<span class="iconfont icon-copy"></span>';
+const COPIED_ICON_HTML = '<span class="iconfont icon-dui"></span>';
+
 // 全局复制函数
 (window as any).copyCode = function (button: HTMLElement) {
     const codeBlock = button.closest('.openmcp-code-block');
@@ -63,20 +57,31 @@ export default function highlight(option: HighlightOption = {}) {
     const codeElement = codeBlock.querySelector('code');
     const code = codeElement?.textContent || '';
 
-    //  支持 nodejs 下运行
     const thisWindow = window as any;
-    if (!thisWindow || !thisWindow.navigator || !thisWindow.navigator.clipboard) {
-        return;
-    }
+    if (!thisWindow?.navigator?.clipboard) return;
 
     navigator.clipboard.writeText(code).then(() => {
-        const originalText = button.textContent;
-        button.textContent = t('copied');
-        setTimeout(() => {
-            button.textContent = originalText;
-        }, 500);
-    }).catch((error) => {
-        console.error('复制失败:', error);
-        button.textContent = t('fail-to-copy');
+        const isIconBtn = button.classList.contains('copy-button--icon');
+        if (isIconBtn) {
+            const origTitle = button.getAttribute('title');
+            button.innerHTML = COPIED_ICON_HTML;
+            button.setAttribute('title', t('copied'));
+            setTimeout(() => {
+                button.innerHTML = COPY_ICON_HTML;
+                button.setAttribute('title', origTitle || t('copy'));
+            }, 800);
+        } else {
+            const originalText = button.textContent;
+            button.textContent = t('copied');
+            setTimeout(() => { button.textContent = originalText; }, 500);
+        }
+    }).catch((err) => {
+        console.error('复制失败:', err);
+        if (button.classList.contains('copy-button--icon')) {
+            button.setAttribute('title', t('fail-to-copy'));
+            setTimeout(() => button.setAttribute('title', t('copy')), 1500);
+        } else {
+            button.textContent = t('fail-to-copy');
+        }
     });
 };

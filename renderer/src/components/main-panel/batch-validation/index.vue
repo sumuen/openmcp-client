@@ -44,7 +44,6 @@
                 <div class="batch-detail-panel">
             <el-scrollbar>
                 <div v-if="listItems.length === 0" class="no-selection">
-                    <el-empty :description="t('batch-validation-no-cases-hint')" />
                 </div>
                 <div v-else-if="formModel" class="detail-content">
                     <div class="detail-section detail-actions-top">
@@ -137,18 +136,15 @@
                             </div>
                             <div class="settings-drawer-body">
                                 <div class="settings-drawer-section">
-                                    <label class="detail-section-label">{{ t('batch-validation-evaluation-mode')
-                                        }}</label>
-                                    <el-radio-group v-model="tabStorage.evaluationMode" class="settings-drawer-radio">
-                                        <el-radio-button label="pass-fail">{{ t('batch-validation-mode-pass-fail')
-                                            }}</el-radio-button>
-                                        <el-radio-button label="score">{{ t('batch-validation-mode-score')
-                                            }}</el-radio-button>
-                                    </el-radio-group>
+                                    <label class="settings-drawer-section-label">{{ t('batch-validation-evaluation-mode') }}</label>
+                                    <el-select v-model="tabStorage.evaluationMode" class="settings-drawer-mode-select"
+                                        :placeholder="t('batch-validation-evaluation-mode')">
+                                        <el-option :value="'pass-fail'" :label="t('batch-validation-mode-pass-fail')" />
+                                        <el-option :value="'score'" :label="t('batch-validation-mode-score')" />
+                                    </el-select>
                                 </div>
                                 <div class="settings-drawer-section">
-                                    <label class="detail-section-label">{{ t('batch-validation-test-case-desc')
-                                        }}</label>
+                                    <label class="settings-drawer-section-label">{{ t('batch-validation-test-case-desc') }}</label>
                                     <el-input v-model="formModel.description" type="textarea" :rows="4"
                                         :placeholder="t('batch-validation-test-case-desc-placeholder')" />
                                 </div>
@@ -161,7 +157,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMessageBridge } from '@/api/message-bridge';
 import { tabs } from '../panel';
@@ -546,6 +542,58 @@ watch(() => tabStorage.testCases?.length ?? 0, (len) => {
         tabStorage.selectedCaseIndex = Math.max(0, len - 1);
     }
 }, { immediate: true });
+
+// 批量验证持久化：从 DuckDB 加载（新 tab 或切换到此 tab 时），变更时防抖写入 DuckDB
+const bridge = useMessageBridge();
+async function loadBatchValidationFromDuckDb() {
+    const clientId = mcpClientAdapter.masterNode?.clientId;
+    if (!clientId) return;
+    const res = await bridge.commandRequest<{ storage: BatchValidationStorage }>('batch-validation/load', { clientId });
+    if (res.code === 200 && res.msg?.storage) {
+        Object.assign(tab.storage, res.msg.storage);
+        ensureBatchValidationStorage(tab.storage);
+    }
+}
+onMounted(() => {
+    loadBatchValidationFromDuckDb();
+});
+// 切换到此批量验证 tab 时重新从 DuckDB 拉取，保证与其它 tab 一致
+watch(
+    () => tabs.activeIndex === props.tabId,
+    (isActive) => {
+        if (isActive) loadBatchValidationFromDuckDb();
+    }
+);
+
+let saveToDuckDbTimer: ReturnType<typeof setTimeout> | null = null;
+function scheduleSaveToDuckDb() {
+    const clientId = mcpClientAdapter.masterNode?.clientId;
+    if (!clientId) return;
+    if (saveToDuckDbTimer) clearTimeout(saveToDuckDbTimer);
+    saveToDuckDbTimer = setTimeout(() => {
+        saveToDuckDbTimer = null;
+        bridge.commandRequest('batch-validation/save', {
+            clientId,
+            storage: {
+                testCases: tabStorage.testCases ?? [],
+                selectedCaseIndex: tabStorage.selectedCaseIndex ?? 0,
+                sourceTabIndex: tabStorage.sourceTabIndex ?? 0,
+                evaluationMode: tabStorage.evaluationMode ?? 'pass-fail'
+            }
+        });
+    }, 400);
+}
+
+watch(
+    () => [
+        JSON.stringify(tabStorage.testCases ?? []),
+        tabStorage.selectedCaseIndex,
+        tabStorage.sourceTabIndex,
+        tabStorage.evaluationMode
+    ],
+    () => scheduleSaveToDuckDb(),
+    { deep: true }
+);
 </script>
 
 <style scoped>
@@ -824,22 +872,16 @@ watch(() => tabStorage.testCases?.length ?? 0, (len) => {
     margin-bottom: 20px;
 }
 
-.settings-drawer-section .detail-section-label {
-    margin-bottom: 8px;
+.settings-drawer-section-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--el-text-color-regular);
+    margin-bottom: 10px;
 }
 
-.settings-drawer-radio {
-    display: flex;
+.settings-drawer-mode-select {
     width: 100%;
-}
-
-.settings-drawer-radio .el-radio-button {
-    flex: 1;
-}
-
-.settings-drawer-radio .el-radio-button__inner {
-    width: 100%;
-    text-align: center;
 }
 
 /* 抽屉从右往左滑入 */

@@ -4,6 +4,7 @@ import { RequestData } from "../common/index.dto.js";
 import { getClient } from "../mcp/connect.service.js";
 import { systemPromptDB } from "../hook/db.js";
 import { loadTabSaveConfig, saveTabSaveConfig, saveVariableConfig, loadVariableConfig, saveExtractionRulesConfig, loadExtractionRulesConfig, saveTestCasesConfig, loadTestCasesConfig } from "./panel.service.js";
+import { getBatchValidationRepository } from "./batch-validation.repository.js";
 
 export class PanelController {
     @Controller('panel/save')
@@ -175,5 +176,37 @@ export class PanelController {
             code: 200,
             msg: config || { testCases: [] }
         };
+    }
+
+    @Controller('batch-validation/load')
+    async loadBatchValidation(data: RequestData) {
+        const clientId = data.clientId as string;
+        if (!clientId) {
+            return { code: 400, msg: { storage: null } };
+        }
+        const client = getClient(clientId);
+        const serverName = client?.getServerVersion()?.name ?? 'default';
+        const repo = getBatchValidationRepository(serverName);
+        const storage = await repo.load();
+        return { code: 200, msg: { storage } };
+    }
+
+    @Controller('batch-validation/save')
+    async saveBatchValidation(data: RequestData) {
+        const clientId = data.clientId as string;
+        const storage = data.storage as any;
+        if (!clientId || !storage) {
+            return { code: 400, msg: 'Missing clientId or storage' };
+        }
+        const client = getClient(clientId);
+        const serverName = client?.getServerVersion()?.name ?? 'default';
+        const repo = getBatchValidationRepository(serverName);
+        await repo.save({
+            testCases: Array.isArray(storage.testCases) ? storage.testCases : [],
+            selectedCaseIndex: typeof storage.selectedCaseIndex === 'number' ? storage.selectedCaseIndex : 0,
+            sourceTabIndex: typeof storage.sourceTabIndex === 'number' ? storage.sourceTabIndex : 0,
+            evaluationMode: storage.evaluationMode === 'score' ? 'score' : 'pass-fail'
+        });
+        return { code: 200, msg: 'ok' };
     }
 }
