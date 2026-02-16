@@ -634,6 +634,17 @@ async function copyResponse(toolIndex: number) {
     padding: 8px 10px;
 }
 
+/* 响应部分 JSON 中 token string 可点击展开弹窗（与参数区一致，对所有 .token.string 生效） */
+.tool-result-content :deep(.token.string) {
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 1px 2px;
+    margin: -1px -2px;
+}
+.tool-result-content :deep(.token.string:hover) {
+    background: var(--el-fill-color-light);
+    outline: 1px solid var(--el-border-color-lighter);
+}
 
 /* 错误展示 - 开发者可读 */
 .tool-result--error {

@@ -240,13 +240,13 @@ const renderMode = reactive({
 .tool-logger-json-wrap.tool-text-body--json :deep(.json-render .json-render-body) {
     padding: 0;
 }
-.tool-logger-json-wrap.tool-text-body--json :deep(.token.string.json-render-string-expandable) {
+.tool-logger-json-wrap.tool-text-body--json :deep(.token.string) {
     cursor: pointer;
     border-radius: 3px;
     padding: 1px 2px;
     margin: -1px -2px;
 }
-.tool-logger-json-wrap.tool-text-body--json :deep(.token.string.json-render-string-expandable:hover) {
+.tool-logger-json-wrap.tool-text-body--json :deep(.token.string:hover) {
     background: var(--el-fill-color-light);
     outline: 1px solid var(--el-border-color-lighter);
 }

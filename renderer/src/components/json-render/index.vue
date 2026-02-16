@@ -179,9 +179,16 @@ function attachExpandableStrings(root: HTMLElement) {
 }
 
 function onBodyClick(e: MouseEvent) {
-    const target = (e.target as HTMLElement).closest('.json-render-string-expandable');
-    if (!target || !jsonBodyRef.value) return;
-    const content = expandableContentMap.get(target);
+    if (!jsonBodyRef.value) return;
+    let target = (e.target as HTMLElement).closest('.json-render-string-expandable');
+    let content: string | undefined = target ? expandableContentMap.get(target) : undefined;
+    if (content === undefined) {
+        // 未命中预绑定的 expandable 时，直接查找 .token.string（解决含转义的长字符串等未正确绑定的情况）
+        target = (e.target as HTMLElement).closest('.token.string') as HTMLElement | null;
+        if (!target) return;
+        const raw = target.textContent || '';
+        content = unescapeJsonString(raw);
+    }
     if (content === undefined) return;
     const rect = (target as HTMLElement).getBoundingClientRect();
     const gap = 8;
@@ -329,14 +336,14 @@ async function handleCopy() {
     display: block;
 }
 
-/* .token.string：悬停高亮 + 点击展开（弹层在元素上下方） */
-.json-render-body :deep(.token.string.json-render-string-expandable) {
+/* .token.string：悬停高亮 + 点击展开（对所有 string token 生效，避免转义长字符串等未绑定 expandable 时无样式） */
+.json-render-body :deep(.token.string) {
     cursor: pointer;
     border-radius: 3px;
     padding: 1px 2px;
     margin: -1px -2px;
 }
-.json-render-body :deep(.token.string.json-render-string-expandable:hover) {
+.json-render-body :deep(.token.string:hover) {
     background: var(--el-fill-color-light);
     outline: 1px solid var(--el-border-color-lighter);
 }
