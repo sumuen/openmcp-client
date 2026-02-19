@@ -15,6 +15,7 @@ export interface BatchValidationStorageRow {
         name?: string;
         description?: string;
         input: string;
+        inputRichContent?: Array<{ type: string; text: string; name?: string; args?: Record<string, string> }>;
         criteria: string[];
     }>;
     selectedCaseIndex: number;

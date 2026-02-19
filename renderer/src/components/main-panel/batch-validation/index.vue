@@ -41,8 +41,10 @@
                 </div>
             </el-splitter-panel>
             <el-splitter-panel class="batch-splitter-panel-right">
-                <div class="batch-detail-panel">
-            <el-scrollbar>
+                <el-splitter layout="vertical" class="batch-right-vertical-splitter">
+                    <el-splitter-panel :min="180" :max="600" size="80%" class="batch-executor-panel">
+                        <div class="batch-detail-panel">
+                            <el-scrollbar>
                 <div v-if="listItems.length === 0" class="no-selection">
                 </div>
                 <div v-else-if="formModel" class="detail-content">
@@ -64,7 +66,6 @@
                                 </el-button>
                             </div>
                         </div>
-                        <div v-if="runStatusText" class="detail-status">{{ runStatusText }}</div>
                         <div v-if="!canRun && runDisabledReason" class="detail-hint">{{ runDisabledReason }}</div>
                     </div>
                     <div class="detail-section">
@@ -89,36 +90,82 @@
                             {{ t('batch-validation-add-criterion') }}
                         </el-button>
                     </div>
-                    <div v-if="currentResultItems.length > 0" class="detail-results">
-                        <h4>{{ t('batch-validation-results') }}</h4>
-                        <div class="results-list">
-                            <div v-for="(r, idx) in currentResultItems" :key="`${r.testCaseId}-${r.criterionIndex}`"
-                                class="result-item" :class="{ error: r.error }">
-                                <div class="result-header">
-                                    <span class="result-index">#{{ r.testCaseIndex + 1 }}-{{ r.criterionIndex + 1
-                                    }}</span>
-                                    <span v-if="tabStorage.evaluationMode === 'pass-fail'" class="result-badge"
-                                        :class="r.pass === true ? 'pass' : r.pass === false ? 'fail' : 'unknown'">
-                                        {{ r.pass === true ? t('batch-validation-pass') : r.pass === false ?
-                                            t('batch-validation-fail') : '?' }}
-                                    </span>
-                                    <span v-else class="result-score">
-                                        {{ r.score !== undefined ? `${r.score}/10` : '-' }}
-                                    </span>
-                                </div>
-                                <div class="result-input" v-if="r.testInput">{{ r.testInput }}</div>
-                                <div class="result-criteria">{{ r.testCaseCriteria }}</div>
-                                <div v-if="r.error" class="result-error">{{ r.error }}</div>
-                                <div v-else class="result-raw">{{ r.rawResponse }}</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <div v-else class="no-selection">
                     <el-empty />
                 </div>
             </el-scrollbar>
-                </div>
+                        </div>
+                    </el-splitter-panel>
+                    <el-splitter-panel size="20%" :min="120" class="batch-results-panel">
+                        <div class="batch-results-wrap">
+                            <div class="batch-results-header">{{ t('batch-validation-results') }}</div>
+                            <el-scrollbar class="batch-results-scroll">
+                                <div v-if="isRunning" class="batch-results-loading">
+                                    <el-icon class="batch-results-loading-icon"><Loading /></el-icon>
+                                    <span class="batch-results-loading-text">{{ runStatusText }}</span>
+                                </div>
+                                <div v-else-if="resultGroups.length === 0" class="batch-results-empty">
+                                    <span class="batch-results-empty-text">{{ t('batch-validation-results-empty-hint') }}</span>
+                                </div>
+                                <div v-else class="result-groups">
+                                    <div v-for="(group, gIdx) in resultGroups" :key="gIdx" class="result-group">
+                                        <div class="result-group-title">#{{ group.testCaseIndex + 1 }} {{ getListItemTitle(group.testCaseIndex) }}</div>
+                                        <div v-if="group.agentMessages?.length || group.testInput || group.inputRichContent?.length" class="result-group-trace">
+                                            <BatchValidationAgentTrace
+                                                :messages="group.agentMessages ?? []"
+                                                :tab-id="props.tabId"
+                                                :input-rich-content="group.inputRichContent"
+                                                :fallback-input="group.agentMessages?.length ? undefined : group.testInput"
+                                            />
+                                        </div>
+                                        <div v-if="group.agentLoopStats" class="result-group-agent-stats">
+                                            <div class="agent-stats-row">
+                                                <span class="agent-stat-item">
+                                                    <span class="agent-stat-label">{{ t('batch-validation-agent-duration') }}：</span>
+                                                    {{ formatDuration(group.agentLoopStats.durationMs) }}
+                                                </span>
+                                                <span class="agent-stat-item">
+                                                    <span class="agent-stat-label">{{ t('input-token') }}：</span>
+                                                    {{ group.agentLoopStats.inputTokens }}
+                                                </span>
+                                                <span class="agent-stat-item">
+                                                    <span class="agent-stat-label">{{ t('output-token') }}：</span>
+                                                    {{ group.agentLoopStats.outputTokens }}
+                                                </span>
+                                                <span class="agent-stat-item">
+                                                    <span class="agent-stat-label">{{ t('total-token') }}：</span>
+                                                    {{ group.agentLoopStats.totalTokens }}
+                                                </span>
+                                                <span class="agent-stat-item">
+                                                    <span class="agent-stat-label">{{ t('batch-validation-tool-calls') }}：</span>
+                                                    {{ group.agentLoopStats.toolCallCount }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="result-group-criteria">
+                                            <div class="result-group-criteria-title">{{ t('batch-validation-criteria-results') }}</div>
+                                            <div v-for="(r, rIdx) in group.criterionResults" :key="rIdx" class="result-item" :class="{ error: r.error }">
+                                                <div class="result-header">
+                                                    <span class="result-index">{{ r.testCaseCriteria || `#${rIdx + 1}` }}</span>
+                                                    <span v-if="tabStorage.evaluationMode === 'pass-fail'" class="result-badge"
+                                                        :class="r.pass === true ? 'pass' : r.pass === false ? 'fail' : 'unknown'">
+                                                        {{ r.pass === true ? t('batch-validation-pass') : r.pass === false ?
+                                                            t('batch-validation-fail') : '?' }}
+                                                    </span>
+                                                    <span v-else class="result-score">
+                                                        {{ r.score !== undefined ? (r.score / 10).toFixed(1) + '/1' : '-' }}
+                                                    </span>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </el-scrollbar>
+                        </div>
+                    </el-splitter-panel>
+                </el-splitter>
             </el-splitter-panel>
         </el-splitter>
             <!-- 从右往左拉出的配置抽屉：当前测试样例的 pass/score、描述等 -->
@@ -157,17 +204,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, provide } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMessageBridge } from '@/api/message-bridge';
 import { tabs } from '../panel';
 import { llms, llmManager } from '@/views/setting/llm';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElIcon } from 'element-plus';
+import { Loading } from '@element-plus/icons-vue';
 import { v4 as uuidv4 } from 'uuid';
-import type { ChatMessage, ChatStorage } from '../chat/chat-box/chat';
+import type { ChatMessage, ChatStorage, ChatSetting } from '../chat/chat-box/chat';
 import { TaskLoop } from '../chat/core/task-loop';
 import { mcpClientAdapter } from '@/views/connect/core';
 import BatchValidationInput from './batch-validation-input.vue';
+import BatchValidationAgentTrace from './batch-validation-agent-trace.vue';
 import type { BatchValidationStorage, BatchValidationTestCase } from './storage';
 import { ensureBatchValidationStorage } from './storage';
 
@@ -197,15 +246,40 @@ interface ValidationResult {
     error?: string;
 }
 
+interface AgentLoopStats {
+    durationMs: number;
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    toolCallCount: number;
+}
+
+interface ResultGroup {
+    testCaseIndex: number;
+    testInput: string;
+    inputRichContent?: import('../chat/chat-box/chat').RichTextItem[];
+    agentMessages?: ChatMessage[];
+    agentLoopStats?: AgentLoopStats;
+    criterionResults: ValidationResult[];
+}
+
 /** 当前 tab 的持久化数据（绑定到 tab.storage，与 chat/index.vue 一致） */
 const tab = tabs.content[props.tabId];
 const tabStorage = tab.storage as BatchValidationStorage;
 
 
 ensureBatchValidationStorage(tab.storage);
+
+// 供 Message.User / Message.Assistant / Message.Toolcall 注入使用（批量验证结果展示复用交互测试组件）
+provide('chatContext', { handleSend: () => {} });
+provide('chatMode', ref('single-chat'));
+provide('parallelChats', ref([]));
+provide('updateChatRenderMessages', () => {});
+
 const isRunning = ref(false);
 const runStatusText = ref('');
 const results = ref<ValidationResult[]>([]);
+const resultGroupsWithStats = ref<ResultGroup[]>([]);
 /** 从右往左拉出的配置抽屉（pass/score、描述等） */
 const settingsDrawerVisible = ref(false);
 
@@ -285,12 +359,34 @@ function commitDraftToCase() {
     draftTestCase.value = null;
 }
 
-/** 当前表单对应测试案例的验证结果 */
-const currentResultItems = computed(() => {
-    const tc = formModel.value;
-    if (!tc) return [];
-    return results.value.filter((r) => r.testCaseId === tc.id);
-});
+/** 按测试用例分组的结果（含 agent loop 统计） */
+const resultGroups = computed(() => resultGroupsWithStats.value);
+
+function formatDuration(ms: number): string {
+    if (ms < 1000) return `${ms} ms`;
+    return `${(ms / 1000).toFixed(1)} s`;
+}
+
+function extractAgentLoopStats(messages: ChatMessage[], startTime: number): AgentLoopStats {
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let toolCallCount = 0;
+    for (const m of messages) {
+        const usage = (m as any).extraInfo?.usage;
+        if (usage) {
+            inputTokens += usage.prompt_tokens || 0;
+            outputTokens += usage.completion_tokens || 0;
+        }
+        if (m.role === 'tool') toolCallCount++;
+    }
+    return {
+        durationMs: Date.now() - startTime,
+        inputTokens,
+        outputTokens,
+        totalTokens: inputTokens + outputTokens,
+        toolCallCount
+    };
+}
 
 const validTestCases = computed(() => {
     const cases: Array<{ caseIndex: number; tc: TestCase }> = [];
@@ -329,6 +425,13 @@ function selectTestCase(caseIndex: number) {
     if (draftTestCase.value) {
         commitDraftToCase();
     }
+    // 切换前提取当前编辑器富文本并保存到当前用例
+    const curTc = formModel.value;
+    if (curTc) {
+        const inputRef = tcInputRefs.get(curTc.id);
+        const richContent = inputRef?.editorRef?.extractRichContent?.() ?? [];
+        if (richContent.length > 0) curTc.inputRichContent = richContent;
+    }
     tabStorage.selectedCaseIndex = caseIndex;
 }
 
@@ -342,6 +445,12 @@ function openSettingsForTab(caseIndex: number) {
 function addTestCaseFromList() {
     if (draftTestCase.value) {
         commitDraftToCase();
+    }
+    const curTc = formModel.value;
+    if (curTc) {
+        const inputRef = tcInputRefs.get(curTc.id);
+        const richContent = inputRef?.editorRef?.extractRichContent?.() ?? [];
+        if (richContent.length > 0) curTc.inputRichContent = richContent;
     }
     const arr = tabStorage.testCases || [];
     const next = createEmptyTestCase();
@@ -376,6 +485,12 @@ async function runValidation() {
     if (draftTestCase.value) {
         commitDraftToCase();
     }
+    const curTc = formModel.value;
+    if (curTc) {
+        const inputRef = tcInputRefs.get(curTc.id);
+        const richContent = inputRef?.editorRef?.extractRichContent?.() ?? [];
+        if (richContent.length > 0) curTc.inputRichContent = richContent;
+    }
     if (!canRun.value) return;
 
     const llm = llms[llmManager.currentModelIndex] ?? llms[0];
@@ -404,6 +519,7 @@ async function runValidation() {
 
     try {
         const allResults: ValidationResult[] = [];
+        const groupsWithStats: ResultGroup[] = [];
 
         const sourceTab = tabStorage.sourceTabIndex ?? 0;
         const tabItem = chatTabs.value[sourceTab];
@@ -433,6 +549,22 @@ async function runValidation() {
                     id: uuidv4(),
                     messages: []
                 }));
+            const defaultSettings: ChatSetting = {
+                modelIndex: llmManager.currentModelIndex,
+                enableTools: [],
+                enableWebSearch: false,
+                temperature: 0.6,
+                contextLength: 100,
+                systemPrompt: '',
+                enableXmlWrapper: false,
+                parallelToolCalls: true
+            };
+            storage.settings = {
+                ...defaultSettings,
+                ...(storage.settings || {}),
+                enableTools: storage.settings?.enableTools ?? defaultSettings.enableTools,
+                enableXmlWrapper: storage.settings?.enableXmlWrapper ?? false
+            };
             const slashParsed = inputRef?.parseSlashCommand?.(input);
             if (slashParsed?.skillName) {
                 (storage as any)._skillOverrideForNextMessage = slashParsed.skillName;
@@ -448,11 +580,13 @@ async function runValidation() {
             });
 
             const actualInput = slashParsed?.actualMessage !== undefined ? slashParsed.actualMessage || input : input;
+            const loopStartTime = Date.now();
             await loop.start(storage, actualInput, { mode: 'batch-validation' });
+            const agentStats = extractAgentLoopStats(storage.messages, loopStartTime);
 
             const trace = messagesToTrace(storage.messages);
             if (trace.length === 0) {
-                allResults.push({
+                const errResult: ValidationResult = {
                     testCaseId: tc.id,
                     testCaseIndex: i,
                     criterionIndex: 0,
@@ -460,6 +594,15 @@ async function runValidation() {
                     testCaseCriteria: criteria[0] || '',
                     rawResponse: '',
                     error: t('batch-validation-empty-trace')
+                };
+                allResults.push(errResult);
+                groupsWithStats.push({
+                    testCaseIndex: i,
+                    testInput: input,
+                    inputRichContent: tc.inputRichContent,
+                    agentMessages: storage.messages,
+                    agentLoopStats: agentStats,
+                    criterionResults: [errResult]
                 });
                 continue;
             }
@@ -490,8 +633,9 @@ async function runValidation() {
                     score?: number;
                     error?: string;
                 }>;
+                const criterionResults: ValidationResult[] = [];
                 apiResults.forEach((r, cIdx) => {
-                    allResults.push({
+                    const vr: ValidationResult = {
                         testCaseId: r.testCaseId,
                         testCaseIndex: i,
                         criterionIndex: cIdx,
@@ -501,11 +645,22 @@ async function runValidation() {
                         pass: r.pass,
                         score: r.score,
                         error: r.error
-                    });
+                    };
+                    allResults.push(vr);
+                    criterionResults.push(vr);
+                });
+                groupsWithStats.push({
+                    testCaseIndex: i,
+                    testInput: input,
+                    inputRichContent: tc.inputRichContent,
+                    agentMessages: storage.messages,
+                    agentLoopStats: agentStats,
+                    criterionResults
                 });
             } else {
+                const criterionResults: ValidationResult[] = [];
                 criteria.forEach((c, cIdx) => {
-                    allResults.push({
+                    const vr: ValidationResult = {
                         testCaseId: tc.id,
                         testCaseIndex: i,
                         criterionIndex: cIdx,
@@ -513,12 +668,23 @@ async function runValidation() {
                         testCaseCriteria: c,
                         rawResponse: '',
                         error: String(msg ?? 'Validation failed')
-                    });
+                    };
+                    allResults.push(vr);
+                    criterionResults.push(vr);
+                });
+                groupsWithStats.push({
+                    testCaseIndex: i,
+                    testInput: input,
+                    inputRichContent: tc.inputRichContent,
+                    agentMessages: storage.messages,
+                    agentLoopStats: agentStats,
+                    criterionResults
                 });
             }
         }
 
         results.value = allResults;
+        resultGroupsWithStats.value = groupsWithStats;
         runStatusText.value = '';
         ElMessage.success(t('batch-validation-done'));
     } catch (err) {
@@ -556,6 +722,10 @@ async function loadBatchValidationFromDuckDb() {
 }
 onMounted(() => {
     loadBatchValidationFromDuckDb();
+    window.addEventListener('beforeunload', onBeforeUnload);
+});
+onUnmounted(() => {
+    window.removeEventListener('beforeunload', onBeforeUnload);
 });
 // 切换到此批量验证 tab 时重新从 DuckDB 拉取，保证与其它 tab 一致
 watch(
@@ -566,22 +736,32 @@ watch(
 );
 
 let saveToDuckDbTimer: ReturnType<typeof setTimeout> | null = null;
+function flushSaveToDuckDb() {
+    const clientId = mcpClientAdapter.masterNode?.clientId;
+    if (!clientId) return;
+    if (saveToDuckDbTimer) {
+        clearTimeout(saveToDuckDbTimer);
+        saveToDuckDbTimer = null;
+    }
+    bridge.commandRequest('batch-validation/save', {
+        clientId,
+        storage: {
+            testCases: tabStorage.testCases ?? [],
+            selectedCaseIndex: tabStorage.selectedCaseIndex ?? 0,
+            sourceTabIndex: tabStorage.sourceTabIndex ?? 0,
+            evaluationMode: tabStorage.evaluationMode ?? 'pass-fail'
+        }
+    });
+}
 function scheduleSaveToDuckDb() {
     const clientId = mcpClientAdapter.masterNode?.clientId;
     if (!clientId) return;
     if (saveToDuckDbTimer) clearTimeout(saveToDuckDbTimer);
-    saveToDuckDbTimer = setTimeout(() => {
-        saveToDuckDbTimer = null;
-        bridge.commandRequest('batch-validation/save', {
-            clientId,
-            storage: {
-                testCases: tabStorage.testCases ?? [],
-                selectedCaseIndex: tabStorage.selectedCaseIndex ?? 0,
-                sourceTabIndex: tabStorage.sourceTabIndex ?? 0,
-                evaluationMode: tabStorage.evaluationMode ?? 'pass-fail'
-            }
-        });
-    }, 400);
+    saveToDuckDbTimer = setTimeout(flushSaveToDuckDb, 400);
+}
+
+function onBeforeUnload() {
+    flushSaveToDuckDb();
 }
 
 watch(
@@ -619,6 +799,149 @@ watch(
     display: flex;
     flex-direction: column;
     min-width: 0;
+}
+
+.batch-right-vertical-splitter {
+    height: 100%;
+    width: 100%;
+}
+
+.batch-right-vertical-splitter :deep(.el-splitter__panel) {
+    overflow: hidden;
+}
+
+.batch-executor-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.batch-results-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.batch-results-wrap {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.batch-results-header {
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 15px;
+    border-bottom: 1px solid var(--el-border-color-light);
+    flex-shrink: 0;
+}
+
+.batch-results-scroll {
+    flex: 1;
+    min-height: 0;
+}
+
+.batch-results-empty {
+    padding: 40px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.batch-results-empty-text {
+    font-size: 14px;
+    color: var(--el-text-color-secondary);
+}
+
+.batch-results-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    gap: 16px;
+}
+
+.batch-results-loading-icon {
+    font-size: 32px;
+    color: var(--el-color-primary);
+    animation: batch-loading-spin 1s linear infinite;
+}
+
+@keyframes batch-loading-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.batch-results-loading-text {
+    font-size: 14px;
+    color: var(--el-text-color-secondary);
+}
+
+.result-groups {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.result-group {
+    padding: 16px;
+    border: 1px solid var(--el-border-color-light);
+    border-radius: 8px;
+    background-color: var(--el-fill-color-blank);
+}
+
+.result-group-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.result-group-agent-stats {
+    padding: 10px 12px;
+    background-color: var(--el-fill-color-light);
+    border-radius: 6px;
+    margin-bottom: 12px;
+}
+
+.agent-stats-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    font-size: 13px;
+}
+
+.agent-stat-item {
+    color: var(--el-text-color-regular);
+}
+
+.agent-stat-label {
+    color: var(--el-text-color-secondary);
+    margin-right: 4px;
+}
+
+.result-group-criteria-title {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.result-group-criteria .result-item {
+    margin-bottom: 8px;
+}
+
+.result-group-criteria .result-item:last-child {
+    margin-bottom: 0;
+}
+
+.result-group-trace {
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 8px;
+    background-color: var(--el-fill-color-blank);
 }
 
 /* 左侧列表 */

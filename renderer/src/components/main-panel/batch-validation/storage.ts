@@ -1,9 +1,13 @@
+import type { RichTextItem } from '../chat/chat-box/chat';
+
 /** 单个测试用例（可持久化） */
 export interface BatchValidationTestCase {
     id: string;
     name?: string;
     description?: string;
     input: string;
+    /** 提词卡片等富文本结构，用于刷新后恢复卡片展示 */
+    inputRichContent?: RichTextItem[];
     criteria: string[];
 }
 
@@ -54,6 +58,9 @@ export function ensureBatchValidationStorage(storage: Record<string, any>): stor
     }
     if (storage.evaluationMode !== 'pass-fail' && storage.evaluationMode !== 'score') {
         storage.evaluationMode = DEFAULT_STORAGE.evaluationMode;
+    }
+    if (!Array.isArray(storage.messages)) {
+        storage.messages = [];
     }
     storage.selectedCaseIndex = Math.max(0, Math.min(storage.selectedCaseIndex, Math.max(0, storage.testCases.length - 1)));
     return true;

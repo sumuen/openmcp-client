@@ -1,0 +1,94 @@
+/**
+ * 连接页「连接参数 / 环境变量」区块样式（从设置页迁移复制，不依赖 setting 组件加载）
+ * 在 connect/index.vue 中引入，确保先进入连接页时样式也能正确渲染
+ */
+
+/* 与设置页 .setting-content 一致 */
+.connection-setting-content {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	padding: 24px 32px;
+	height: fit-content;
+	min-height: 100%;
+	box-sizing: border-box;
+}
+
+.connection-setting-content .setting-section {
+	padding: 20px 24px;
+	margin: 0;
+	width: 550px;
+	border-radius: 16px;
+	min-height: 50px;
+}
+
+.connection-setting-content .setting-section h2 {
+	font-size: 15px;
+	font-weight: 600;
+	margin: 0 0 16px 0;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--sidebar-border);
+	color: var(--foreground);
+}
+
+/* 选项列表：边框与背景，与 .setting-section .setting-options .setting-option 一致 */
+.connection-setting-content .setting-section .setting-options .setting-option {
+	border-top: 1px solid var(--window-button-active);
+	border-left: 1px solid var(--window-button-active);
+	border-right: 1px solid var(--window-button-active);
+	background-color: var(--sidebar);
+	padding: 14px 18px;
+	min-height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 14px;
+	gap: 16px;
+	transition: var(--animation-3s);
+}
+
+.connection-setting-content .setting-section .setting-options .setting-option .el-input__wrapper,
+.connection-setting-content .setting-section .setting-options .setting-option .el-select__wrapper {
+	border: 1px solid var(--window-button-active);
+}
+
+.connection-setting-content .setting-section .setting-options .setting-option:first-child {
+	border-top-left-radius: 16px;
+	border-top-right-radius: 16px;
+}
+
+.connection-setting-content .setting-section .setting-options .setting-option:last-child {
+	border-bottom: 1px solid var(--window-button-active);
+	border-bottom-left-radius: 16px;
+	border-bottom-right-radius: 16px;
+}
+
+.connection-setting-content .setting-section .setting-options .option-title {
+	font-size: 14px;
+	min-width: 100px;
+	margin-right: 0;
+	user-select: none;
+	color: var(--foreground);
+}
+
+.connection-setting-content .setting-section .el-select,
+.connection-setting-content .setting-section .el-input,
+.connection-setting-content .setting-section .el-input__wrapper {
+	border-radius: 12px;
+}
+
+.connection-setting-content .setting-section .el-button--primary {
+	border-radius: 16px !important;
+	background-color: var(--foreground) !important;
+	color: var(--background) !important;
+	border-color: var(--foreground) !important;
+}
+
+.connection-setting-content .setting-section .el-button--primary:hover,
+.connection-setting-content .setting-section .el-button--primary:focus {
+	background-color: var(--foreground) !important;
+	color: var(--background) !important;
+	border-color: var(--foreground) !important;
+	opacity: 0.9;
+}

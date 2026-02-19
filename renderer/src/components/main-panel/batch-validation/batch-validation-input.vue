@@ -22,8 +22,11 @@
             :ref="(el: any) => editorRef = el"
             :tab-id="-1"
             v-model="inputValue"
+            :model-rich-content="inputRichContent"
             :placeholder="placeholder"
             enter-inserts-newline
+            sync-value-to-editor
+            @update:rich-content="onRichContentUpdate"
             @keydown="(e: KeyboardEvent) => handleSlashKeydown(e)"
         />
     </div>
@@ -91,6 +94,27 @@ const inputValue = computed({
         }
     }
 });
+
+/** 当前用例的富文本（提词卡片等），用于刷新后恢复 */
+const inputRichContent = computed(() => {
+    const st = tabStorage.value;
+    if (!st) return undefined;
+    const idx = st.selectedCaseIndex;
+    const arr = st.testCases || [];
+    const tc = arr[idx];
+    return tc?.inputRichContent;
+});
+
+function onRichContentUpdate(items: import('../chat/chat-box/chat').RichTextItem[]) {
+    const st = tabStorage.value;
+    if (!st) return;
+    const idx = st.selectedCaseIndex;
+    const arr = st.testCases || [];
+    const tc = arr[idx];
+    if (tc) {
+        tc.inputRichContent = items.length > 0 ? items : undefined;
+    }
+}
 
 function createDefaultStorage(): ChatStorage {
     return {

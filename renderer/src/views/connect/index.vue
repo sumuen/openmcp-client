@@ -1,60 +1,67 @@
 <template>
 	<div class="connection-container-wrapper">
-		<div class="server-list"
-			:ref="el => mcpServerAddRef = el"
-		>
-			<el-segmented 
-				v-model="mcpClientAdapter.currentClientIndex" 
-				:options="serverOptions"
-				style="background-color: var(--background);"
-			>
-				<template #default="scope"
-					@click="selectServer(scope.item.index)"
-				>
-					<div class="server-item" :class="{ 'active': mcpClientAdapter.currentClientIndex === scope.index }">
-						<span class="connect-status">
-							<span v-if="scope.item.client.connectionResult.success"
-								class="success"
-							>
-								<span class="iconfont icon-dui"></span>
-								<span class="name">{{ scope.item.client.connectionResult.name }}</span>
-							</span>
-							<span v-else>
-								<span class="server-name" style="margin-right: 60px;">
-									<span class="iconfont icon-blank"></span>
-								</span>
-								<span class="iconfont icon-cuo"></span>
-							</span>
-						</span>
-						<span
-							v-if="scope.item.index > 0"
-							class="delete-btn" @click.stop="deleteServer(scope.item.index)">
-							<span class="iconfont icon-delete"></span>
-						</span>
+		<el-splitter class="connection-splitter">
+			<el-splitter-panel :min="120" :max="400" size="200" class="splitter-panel-left">
+				<div class="server-list-panel">
+					<div class="list-container">
+						<el-scrollbar>
+							<div class="list-inner">
+								<div
+									v-for="(item, index) in mcpClientAdapter.clients"
+									:key="index"
+									class="list-item server-item"
+									:class="{ active: mcpClientAdapter.currentClientIndex === index }"
+									@click="selectServer(index)"
+								>
+									<div class="list-item-content">
+										<span class="connect-status">
+											<span v-if="item.connectionResult.success" class="success">
+												<span class="item-title name">{{ item.connectionResult.name }}</span>
+											</span>
+											<span v-else>
+												<span class="item-title">{{ t('server') }} {{ index + 1 }}</span>
+											</span>
+										</span>
+									</div>
+									<span
+										v-if="mcpClientAdapter.clients.length > 1"
+										class="delete-btn"
+										@click.stop="deleteServer(index)"
+									>
+										<span class="iconfont icon-delete"></span>
+									</span>
+								</div>
+								<div class="add-server" @click="addServer">
+									<span class="iconfont icon-add"></span>
+									<span class="add-server-text">{{ t('add-server') }}</span>
+								</div>
+							</div>
+						</el-scrollbar>
 					</div>
-				</template>
-			</el-segmented>
-			<div class="add-server" @click="addServer">
-				<span class="iconfont icon-add"></span>
-			</div>
-		</div>
-		<div class="panel-container" v-if="mcpClientAdapter.clients.length > 0">
-			<ConnectionPanel :index="mcpClientAdapter.currentClientIndex" />
-		</div>
-		<div class="empty-state" v-else>
-			<span class="iconfont icon-openmcp"></span>
-			<span class="empty-text">{{ t('no-connect-right-now') }}</span>
-		</div>
+				</div>
+			</el-splitter-panel>
+			<el-splitter-panel class="splitter-panel-right">
+				<div class="connection-detail-panel" v-if="mcpClientAdapter.clients.length > 0">
+					<ConnectionPanel :index="mcpClientAdapter.currentClientIndex" />
+				</div>
+				<div class="empty-state" v-else>
+					<span class="iconfont icon-openmcp"></span>
+					<span class="empty-text">{{ t('no-connect-right-now') }}</span>
+				</div>
+			</el-splitter-panel>
+		</el-splitter>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { defineComponent, computed, reactive } from 'vue';
+import { defineComponent, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import ConnectionPanel from './connection-panel.vue';
 import { McpClient, mcpClientAdapter } from './core';
 import { ElMessage } from 'element-plus';
-import { mcpServerAddRef } from '.';
+
+/* 连接参数/环境变量区块样式（迁移自设置页），在连接页入口引入避免依赖 setting 组件异步加载 */
+import './connection-setting-styles.css';
 
 defineComponent({ name: 'connection' });
 
@@ -65,123 +72,166 @@ function selectServer(index: number) {
 }
 
 function addServer() {
-	// const client = reactive(new McpClient());
 	const client = new McpClient();
 	mcpClientAdapter.clients.push(client);
 	mcpClientAdapter.currentClientIndex = mcpClientAdapter.clients.length - 1;
 	mcpClientAdapter.clients.at(-1)!.handleEnvSwitch(true);
 }
 
-
-const serverOptions = computed(() => {
-    return mcpClientAdapter.clients.map((client, index) => ({
-        value: index,
-        label: `Server ${index + 1}`,
-        client,
-        index
-    }));
-});
-
-
 function deleteServer(index: number) {
-    if (mcpClientAdapter.clients.length <= 1) {
-        ElMessage.warning(t('at-least-one-server'));
-        return;
-    }
-    mcpClientAdapter.clients.splice(index, 1);
-    if (mcpClientAdapter.currentClientIndex >= mcpClientAdapter.clients.length) {
-        mcpClientAdapter.currentClientIndex = mcpClientAdapter.clients.length - 1;
-    }
+	if (mcpClientAdapter.clients.length <= 1) {
+		ElMessage.warning(t('at-least-one-server'));
+		return;
+	}
+	mcpClientAdapter.clients.splice(index, 1);
+	if (mcpClientAdapter.currentClientIndex >= mcpClientAdapter.clients.length) {
+		mcpClientAdapter.currentClientIndex = mcpClientAdapter.clients.length - 1;
+	}
 	mcpClientAdapter.saveLaunchSignature();
 }
 </script>
 
-<style>
+<style scoped>
 .connection-container-wrapper {
-	display: flex;
-	flex-direction: column;
 	height: 100%;
 }
 
-.server-list {
+.connection-splitter {
+	height: 100%;
+}
+
+.connection-splitter :deep(.el-splitter__panel) {
+	overflow: hidden;
+}
+
+.splitter-panel-left {
 	display: flex;
-	align-items: center;
-	width: 150px;
-	border-right: 1px solid var(--border);
-	padding: 0 25px;
+	flex-direction: column;
 }
 
-.server-name {
-	font-size: 12px;
+.splitter-panel-right {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
 }
 
-.server-item {
+.server-list-panel {
+	width: 100%;
+	height: 100%;
+	border-right: 1px solid var(--el-border-color-light);
+	background-color: var(--el-bg-color);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.server-list-panel .list-container {
+	flex: 1;
+	min-height: 0;
+}
+
+.server-list-panel .list-container .el-scrollbar {
+	height: 100%;
+}
+
+.server-list-panel .list-inner {
+	padding: 10px;
+}
+
+.server-list-panel .list-item {
+	margin: 3px;
+	padding: 10px 12px;
+	border-radius: 0.3em;
+	user-select: none;
 	cursor: pointer;
-	border-radius: 4px;
 	display: flex;
-	justify-content: space-between;
+	flex-direction: row;
 	align-items: center;
+	gap: 8px;
+	transition: var(--animation-3s);
 }
 
-.server-item.active {
-	background-color: var(--foreground);
-	color: var(--background);
+.server-list-panel .list-item:hover {
+	background-color: var(--el-fill-color-light);
 }
 
-.server-item .name {
-	width: 100px;
+.server-list-panel .list-item.active {
+	background-color: var(--el-fill-color-light);
+	border-left: 3px solid var(--el-color-primary-light-5);
+}
+
+.server-list-panel .list-item-content {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.server-list-panel .item-title {
+	font-weight: bold;
+	font-size: 13px;
+	max-width: 100%;
+	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	white-space: nowrap;
-	margin-left: 5px;
 }
 
-.server-item .success {
+.server-list-panel .name {
+	max-width: 120px;
+}
+
+.server-list-panel .connect-status {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.server-list-panel .connect-status .success {
 	display: flex;
 	align-items: center;
 }
 
-.server-status {
-	font-size: 12px;
+.server-list-panel .delete-btn {
+	margin-left: auto;
+	cursor: pointer;
+	color: var(--el-color-danger);
+	flex-shrink: 0;
+}
+.server-list-panel .delete-btn:hover {
+	opacity: 0.8;
 }
 
-.server-status.connected {
-	color: green;
-}
-
-.server-status.disconnected {
-	color: red;
-}
-
-.add-server {
-	padding: 10px;
+.server-list-panel .add-server {
+	padding: 10px 12px;
 	text-align: center;
 	cursor: pointer;
-	border-radius: 4px;
-	border: 1px dashed var(--border);
+	border-radius: 0.3em;
+	border: 1px dashed var(--el-border-color);
+	margin: 3px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	transition: var(--animation-3s);
+}
+.server-list-panel .add-server:hover {
+	background-color: var(--el-fill-color-light);
+	border-color: var(--el-color-primary-light-5);
+}
+.server-list-panel .add-server-text {
+	font-size: 13px;
 }
 
-.add-server:hover {
-	background-color: var(--foreground);
-	color: var(--background);
-}
-
-.panel-container {
+.connection-detail-panel {
 	flex: 1;
-	padding: 5px;
-}
-
-.delete-btn {
-    margin-left: 10px;
-    cursor: pointer;
-    color: var(--el-color-danger);
-}
-.delete-btn:hover {
-    opacity: 0.8;
+	min-width: 0;
+	height: 100%;
+	overflow: hidden;
 }
 
 .empty-state {
-    display: flex;
+	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
@@ -190,12 +240,12 @@ function deleteServer(index: number) {
 }
 
 .empty-state .iconfont {
-    font-size: 128px;
-    margin-bottom: 16px;
+	font-size: 128px;
+	margin-bottom: 16px;
 }
 
 .empty-text {
-    font-size: 18px;
-    color: var(--el-text-color-secondary);
+	font-size: 18px;
+	color: var(--el-text-color-secondary);
 }
 </style>

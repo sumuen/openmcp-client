@@ -1,10 +1,28 @@
 <template>
-	<div class="connection-log">
-		<div class="header">
-			<span>{{ t('log') }}</span>
-			<span class="iconfont icon-delete" @click="clearLogs"></span>
+	<div class="connection-log-wrap">
+		<div class="connection-log-header">
+			<span class="connection-log-header-title">{{ t('log') }}</span>
+			<span class="iconfont icon-delete connection-log-clear" @click="clearLogs" :title="t('clear')"></span>
+			<el-button-group class="connection-actions-group">
+				<el-button
+					class="btn-disconnect"
+					:loading="disconnecting"
+					:disabled="!connected"
+					@click="$emit('disconnect')"
+				>
+					{{ t('connect.appearance.disconnect') }}
+				</el-button>
+				<el-button
+					type="primary"
+					class="btn-connect"
+					:loading="loading"
+					@click="$emit('connect')"
+				>
+					{{ t('connect.appearance.connect') }}
+				</el-button>
+			</el-button-group>
 		</div>
-		<el-scrollbar height="90%">
+		<el-scrollbar class="connection-log-scroll">
 			<div class="output-content">
 				<el-collapse :expand-icon-position="'left'">
 					<el-collapse-item v-for="(log, index) in logString" :name="index" :class="['item', log.type]">
@@ -15,7 +33,6 @@
 								</div>
 							</div>
 						</template>
-
 						<div class="logger-inner">
 							{{ log.message || '' }}
 						</div>
@@ -32,12 +49,18 @@ import { useI18n } from 'vue-i18n';
 import { mcpClientAdapter } from './core';
 
 defineComponent({ name: 'connection-log' });
+
 const props = defineProps({
-	index: {
-		type: Number,
-		required: true
-	}
+	index: { type: Number, required: true },
+	loading: { type: Boolean, default: false },
+	disconnecting: { type: Boolean, default: false },
+	connected: { type: Boolean, default: false },
 });
+
+defineEmits<{
+	(e: 'connect'): void;
+	(e: 'disconnect'): void;
+}>();
 
 const logString = computed(() => {
 	return mcpClientAdapter.clients[props.index].connectionResult.logString;
@@ -46,32 +69,106 @@ const logString = computed(() => {
 const { t } = useI18n();
 
 function clearLogs() {
-    mcpClientAdapter.clients[props.index].connectionResult.logString = [];
+	mcpClientAdapter.clients[props.index].connectionResult.logString = [];
 }
 </script>
 
-<style>
-
-.connection-log {
+<style scoped>
+/* 与批量测试 batch-results 完全一致的结构与样式 */
+.connection-log-wrap {
 	height: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 16px;
-    background-color: var(--el-bg-color);
-    border-radius: 4px;
-    margin-bottom: 16px;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
 }
 
-.connection-log .el-scrollbar__view {
-	height: 100%;
-}
-
-.connection-log .output-content {
-	border-radius: .5em;
+.connection-log-header {
 	padding: 12px 16px;
-	min-height: 300px;
-	height: fit-content;
+	font-weight: 600;
+	font-size: 15px;
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.connection-log-header-title {
+	flex-shrink: 0;
+}
+
+.connection-log-clear {
+	cursor: pointer;
+	color: var(--el-text-color-secondary);
+	font-size: 16px;
+	margin-left: auto;
+}
+.connection-log-clear:hover {
+	color: var(--el-color-error);
+}
+
+.connection-log-scroll {
+	flex: 1;
+	min-height: 0;
+}
+
+/* 仿工具测试 executor-actions-group：断开在左、连接在右 */
+.connection-actions-group {
+	display: inline-flex;
+}
+
+.connection-actions-group .el-button {
+	border-radius: 0 !important;
+	border-color: var(--window-button-active) !important;
+	border-top: 1px solid var(--window-button-active);
+	border-left: 1px solid var(--window-button-active);
+	border-bottom: 1px solid var(--window-button-active);
+	border-right: 1px solid var(--window-button-active);
+	background-color: var(--el-fill-color-blank);
+	color: var(--el-text-color-regular);
+	padding: 8px 18px;
+	font-size: 14px;
+	transition: var(--animation-3s);
+}
+
+.connection-actions-group .el-button:first-child {
+	border-top-left-radius: 8px !important;
+	border-bottom-left-radius: 8px !important;
+}
+
+.connection-actions-group .el-button:last-child {
+	border: 1px solid var(--main-light-color-50) !important;
+	border-top-right-radius: 8px !important;
+	border-bottom-right-radius: 8px !important;
+}
+
+.connection-actions-group .btn-disconnect:hover:not(:disabled) {
+	border-color: var(--el-border-color-hover);
+	background-color: var(--main-light-color-50);
+	color: var(--el-text-color-primary);
+}
+
+.connection-actions-group .btn-disconnect:disabled {
+	opacity: 0.5;
+}
+
+.connection-actions-group .btn-connect {
+	background-color: var(--main-light-color-20) !important;
+	color: var(--el-text-color-primary) !important;
+	border-color: var(--main-light-color-50) !important;
+	font-weight: 600;
+}
+
+.connection-actions-group .btn-connect:hover:not(:disabled),
+.connection-actions-group .btn-connect:focus {
+	background-color: var(--main-light-color-50) !important;
+	color: var(--el-text-color-primary) !important;
+	border-color: var(--main-light-color-90) !important;
+}
+
+.connection-log-wrap :deep(.output-content) {
+	padding: 16px;
 	font-family: var(--code-font-family);
 	white-space: pre-wrap;
 	word-break: break-all;
@@ -79,81 +176,34 @@ function clearLogs() {
 	cursor: text;
 	font-size: 14px;
 	line-height: 1.6;
-	background-color: rgba(var(--sidebar), 0.3);
-	height: 95%;
 }
 
-.output-content .item {
+.connection-log-wrap :deep(.output-content .item) {
 	margin-bottom: 12px;
 	padding: 0px 9px;
-	border-radius: .5em;
+	border-radius: 0.5em;
+	border: 1px solid var(--window-button-active);
 }
 
-.output-content .info {
-	background-color: var(--main-light-color-30);
-}
-
-.output-content .error {
+.connection-log-wrap :deep(.output-content .error) {
 	background-color: rgba(245, 108, 108, 0.5);
 }
 
-.output-content .warning {
+.connection-log-wrap :deep(.output-content .warning) {
 	background-color: rgba(230, 162, 60, 0.5);
 }
 
-.log-icon {
-	display: inline-block;
-	width: 8px;
-	height: 8px;
-	border-radius: 50%;
-	margin-right: 8px;
-	vertical-align: middle;
-}
-
-.log-icon.info {
-	background-color: var(--main-light-color-50);
-}
-
-.log-icon.error {
-	background-color: rgba(245, 108, 108, 0.3);
-}
-
-.log-icon.warning {
-	background-color: rgba(230, 162, 60, 0.3);
-}
-
-.log-message {
-	display: inline-block;
-	vertical-align: middle;
-}
-
-.output-content .el-collapse-item__header,
-.output-content .el-collapse-item__wrap {
+.connection-log-wrap :deep(.output-content .el-collapse-item__header),
+.connection-log-wrap :deep(.output-content .el-collapse-item__wrap) {
 	background-color: unset !important;
 	border-bottom: unset !important;
 }
 
-.output-content .el-collapse-item__content {
+.connection-log-wrap :deep(.output-content .el-collapse-item__content) {
 	padding-bottom: unset;
 }
 
-.logger-inner {
+.connection-log-wrap :deep(.logger-inner) {
 	padding: 10px;
 }
-
-.header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 16px;
-}
-
-.header .icon-delete {
-	margin-left: 10px;
-	cursor: pointer;
-}
-
-.header .icon-delete:hover {
-	color: var(--el-color-error);
-}
-
 </style>

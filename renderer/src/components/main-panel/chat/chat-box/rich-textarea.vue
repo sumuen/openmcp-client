@@ -21,10 +21,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, provide } from 'vue';
+import { ref, computed, provide, watch, onMounted, nextTick } from 'vue';
+import { createApp } from 'vue';
 
 import Setting from './options/setting.vue';
-import type { RichTextItem } from './chat';
+import type { RichTextItem, PromptTextItem, ResourceTextItem } from './chat';
+import PromptChatItem from './prompt-chat-item.vue';
+import i18n from '@/i18n';
+import {
+    ElTooltip,
+    ElPopover,
+    ElButtonGroup,
+    ElButton,
+    ElForm,
+    ElFormItem,
+    ElInput,
+    ElScrollbar,
+    ElMention
+} from 'element-plus';
 
 const props = defineProps({
     tabId: {
@@ -34,6 +48,11 @@ const props = defineProps({
     modelValue: {
         type: String,
         required: true
+    },
+    /** 富文本结构（提词卡片等），用于 refresh 后恢复卡片展示 */
+    modelRichContent: {
+        type: Array as () => RichTextItem[],
+        default: undefined
     },
     placeholder: {
         type: String,
@@ -45,6 +64,11 @@ const props = defineProps({
     },
     /** 为 true 时 Enter 插入换行而非发送（用于批量验证等多行输入） */
     enterInsertsNewline: {
+        type: Boolean,
+        default: false
+    },
+    /** 为 true 时从 modelValue/modelRichContent 同步到编辑器（用于批量验证等需要持久化恢复的场景） */
+    syncValueToEditor: {
         type: Boolean,
         default: false
     }
@@ -59,13 +83,104 @@ const modelValue = computed({
     }
 })
 
-const emit = defineEmits(['update:modelValue', 'pressEnter', 'keydown']);
+const emit = defineEmits(['update:modelValue', 'update:richContent', 'pressEnter', 'keydown']);
 
 const editor = ref<any>(null);
 
 provide('editorContext', {
     editor,
 });
+
+/** 将 RichTextItem[] 渲染到编辑器 DOM */
+function renderRichContentToEditor(el: HTMLDivElement, items: RichTextItem[]) {
+    el.innerHTML = '';
+    for (let i = 0; i < items.length; i++) {
+        if (i > 0) {
+            el.appendChild(document.createTextNode(' '));
+        }
+        const item = items[i];
+        if (item.type === 'text') {
+            if (item.text) {
+                el.appendChild(document.createTextNode(item.text));
+            }
+        } else if (item.type === 'prompt') {
+            const p = item as PromptTextItem;
+            const container = document.createElement('div');
+            const promptChatItem = createApp(PromptChatItem, {
+                messages: [{ role: 'user', content: { type: 'text', text: p.text } }],
+                promptName: p.name,
+                promptArgs: p.args
+            });
+            promptChatItem
+                .use(i18n)
+                .use(ElTooltip)
+                .use(ElPopover)
+                .use(ElButtonGroup)
+                .use(ElButton)
+                .use(ElForm)
+                .use(ElFormItem)
+                .use(ElInput)
+                .use(ElScrollbar)
+                .use(ElMention);
+            promptChatItem.mount(container);
+            const first = container.firstElementChild;
+            if (first) el.appendChild(first);
+        } else if (item.type === 'resource') {
+            const r = item as ResourceTextItem;
+            const span = document.createElement('span');
+            span.className = 'chat-prompt-item chat-resource-item';
+            span.setAttribute('contenteditable', 'false');
+            span.setAttribute('data-rich-type', 'resource');
+            span.setAttribute('data-full-text', r.text);
+            span.innerHTML = '<span class="iconfont icon-file"></span><span class="real-text">' + escapeHtml(r.text) + '</span>';
+            el.appendChild(span);
+        }
+    }
+}
+
+function escapeHtml(s: string): string {
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+}
+
+/** 将 modelValue / modelRichContent 同步到编辑器 DOM（用于加载/切换后恢复内容） */
+function syncModelValueToEditor() {
+    if (!props.syncValueToEditor) return;
+    const el = editor.value;
+    if (!(el instanceof HTMLDivElement)) return;
+    if (el.contains(document.activeElement)) return;
+
+    const richItems = props.modelRichContent;
+    if (richItems && richItems.length > 0) {
+        renderRichContentToEditor(el, richItems);
+        return;
+    }
+    if (!props.modelValue) return;
+    const currentText = el.childNodes.length === 1 && el.childNodes[0].nodeType === Node.TEXT_NODE
+        ? (el.childNodes[0].textContent || '')
+        : Array.from(el.querySelectorAll('.real-text')).map(n => n.textContent || '').join(' ').trim();
+    if (currentText === props.modelValue) return;
+    el.textContent = props.modelValue;
+}
+
+onMounted(() => {
+    if (!props.syncValueToEditor) return;
+    nextTick(() => {
+        const el = editor.value;
+        if (!(el instanceof HTMLDivElement)) return;
+        const richItems = props.modelRichContent;
+        if (richItems && richItems.length > 0 && !el.textContent?.trim()) {
+            renderRichContentToEditor(el, richItems);
+        } else if (props.modelValue && !el.textContent?.trim()) {
+            el.textContent = props.modelValue;
+        }
+    });
+});
+
+watch(() => [props.modelValue, props.modelRichContent], () => {
+    syncModelValueToEditor();
+}, { flush: 'post', deep: true });
 
 function handleBackspace(event: KeyboardEvent) {
     // 自定义 Backspace 行为
@@ -121,6 +236,9 @@ function handleInput(event: Event) {
     });
 
     emit('update:modelValue', fragments.join(' '));
+    if (props.syncValueToEditor) {
+        emit('update:richContent', extractRichContentFromEditor(editorElement));
+    }
 }
 
 function extractTextFromCollection(collection: HTMLCollection) {
