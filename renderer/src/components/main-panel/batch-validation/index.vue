@@ -99,7 +99,31 @@
                     </el-splitter-panel>
                     <el-splitter-panel size="20%" :min="120" class="batch-results-panel">
                         <div class="batch-results-wrap">
-                            <div class="batch-results-header">{{ t('batch-validation-results') }}</div>
+                            <div class="batch-results-header">
+                                <span class="batch-results-header-title">{{ t('batch-validation-results') }}</span>
+                                <span v-if="tabStorage.evaluationMode === 'pass-fail'" class="batch-results-header-stats">
+                                    <span class="batch-results-header-stat pass">pass: {{ passFailSummary.pass }}</span>
+                                    <span class="batch-results-header-stat fail">fail: {{ passFailSummary.fail }}</span>
+                                    <el-tooltip :content="t('batch-validation-agent-duration')" placement="top">
+                                        <span class="batch-results-header-stat icon-stat">
+                                            <span class="batch-results-header-stat-icon iconfont icon-waiting"></span>
+                                            <span>{{ formatDuration(passFailSummary.durationMs) }}</span>
+                                        </span>
+                                    </el-tooltip>
+                                    <el-tooltip :content="t('batch-validation-trace-input-token')" placement="top">
+                                        <span class="batch-results-header-stat icon-stat">
+                                            <el-icon class="batch-results-header-stat-icon"><ArrowDown /></el-icon>
+                                            <span>{{ passFailSummary.inputTokens }}</span>
+                                        </span>
+                                    </el-tooltip>
+                                    <el-tooltip :content="t('batch-validation-trace-output-token')" placement="top">
+                                        <span class="batch-results-header-stat icon-stat">
+                                            <el-icon class="batch-results-header-stat-icon is-up"><ArrowDown /></el-icon>
+                                            <span>{{ passFailSummary.outputTokens }}</span>
+                                        </span>
+                                    </el-tooltip>
+                                </span>
+                            </div>
                             <el-scrollbar class="batch-results-scroll">
                                 <div v-if="isRunning" class="batch-results-loading">
                                     <el-icon class="batch-results-loading-icon"><Loading /></el-icon>
@@ -108,58 +132,50 @@
                                 <div v-else-if="resultGroups.length === 0" class="batch-results-empty">
                                     <span class="batch-results-empty-text">{{ t('batch-validation-results-empty-hint') }}</span>
                                 </div>
-                                <div v-else class="result-groups">
-                                    <div v-for="(group, gIdx) in resultGroups" :key="gIdx" class="result-group">
-                                        <div class="result-group-title">#{{ group.testCaseIndex + 1 }} {{ getListItemTitle(group.testCaseIndex) }}</div>
-                                        <div v-if="group.agentMessages?.length || group.testInput || group.inputRichContent?.length" class="result-group-trace">
-                                            <BatchValidationAgentTrace
-                                                :messages="group.agentMessages ?? []"
-                                                :tab-id="props.tabId"
-                                                :input-rich-content="group.inputRichContent"
-                                                :fallback-input="group.agentMessages?.length ? undefined : group.testInput"
-                                            />
-                                        </div>
-                                        <div v-if="group.agentLoopStats" class="result-group-agent-stats">
-                                            <div class="agent-stats-row">
-                                                <span class="agent-stat-item">
-                                                    <span class="agent-stat-label">{{ t('batch-validation-agent-duration') }}：</span>
-                                                    {{ formatDuration(group.agentLoopStats.durationMs) }}
-                                                </span>
-                                                <span class="agent-stat-item">
-                                                    <span class="agent-stat-label">{{ t('input-token') }}：</span>
-                                                    {{ group.agentLoopStats.inputTokens }}
-                                                </span>
-                                                <span class="agent-stat-item">
-                                                    <span class="agent-stat-label">{{ t('output-token') }}：</span>
-                                                    {{ group.agentLoopStats.outputTokens }}
-                                                </span>
-                                                <span class="agent-stat-item">
-                                                    <span class="agent-stat-label">{{ t('total-token') }}：</span>
-                                                    {{ group.agentLoopStats.totalTokens }}
-                                                </span>
-                                                <span class="agent-stat-item">
-                                                    <span class="agent-stat-label">{{ t('batch-validation-tool-calls') }}：</span>
-                                                    {{ group.agentLoopStats.toolCallCount }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="result-group-criteria">
-                                            <div class="result-group-criteria-title">{{ t('batch-validation-criteria-results') }}</div>
-                                            <div v-for="(r, rIdx) in group.criterionResults" :key="rIdx" class="result-item" :class="{ error: r.error }">
-                                                <div class="result-header">
-                                                    <span class="result-index">{{ r.testCaseCriteria || `#${rIdx + 1}` }}</span>
+                                <div v-else class="batch-log-history">
+                                    <div v-for="(group, gIdx) in resultGroups" :key="gIdx" class="batch-log-session">
+                                        <div class="batch-log-evaluation">
+                                            <div v-for="(r, rIdx) in group.criterionResults" :key="rIdx" class="batch-log-eval-item" :class="{ error: r.error }">
+                                                <div class="batch-log-eval-header">
+                                                    <span class="batch-log-eval-index">{{ r.testCaseCriteria || `#${rIdx + 1}` }}</span>
                                                     <span v-if="tabStorage.evaluationMode === 'pass-fail'" class="result-badge"
                                                         :class="r.pass === true ? 'pass' : r.pass === false ? 'fail' : 'unknown'">
-                                                        {{ r.pass === true ? t('batch-validation-pass') : r.pass === false ?
-                                                            t('batch-validation-fail') : '?' }}
+                                                        {{ r.pass === true ? t('batch-validation-pass') : r.pass === false ? t('batch-validation-fail') : '?' }}
                                                     </span>
                                                     <span v-else class="result-score">
                                                         {{ r.score !== undefined ? (r.score / 10).toFixed(1) + '/1' : '-' }}
                                                     </span>
                                                 </div>
-
+                                                <div v-if="r.reason" class="batch-log-eval-reason markdown-body" v-html="markdownToHtml(r.reason)"></div>
+                                                <div v-if="r.error" class="result-error">{{ r.error }}</div>
+                                            </div>
+                                            <div v-if="getGroupEvalTokens(group).total > 0" class="batch-log-eval-tokens">
+                                                <span class="batch-log-eval-tokens-label">{{ t('batch-validation-eval-tokens') }}</span>
+                                                <el-tooltip :content="t('input-token')" placement="top">
+                                                    <span class="batch-log-eval-tokens-stat">
+                                                        <el-icon class="batch-log-eval-tokens-icon"><ArrowDown /></el-icon>
+                                                        {{ getGroupEvalTokens(group).input }}
+                                                    </span>
+                                                </el-tooltip>
+                                                <el-tooltip :content="t('output-token')" placement="top">
+                                                    <span class="batch-log-eval-tokens-stat">
+                                                        <el-icon class="batch-log-eval-tokens-icon is-up"><ArrowDown /></el-icon>
+                                                        {{ getGroupEvalTokens(group).output }}
+                                                    </span>
+                                                </el-tooltip>
                                             </div>
                                         </div>
+                                        <hr>
+
+                                        <h2>Trace</h2>
+                                        <BatchValidationAgentTrace
+                                            v-if="group.agentMessages?.length || group.testInput || group.inputRichContent?.length"
+                                            :messages="group.agentMessages ?? []"
+                                            :tab-id="props.tabId"
+                                            :input-rich-content="group.inputRichContent"
+                                            :fallback-input="group.agentMessages?.length ? undefined : group.testInput"
+                                            :collapse-tools-by-default="true"
+                                        />
                                     </div>
                                 </div>
                             </el-scrollbar>
@@ -210,14 +226,21 @@ import { useMessageBridge } from '@/api/message-bridge';
 import { tabs } from '../panel';
 import { llms, llmManager } from '@/views/setting/llm';
 import { ElMessage, ElIcon } from 'element-plus';
-import { Loading } from '@element-plus/icons-vue';
+import { Loading, ArrowDown } from '@element-plus/icons-vue';
 import { v4 as uuidv4 } from 'uuid';
 import type { ChatMessage, ChatStorage, ChatSetting } from '../chat/chat-box/chat';
 import { TaskLoop } from '../chat/core/task-loop';
 import { mcpClientAdapter } from '@/views/connect/core';
 import BatchValidationInput from './batch-validation-input.vue';
 import BatchValidationAgentTrace from './batch-validation-agent-trace.vue';
-import type { BatchValidationStorage, BatchValidationTestCase } from './storage';
+import { markdownToHtml } from '../chat/markdown/markdown';
+import type {
+    BatchValidationStorage,
+    BatchValidationTestCase,
+    BatchValidationCriterionResult,
+    BatchValidationAgentLoopStats,
+    BatchValidationResultGroup
+} from './storage';
 import { ensureBatchValidationStorage } from './storage';
 
 const { t } = useI18n();
@@ -234,34 +257,9 @@ function setTcInputRef(tcId: string, el: any) {
     else tcInputRefs.delete(tcId);
 }
 
-interface ValidationResult {
-    testCaseId: string;
-    testCaseIndex: number;
-    criterionIndex: number;
-    testInput: string;
-    testCaseCriteria: string;
-    rawResponse: string;
-    pass?: boolean;
-    score?: number;
-    error?: string;
-}
-
-interface AgentLoopStats {
-    durationMs: number;
-    inputTokens: number;
-    outputTokens: number;
-    totalTokens: number;
-    toolCallCount: number;
-}
-
-interface ResultGroup {
-    testCaseIndex: number;
-    testInput: string;
-    inputRichContent?: import('../chat/chat-box/chat').RichTextItem[];
-    agentMessages?: ChatMessage[];
-    agentLoopStats?: AgentLoopStats;
-    criterionResults: ValidationResult[];
-}
+type ValidationResult = BatchValidationCriterionResult;
+type AgentLoopStats = BatchValidationAgentLoopStats;
+type ResultGroup = BatchValidationResultGroup;
 
 /** 当前 tab 的持久化数据（绑定到 tab.storage，与 chat/index.vue 一致） */
 const tab = tabs.content[props.tabId];
@@ -279,7 +277,7 @@ provide('updateChatRenderMessages', () => {});
 const isRunning = ref(false);
 const runStatusText = ref('');
 const results = ref<ValidationResult[]>([]);
-const resultGroupsWithStats = ref<ResultGroup[]>([]);
+const resultGroupsWithStats = ref<ResultGroup[]>(tabStorage.resultGroups ?? []);
 /** 从右往左拉出的配置抽屉（pass/score、描述等） */
 const settingsDrawerVisible = ref(false);
 
@@ -362,22 +360,56 @@ function commitDraftToCase() {
 /** 按测试用例分组的结果（含 agent loop 统计） */
 const resultGroups = computed(() => resultGroupsWithStats.value);
 
+const passFailSummary = computed(() => {
+    let pass = 0;
+    let fail = 0;
+    let durationMs = 0;
+    let inputTokens = 0;
+    let outputTokens = 0;
+    for (const group of resultGroups.value) {
+        for (const item of group.criterionResults || []) {
+            if (item.pass === true) pass++;
+            else if (item.pass === false || item.error) fail++;
+        }
+        durationMs += group.agentLoopStats?.durationMs || 0;
+        inputTokens += group.agentLoopStats?.inputTokens || 0;
+        outputTokens += group.agentLoopStats?.outputTokens || 0;
+    }
+    return { pass, fail, durationMs, inputTokens, outputTokens };
+});
+
 function formatDuration(ms: number): string {
     if (ms < 1000) return `${ms} ms`;
     return `${(ms / 1000).toFixed(1)} s`;
 }
 
+/** 汇总单个 session 的验证阶段 token 消耗（仅评估 LLM，不含 trace） */
+function getGroupEvalTokens(group: BatchValidationResultGroup): { input: number; output: number; total: number } {
+    let input = 0;
+    let output = 0;
+    for (const r of group.criterionResults || []) {
+        input += r.evalInputTokens ?? 0;
+        output += r.evalOutputTokens ?? 0;
+    }
+    return { input, output, total: input + output };
+}
+
+/** 只统计 assistant 消息上的 usage，避免同一轮 usage 在 assistant + 多条 tool 上重复累加 */
 function extractAgentLoopStats(messages: ChatMessage[], startTime: number): AgentLoopStats {
     let inputTokens = 0;
     let outputTokens = 0;
     let toolCallCount = 0;
     for (const m of messages) {
+        if (m.role === 'tool') {
+            toolCallCount++;
+            continue;
+        }
+        if (m.role !== 'assistant') continue;
         const usage = (m as any).extraInfo?.usage;
         if (usage) {
             inputTokens += usage.prompt_tokens || 0;
             outputTokens += usage.completion_tokens || 0;
         }
-        if (m.role === 'tool') toolCallCount++;
     }
     return {
         durationMs: Date.now() - startTime,
@@ -501,6 +533,8 @@ async function runValidation() {
 
     isRunning.value = true;
     results.value = [];
+    resultGroupsWithStats.value = [];
+    tabStorage.resultGroups = [];
     const bridge = useMessageBridge();
 
     const llmConfig = {
@@ -521,7 +555,11 @@ async function runValidation() {
         const allResults: ValidationResult[] = [];
         const groupsWithStats: ResultGroup[] = [];
 
-        const sourceTab = tabStorage.sourceTabIndex ?? 0;
+        const activeChatTabIndex = chatTabs.value.findIndex(item => item.originalIndex === tabs.activeIndex);
+        const sourceTab = activeChatTabIndex >= 0 ? activeChatTabIndex : (tabStorage.sourceTabIndex ?? 0);
+        if (tabStorage.sourceTabIndex !== sourceTab) {
+            tabStorage.sourceTabIndex = sourceTab;
+        }
         const tabItem = chatTabs.value[sourceTab];
         if (!tabItem) {
             ElMessage.warning(t('batch-validation-no-chat-tabs'));
@@ -535,20 +573,22 @@ async function runValidation() {
             const input = tc.input.trim();
             const criteria = tc.criteria.filter((c) => c.trim());
 
-            runStatusText.value = t('batch-validation-status-agent', { index: i + 1, total: casesToRun.length });
+            runStatusText.value = t('batch-validation-status-agent');
 
             const inputRef = tcInputRefs.get(tc.id);
-            let storage: ChatStorage = inputRef?.virtualStorage
-                ? JSON.parse(JSON.stringify({
-                    ...(inputRef.virtualStorage as any).value,
-                    id: uuidv4(),
-                    messages: []
-                }))
-                : JSON.parse(JSON.stringify({
-                    ...chatStorage,
-                    id: uuidv4(),
-                    messages: []
-                }));
+            const inputVirtualStorageSettings = (inputRef?.virtualStorage as any)?.value?.settings;
+            const sourceSettings = chatStorage.settings || ({} as ChatSetting);
+            const sourceEnableTools = Array.isArray(sourceSettings.enableTools) ? sourceSettings.enableTools : [];
+            const inputEnableTools = Array.isArray(inputVirtualStorageSettings?.enableTools)
+                ? inputVirtualStorageSettings.enableTools
+                : [];
+            const mergedEnableTools = (inputEnableTools.length > 0 ? inputEnableTools : sourceEnableTools);
+
+            let storage: ChatStorage = JSON.parse(JSON.stringify({
+                ...chatStorage,
+                id: uuidv4(),
+                messages: []
+            }));
             const defaultSettings: ChatSetting = {
                 modelIndex: llmManager.currentModelIndex,
                 enableTools: [],
@@ -561,9 +601,11 @@ async function runValidation() {
             };
             storage.settings = {
                 ...defaultSettings,
-                ...(storage.settings || {}),
-                enableTools: storage.settings?.enableTools ?? defaultSettings.enableTools,
-                enableXmlWrapper: storage.settings?.enableXmlWrapper ?? false
+                ...sourceSettings,
+                ...(inputVirtualStorageSettings || {}),
+                enableTools: mergedEnableTools,
+                enableXmlWrapper: inputVirtualStorageSettings?.enableXmlWrapper ?? sourceSettings.enableXmlWrapper ?? false,
+                parallelToolCalls: inputVirtualStorageSettings?.parallelToolCalls ?? sourceSettings.parallelToolCalls ?? true
             };
             const slashParsed = inputRef?.parseSlashCommand?.(input);
             if (slashParsed?.skillName) {
@@ -607,7 +649,7 @@ async function runValidation() {
                 continue;
             }
 
-            runStatusText.value = t('batch-validation-status-eval', { index: i + 1, total: casesToRun.length });
+            runStatusText.value = t('batch-validation-status-eval');
 
             const testCasesForApi = criteria.map((c, i) => ({
                 id: `${tc.id}-c-${i}`,
@@ -630,8 +672,11 @@ async function runValidation() {
                     testCaseCriteria: string;
                     rawResponse: string;
                     pass?: boolean;
+                    reason?: string;
                     score?: number;
                     error?: string;
+                    evalInputTokens?: number;
+                    evalOutputTokens?: number;
                 }>;
                 const criterionResults: ValidationResult[] = [];
                 apiResults.forEach((r, cIdx) => {
@@ -643,8 +688,11 @@ async function runValidation() {
                         testCaseCriteria: r.testCaseCriteria,
                         rawResponse: r.rawResponse,
                         pass: r.pass,
+                        reason: r.reason,
                         score: r.score,
-                        error: r.error
+                        error: r.error,
+                        evalInputTokens: r.evalInputTokens,
+                        evalOutputTokens: r.evalOutputTokens
                     };
                     allResults.push(vr);
                     criterionResults.push(vr);
@@ -685,6 +733,7 @@ async function runValidation() {
 
         results.value = allResults;
         resultGroupsWithStats.value = groupsWithStats;
+        tabStorage.resultGroups = groupsWithStats;
         runStatusText.value = '';
         ElMessage.success(t('batch-validation-done'));
     } catch (err) {
@@ -718,6 +767,7 @@ async function loadBatchValidationFromDuckDb() {
     if (res.code === 200 && res.msg?.storage) {
         Object.assign(tab.storage, res.msg.storage);
         ensureBatchValidationStorage(tab.storage);
+        resultGroupsWithStats.value = tabStorage.resultGroups ?? [];
     }
 }
 onMounted(() => {
@@ -749,7 +799,8 @@ function flushSaveToDuckDb() {
             testCases: tabStorage.testCases ?? [],
             selectedCaseIndex: tabStorage.selectedCaseIndex ?? 0,
             sourceTabIndex: tabStorage.sourceTabIndex ?? 0,
-            evaluationMode: tabStorage.evaluationMode ?? 'pass-fail'
+            evaluationMode: tabStorage.evaluationMode ?? 'pass-fail',
+            resultGroups: tabStorage.resultGroups ?? []
         }
     });
 }
@@ -769,7 +820,8 @@ watch(
         JSON.stringify(tabStorage.testCases ?? []),
         tabStorage.selectedCaseIndex,
         tabStorage.sourceTabIndex,
-        tabStorage.evaluationMode
+        tabStorage.evaluationMode,
+        JSON.stringify(tabStorage.resultGroups ?? [])
     ],
     () => scheduleSaveToDuckDb(),
     { deep: true }
@@ -831,10 +883,54 @@ watch(
 
 .batch-results-header {
     padding: 12px 16px;
-    font-weight: 600;
     font-size: 15px;
     border-bottom: 1px solid var(--el-border-color-light);
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.batch-results-header-title {
+    font-weight: 600;
+}
+
+.batch-results-header-stats {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.batch-results-header-stat {
+    color: var(--el-text-color-secondary);
+}
+
+.batch-results-header-stat.icon-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.batch-results-header-stat-icon {
+    font-size: 12px;
+    color: var(--el-text-color-placeholder);
+}
+
+.batch-results-header-stat-icon.is-up {
+    transform: rotate(180deg);
+}
+
+.batch-results-header-stat.pass {
+    color: var(--el-color-success);
+}
+
+.batch-results-header-stat.fail {
+    color: var(--el-color-danger);
 }
 
 .batch-results-scroll {
@@ -879,69 +975,91 @@ watch(
     color: var(--el-text-color-secondary);
 }
 
-.result-groups {
-    padding: 16px;
+.batch-log-history {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-}
-
-.result-group {
+    gap: 14px;
+    max-width: 860px;
+    margin: 0 auto;
     padding: 16px;
-    border: 1px solid var(--el-border-color-light);
-    border-radius: 8px;
-    background-color: var(--el-fill-color-blank);
 }
 
-.result-group-title {
-    font-weight: 600;
-    font-size: 14px;
-    margin-bottom: 10px;
+.batch-log-evaluation {
+    margin-top: 12px;
 }
 
-.result-group-agent-stats {
+.batch-log-eval-item {
     padding: 10px 12px;
-    background-color: var(--el-fill-color-light);
-    border-radius: 6px;
-    margin-bottom: 12px;
-}
-
-.agent-stats-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px 24px;
-    font-size: 13px;
-}
-
-.agent-stat-item {
-    color: var(--el-text-color-regular);
-}
-
-.agent-stat-label {
-    color: var(--el-text-color-secondary);
-    margin-right: 4px;
-}
-
-.result-group-criteria-title {
-    font-size: 13px;
-    font-weight: 500;
+    border-radius: 8px;
+    border: 1px solid var(--el-border-color-lighter);
     margin-bottom: 8px;
+    background: color-mix(in srgb, var(--el-fill-color-blank) 88%, var(--el-fill-color-light));
+    border-left-color: var(--el-color-info-light-5);
 }
 
-.result-group-criteria .result-item {
-    margin-bottom: 8px;
-}
-
-.result-group-criteria .result-item:last-child {
+.batch-log-eval-item:last-child {
     margin-bottom: 0;
 }
 
-.result-group-trace {
-    margin-top: 12px;
-    padding: 12px;
-    border: 1px solid var(--el-border-color-lighter);
-    border-radius: 8px;
-    background-color: var(--el-fill-color-blank);
+.batch-log-eval-item:has(.result-badge.pass) {
+    border-left-color: var(--el-color-success);
+}
+
+.batch-log-eval-item:has(.result-badge.fail),
+.batch-log-eval-item.error {
+    border-left-color: var(--el-color-danger);
+}
+
+.batch-log-eval-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 2px;
+}
+
+.batch-log-eval-index {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-regular);
+    line-height: 1.4;
+}
+
+.batch-log-eval-tokens {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--el-fill-color-light);
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+}
+.batch-log-eval-tokens-label {
+    font-weight: 500;
+}
+.batch-log-eval-tokens-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.batch-log-eval-tokens-icon {
+    font-size: 12px;
+}
+.batch-log-eval-tokens-icon.is-up {
+    transform: rotate(180deg);
+}
+
+.batch-log-eval-reason {
+    margin-top: 6px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--el-text-color-regular);
+    white-space: pre-wrap;
+    word-break: break-word;
+    border: 1px solid var(--el-border-color-light);
 }
 
 /* 左侧列表 */
@@ -1429,7 +1547,6 @@ watch(
 }
 
 .result-badge.fail {
-    background: var(--el-color-danger-light-9);
     color: var(--el-color-danger);
 }
 

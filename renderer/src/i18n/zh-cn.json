@@ -408,13 +408,16 @@
     "batch-validation-test-case-desc": "描述",
     "batch-validation-test-case-desc-placeholder": "测试用例描述",
     "batch-validation-empty-trace": "Agent 未产生 trace",
-    "batch-validation-status-agent": "正在执行 Agent ({index}/{total})...",
-    "batch-validation-status-eval": "正在评估 ({index}/{total})...",
+    "batch-validation-status-agent": "正在执行 Agent",
+    "batch-validation-status-eval": "正在评估",
     "batch-validation-results-empty-hint": "执行验证后，结果将显示在此处",
     "batch-validation-agent-duration": "执行耗时",
     "batch-validation-tool-calls": "工具调用数",
     "batch-validation-criteria-results": "验证结果",
     "batch-validation-agent-trace": "Agent 执行过程",
+    "batch-validation-eval-tokens": "验证消耗",
+    "batch-validation-trace-input-token": "输入 token（仅 Trace）",
+    "batch-validation-trace-output-token": "输出 token（仅 Trace）",
     "chat-tab": "聊天",
     "add": "添加"
 }

@@ -1,4 +1,4 @@
-import type { RichTextItem } from '../chat/chat-box/chat';
+import type { ChatMessage, RichTextItem } from '../chat/chat-box/chat';
 
 /** 单个测试用例（可持久化） */
 export interface BatchValidationTestCase {
@@ -12,6 +12,39 @@ export interface BatchValidationTestCase {
 }
 
 /** 批量验证面板绑定到 tab.storage 的可持久化数据结构 */
+export interface BatchValidationCriterionResult {
+    testCaseId: string;
+    testCaseIndex: number;
+    criterionIndex: number;
+    testInput: string;
+    testCaseCriteria: string;
+    rawResponse: string;
+    pass?: boolean;
+    reason?: string;
+    score?: number;
+    error?: string;
+    /** 本条评估消耗的 token（仅评估 LLM） */
+    evalInputTokens?: number;
+    evalOutputTokens?: number;
+}
+
+export interface BatchValidationAgentLoopStats {
+    durationMs: number;
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    toolCallCount: number;
+}
+
+export interface BatchValidationResultGroup {
+    testCaseIndex: number;
+    testInput: string;
+    inputRichContent?: RichTextItem[];
+    agentMessages?: ChatMessage[];
+    agentLoopStats?: BatchValidationAgentLoopStats;
+    criterionResults: BatchValidationCriterionResult[];
+}
+
 export interface BatchValidationStorage {
     /** 测试用例列表（左侧一行一个，可任意添加） */
     testCases: BatchValidationTestCase[];
@@ -21,6 +54,8 @@ export interface BatchValidationStorage {
     sourceTabIndex: number;
     /** 评估模式：通过/失败 或 分数 */
     evaluationMode: 'pass-fail' | 'score';
+    /** 批量验证日志结果（用于日志面板持久化恢复） */
+    resultGroups: BatchValidationResultGroup[];
     /** @deprecated 仅用于从旧数据迁移，迁移后不再使用 */
     testCasesByTabIndex?: Record<number, BatchValidationTestCase>;
     /** @deprecated 请使用 selectedCaseIndex */
@@ -31,7 +66,8 @@ const DEFAULT_STORAGE: BatchValidationStorage = {
     testCases: [],
     selectedCaseIndex: 0,
     sourceTabIndex: 0,
-    evaluationMode: 'pass-fail'
+    evaluationMode: 'pass-fail',
+    resultGroups: []
 };
 
 /** 确保 storage 具备 BatchValidationStorage 形状（就地补全缺失字段，并从旧结构迁移） */
@@ -58,6 +94,9 @@ export function ensureBatchValidationStorage(storage: Record<string, any>): stor
     }
     if (storage.evaluationMode !== 'pass-fail' && storage.evaluationMode !== 'score') {
         storage.evaluationMode = DEFAULT_STORAGE.evaluationMode;
+    }
+    if (!Array.isArray(storage.resultGroups)) {
+        storage.resultGroups = [];
     }
     if (!Array.isArray(storage.messages)) {
         storage.messages = [];

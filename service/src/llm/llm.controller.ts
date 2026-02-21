@@ -87,10 +87,10 @@ export class LlmController {
     async chatCompletionSync(data: RequestData, webview: PostMessageble) {
         try {
             const { baseURL, apiKey, model, messages, temperature } = data;
-            const content = await chatCompletion({ baseURL, apiKey, model, messages, temperature });
+            const result = await chatCompletion({ baseURL, apiKey, model, messages, temperature });
             return {
                 code: 200,
-                msg: { content }
+                msg: { content: result.content, usage: result.usage }
             };
         } catch (error) {
             return {

@@ -409,13 +409,16 @@
     "batch-validation-test-case-desc": "Description",
     "batch-validation-test-case-desc-placeholder": "Test case description",
     "batch-validation-empty-trace": "Agent produced no trace",
-    "batch-validation-status-agent": "Running Agent ({index}/{total})...",
-    "batch-validation-status-eval": "Evaluating ({index}/{total})...",
+    "batch-validation-status-agent": "Running Agent...",
+    "batch-validation-status-eval": "Evaluating...",
     "batch-validation-results-empty-hint": "Results will appear here after running validation",
     "batch-validation-agent-duration": "Duration",
     "batch-validation-tool-calls": "Tool calls",
     "batch-validation-criteria-results": "Validation results",
     "batch-validation-agent-trace": "Agent execution trace",
+    "batch-validation-eval-tokens": "Eval tokens",
+    "batch-validation-trace-input-token": "Input tokens (Trace only)",
+    "batch-validation-trace-output-token": "Output tokens (Trace only)",
     "chat-tab": "Chat",
     "add": "Add"
 }

@@ -158,6 +158,10 @@ const props = defineProps({
     tabId: {
         type: Number,
         required: true
+    },
+    collapseByDefault: {
+        type: Boolean,
+        default: false
     }
 });
 
@@ -193,7 +197,7 @@ props.message.toolResults.forEach(() => {
     showJsons.value.push(true);
 });
 
-const activeNames = ref<string[]>(callingTools.value ? ['tool']: []);
+const activeNames = ref<string[]>(!props.collapseByDefault && callingTools.value ? ['tool'] : []);
 
 watch(
     () => props.message,

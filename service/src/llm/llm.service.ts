@@ -9,6 +9,12 @@ import { ocrWorkerStorage } from "../mcp/ocr.service.js";
 // 用 Map<string, AsyncIterable<any> | null> 管理多个流
 export const chatStreams = new Map<string, AsyncIterable<any>>();
 
+export interface ChatCompletionUsage {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens?: number;
+}
+
 /**
  * 非流式聊天补全，用于批量验证等需要完整响应的场景
  */
@@ -20,7 +26,7 @@ export async function chatCompletion(
         messages: any[];
         temperature?: number;
     }
-): Promise<string> {
+): Promise<{ content: string; usage?: ChatCompletionUsage }> {
     const {
         baseURL,
         apiKey,
@@ -49,7 +55,15 @@ export async function chatCompletion(
     });
 
     const content = response.choices?.[0]?.message?.content;
-    return typeof content === 'string' ? content : '';
+    const text = typeof content === 'string' ? content : '';
+    const usage = response.usage
+        ? {
+            prompt_tokens: response.usage.prompt_tokens ?? 0,
+            completion_tokens: response.usage.completion_tokens ?? 0,
+            total_tokens: response.usage.total_tokens
+        }
+        : undefined;
+    return { content: text, usage };
 }
 
 export async function streamingChatCompletion(

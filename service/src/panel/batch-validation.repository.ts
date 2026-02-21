@@ -21,13 +21,41 @@ export interface BatchValidationStorageRow {
     selectedCaseIndex: number;
     sourceTabIndex: number;
     evaluationMode: 'pass-fail' | 'score';
+    resultGroups: Array<{
+        testCaseIndex: number;
+        testInput: string;
+        inputRichContent?: Array<{ type: string; text: string; name?: string; args?: Record<string, string> }>;
+        agentMessages?: any[];
+        agentLoopStats?: {
+            durationMs: number;
+            inputTokens: number;
+            outputTokens: number;
+            totalTokens: number;
+            toolCallCount: number;
+        };
+        criterionResults: Array<{
+            testCaseId: string;
+            testCaseIndex: number;
+            criterionIndex: number;
+            testInput: string;
+            testCaseCriteria: string;
+            rawResponse: string;
+            pass?: boolean;
+            reason?: string;
+            score?: number;
+            error?: string;
+            evalInputTokens?: number;
+            evalOutputTokens?: number;
+        }>;
+    }>;
 }
 
 const DEFAULT_STORAGE: BatchValidationStorageRow = {
     testCases: [],
     selectedCaseIndex: 0,
     sourceTabIndex: 0,
-    evaluationMode: 'pass-fail'
+    evaluationMode: 'pass-fail',
+    resultGroups: []
 };
 
 export class BatchValidationRepository {
@@ -110,7 +138,8 @@ export class BatchValidationRepository {
             testCases: Array.isArray(parsed.testCases) ? parsed.testCases : DEFAULT_STORAGE.testCases,
             selectedCaseIndex: typeof parsed.selectedCaseIndex === 'number' ? parsed.selectedCaseIndex : DEFAULT_STORAGE.selectedCaseIndex,
             sourceTabIndex: typeof parsed.sourceTabIndex === 'number' ? parsed.sourceTabIndex : DEFAULT_STORAGE.sourceTabIndex,
-            evaluationMode: parsed.evaluationMode === 'score' ? 'score' : 'pass-fail'
+            evaluationMode: parsed.evaluationMode === 'score' ? 'score' : 'pass-fail',
+            resultGroups: Array.isArray(parsed.resultGroups) ? parsed.resultGroups : DEFAULT_STORAGE.resultGroups
         };
     }
 

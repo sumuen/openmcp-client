@@ -205,7 +205,8 @@ export class PanelController {
             testCases: Array.isArray(storage.testCases) ? storage.testCases : [],
             selectedCaseIndex: typeof storage.selectedCaseIndex === 'number' ? storage.selectedCaseIndex : 0,
             sourceTabIndex: typeof storage.sourceTabIndex === 'number' ? storage.sourceTabIndex : 0,
-            evaluationMode: storage.evaluationMode === 'score' ? 'score' : 'pass-fail'
+            evaluationMode: storage.evaluationMode === 'score' ? 'score' : 'pass-fail',
+            resultGroups: Array.isArray(storage.resultGroups) ? storage.resultGroups : []
         });
         return { code: 200, msg: 'ok' };
     }
