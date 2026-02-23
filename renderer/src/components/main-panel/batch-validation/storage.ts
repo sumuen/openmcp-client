@@ -11,6 +11,13 @@ export interface BatchValidationTestCase {
     criteria: string[];
 }
 
+/** 用户保存的综合测试预设（名称 + 用例索引列表） */
+export interface BatchValidationComprehensivePreset {
+    id: string;
+    name: string;
+    indices: number[];
+}
+
 /** 批量验证面板绑定到 tab.storage 的可持久化数据结构 */
 export interface BatchValidationCriterionResult {
     testCaseId: string;
@@ -50,6 +57,12 @@ export interface BatchValidationStorage {
     testCases: BatchValidationTestCase[];
     /** 当前选中的测试用例索引 */
     selectedCaseIndex: number;
+    /** 综合测试勾选的用例索引（多选合并执行） */
+    comprehensiveSelectedIndices: number[];
+    /** 用户保存的综合测试预设列表 */
+    comprehensivePresets: BatchValidationComprehensivePreset[];
+    /** 当前选中的综合测试预设 id（用于按钮展示） */
+    currentPresetId?: string;
     /** 运行批量验证时使用的交互测试标签页索引（取该 tab 的配置） */
     sourceTabIndex: number;
     /** 评估模式：通过/失败 或 分数 */
@@ -65,6 +78,8 @@ export interface BatchValidationStorage {
 const DEFAULT_STORAGE: BatchValidationStorage = {
     testCases: [],
     selectedCaseIndex: 0,
+    comprehensiveSelectedIndices: [],
+    comprehensivePresets: [],
     sourceTabIndex: 0,
     evaluationMode: 'pass-fail',
     resultGroups: []
@@ -88,6 +103,12 @@ export function ensureBatchValidationStorage(storage: Record<string, any>): stor
     }
     if (typeof storage.selectedCaseIndex !== 'number') {
         storage.selectedCaseIndex = typeof storage.selectedTabIndex === 'number' ? storage.selectedTabIndex : DEFAULT_STORAGE.selectedCaseIndex;
+    }
+    if (!Array.isArray(storage.comprehensiveSelectedIndices)) {
+        storage.comprehensiveSelectedIndices = DEFAULT_STORAGE.comprehensiveSelectedIndices;
+    }
+    if (!Array.isArray(storage.comprehensivePresets)) {
+        storage.comprehensivePresets = DEFAULT_STORAGE.comprehensivePresets;
     }
     if (typeof storage.sourceTabIndex !== 'number') {
         storage.sourceTabIndex = DEFAULT_STORAGE.sourceTabIndex;

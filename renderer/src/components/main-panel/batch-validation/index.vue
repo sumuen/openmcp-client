@@ -9,6 +9,29 @@
                         <span class="iconfont icon-add"></span>
                         <span class="list-add-btn-text">{{ t('add') }}</span>
                     </el-button>
+                    <el-dropdown split-button type="primary" class="list-comprehensive-dropdown"
+                        :loading="isRunning" :disabled="!canRunComprehensive"
+                        @click="runValidation(true)">
+                        <span class="list-comprehensive-btn-text">{{ comprehensiveButtonLabel }}</span>
+                        <template #dropdown>
+                            <el-dropdown-menu>
+                                <el-dropdown-item @click="openSavePresetDialog">
+                                    <span class="iconfont icon-add"></span>
+                                    {{ t('batch-validation-save-as-preset') }}
+                                </el-dropdown-item>
+                                <el-dropdown-item v-if="comprehensivePresets.length === 0" disabled>
+                                    {{ t('batch-validation-no-presets') }}
+                                </el-dropdown-item>
+                                <template v-else>
+                                    <el-dropdown-item v-for="(preset, pIdx) in comprehensivePresets" :key="preset.id"
+                                        :divided="pIdx === 0"
+                                        @click="applyPreset(preset)">
+                                        {{ preset.name }}
+                                    </el-dropdown-item>
+                                </template>
+                            </el-dropdown-menu>
+                        </template>
+                    </el-dropdown>
                 </div>
             </div>
             <div class="list-container">
@@ -17,6 +40,10 @@
                         <div v-for="item in listItems" :key="item.tc.id" class="list-item"
                             :class="{ active: tabStorage.selectedCaseIndex === item.caseIndex }"
                             @click="selectTestCase(item.caseIndex)">
+                            <el-checkbox :model-value="comprehensiveSelectedSet.has(item.caseIndex)" class="list-item-checkbox"
+                                :title="t('batch-validation-comprehensive-hint')"
+                                @click.stop
+                                @update:model-value="toggleComprehensiveSelection(item.caseIndex)" />
                             <div class="list-item-content">
                                 <div class="item-title">
                                     {{ getListItemTitle(item.caseIndex) }}
@@ -133,7 +160,7 @@
                                     <span class="batch-results-empty-text">{{ t('batch-validation-results-empty-hint') }}</span>
                                 </div>
                                 <div v-else class="batch-log-history">
-                                    <div v-for="(group, gIdx) in resultGroups" :key="gIdx" class="batch-log-session">
+                                    <div v-for="(group, gIdx) in resultGroups" :key="gIdx">
                                         <div class="batch-log-evaluation">
                                             <div v-for="(r, rIdx) in group.criterionResults" :key="rIdx" class="batch-log-eval-item" :class="{ error: r.error }">
                                                 <div class="batch-log-eval-header">
@@ -216,6 +243,18 @@
                     </div>
                 </Transition>
             </Teleport>
+            <!-- 保存为综合测试：输入名称 -->
+            <el-dialog v-model="savePresetDialogVisible" :title="t('batch-validation-save-as-preset')"
+                width="400px" append-to-body @closed="presetNameInput = ''">
+                <el-input v-model="presetNameInput" :placeholder="t('batch-validation-preset-name-placeholder')"
+                    maxlength="64" show-word-limit @keyup.enter="confirmSavePreset" />
+                <template #footer>
+                    <el-button @click="savePresetDialogVisible = false">{{ t('cancel') }}</el-button>
+                    <el-button type="primary" :disabled="!presetNameInput.trim()" @click="confirmSavePreset">
+                        {{ t('confirm') }}
+                    </el-button>
+                </template>
+            </el-dialog>
     </div>
 </template>
 
@@ -452,6 +491,83 @@ const listItems = computed(() => {
     return arr.map((tc, caseIndex) => ({ caseIndex, tc }));
 });
 
+/** 综合测试勾选集合（用于 checkbox 展示与快捷判断） */
+const comprehensiveSelectedSet = computed(() => {
+    const arr = tabStorage.comprehensiveSelectedIndices ?? [];
+    return new Set(arr);
+});
+
+function toggleComprehensiveSelection(caseIndex: number) {
+    const arr = tabStorage.comprehensiveSelectedIndices ?? [];
+    const set = new Set(arr);
+    if (set.has(caseIndex)) {
+        set.delete(caseIndex);
+    } else {
+        set.add(caseIndex);
+    }
+    tabStorage.comprehensiveSelectedIndices = Array.from(set).sort((a, b) => a - b);
+    tabStorage.currentPresetId = undefined;
+}
+
+/** 用户保存的综合测试预设列表 */
+const comprehensivePresets = computed(() => tabStorage.comprehensivePresets ?? []);
+
+/** 综合测试按钮主区文案：当前预设名 或 “执行综合测试 (N 项)” */
+const comprehensiveButtonLabel = computed(() => {
+    const pid = tabStorage.currentPresetId;
+    const presets = comprehensivePresets.value;
+    if (pid && presets.length > 0) {
+        const p = presets.find((x) => x.id === pid);
+        if (p) return p.name;
+    }
+    const n = comprehensiveSelectedSet.value.size;
+    if (n > 0) return t('batch-validation-comprehensive-count', { n });
+    return t('batch-validation-run-comprehensive');
+});
+
+const savePresetDialogVisible = ref(false);
+const presetNameInput = ref('');
+
+function openSavePresetDialog() {
+    if (comprehensiveSelectedSet.value.size === 0) {
+        ElMessage.warning(t('batch-validation-select-at-least-one'));
+        return;
+    }
+    presetNameInput.value = '';
+    savePresetDialogVisible.value = true;
+}
+
+function confirmSavePreset() {
+    const name = presetNameInput.value.trim();
+    if (!name) {
+        ElMessage.warning(t('batch-validation-preset-name-required'));
+        return;
+    }
+    const indices = [...(tabStorage.comprehensiveSelectedIndices ?? [])].sort((a, b) => a - b);
+    const presets = tabStorage.comprehensivePresets ?? [];
+    const newPreset = { id: uuidv4(), name, indices };
+    tabStorage.comprehensivePresets = [...presets, newPreset];
+    tabStorage.currentPresetId = newPreset.id;
+    savePresetDialogVisible.value = false;
+    ElMessage.success(t('batch-validation-preset-saved'));
+}
+
+function applyPreset(preset: { id: string; name: string; indices: number[] }) {
+    const maxIndex = (tabStorage.testCases ?? []).length - 1;
+    const indices = preset.indices.filter((i) => i >= 0 && i <= maxIndex);
+    tabStorage.comprehensiveSelectedIndices = indices;
+    tabStorage.currentPresetId = preset.id;
+}
+
+/** 综合测试可执行：至少勾选一个且勾选的均为有效用例 */
+const comprehensiveTestCases = computed(() => {
+    const indices = new Set(tabStorage.comprehensiveSelectedIndices ?? []);
+    return validTestCases.value.filter(({ caseIndex }) => indices.has(caseIndex));
+});
+const canRunComprehensive = computed(() => {
+    return comprehensiveTestCases.value.length > 0 && llms.length > 0 && mcpClientAdapter.connected;
+});
+
 function selectTestCase(caseIndex: number) {
     if (caseIndex === tabStorage.selectedCaseIndex) return;
     if (draftTestCase.value) {
@@ -513,7 +629,7 @@ function messagesToTrace(messages: ChatMessage[]): Array<{ role: string; content
     });
 }
 
-async function runValidation() {
+async function runValidation(comprehensive = false) {
     if (draftTestCase.value) {
         commitDraftToCase();
     }
@@ -544,9 +660,9 @@ async function runValidation() {
         temperature: 0
     };
 
-    const casesToRun = validTestCases.value;
+    const casesToRun = comprehensive ? comprehensiveTestCases.value : validTestCases.value;
     if (casesToRun.length === 0) {
-        ElMessage.warning(t('batch-validation-invalid-cases'));
+        ElMessage.warning(comprehensive ? t('batch-validation-select-at-least-one') : t('batch-validation-invalid-cases'));
         isRunning.value = false;
         return;
     }
@@ -1081,17 +1197,52 @@ watch(
 .batch-list-panel .list-add-btn-wrap {
     margin: 3px;
     width: calc(100% - 6px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .batch-list-panel .list-add-btn {
-    width: 100%;
     display: flex;
     justify-content: flex-start;
     align-items: center;
     padding-left: 12px;
-    margin-right: 32px;
     border-radius: 8px;
     border: 1px solid var(--vline-stroke-color);
+    width: 100%;
+}
+
+.batch-list-panel .list-comprehensive-dropdown {
+    display: block;
+    width: 100%;
+}
+
+.batch-list-panel .list-comprehensive-dropdown .el-dropdown-self-definition,
+.batch-list-panel .list-comprehensive-dropdown > .el-button-group {
+    display: flex !important;
+    width: 100% !important;
+}
+
+.batch-list-panel .list-comprehensive-dropdown .el-button-group {
+    width: 100%;
+    display: flex;
+}
+
+.batch-list-panel .list-comprehensive-dropdown .el-button-group .el-button:first-child {
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-start;
+    padding-left: 12px;
+}
+
+.batch-list-panel .list-comprehensive-dropdown .el-button-group .el-button:last-child {
+    flex-shrink: 0;
+}
+
+.batch-list-panel .list-comprehensive-dropdown .list-comprehensive-btn-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .batch-list-panel .list-add-btn:hover {
@@ -1144,6 +1295,16 @@ watch(
     align-items: flex-start;
 }
 
+.batch-list-panel .list-item-checkbox {
+    flex-shrink: 0;
+    margin-right: 2px;
+}
+
+.batch-list-panel .list-item-checkbox .el-checkbox__inner {
+    width: 16px;
+    height: 16px;
+}
+
 .batch-list-panel .list-item-setting-btn {
     flex-shrink: 0;
     padding: 4px;
@@ -1155,10 +1316,6 @@ watch(
 
 .batch-list-panel .list-item:hover {
     background-color: var(--el-fill-color-light);
-}
-
-.batch-list-panel .list-item:active {
-    transform: scale(0.95);
 }
 
 .batch-list-panel .list-item.active {

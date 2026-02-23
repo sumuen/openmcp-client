@@ -19,6 +19,9 @@ export interface BatchValidationStorageRow {
         criteria: string[];
     }>;
     selectedCaseIndex: number;
+    comprehensiveSelectedIndices: number[];
+    comprehensivePresets: Array<{ id: string; name: string; indices: number[] }>;
+    currentPresetId?: string;
     sourceTabIndex: number;
     evaluationMode: 'pass-fail' | 'score';
     resultGroups: Array<{
@@ -53,6 +56,8 @@ export interface BatchValidationStorageRow {
 const DEFAULT_STORAGE: BatchValidationStorageRow = {
     testCases: [],
     selectedCaseIndex: 0,
+    comprehensiveSelectedIndices: [],
+    comprehensivePresets: [],
     sourceTabIndex: 0,
     evaluationMode: 'pass-fail',
     resultGroups: []
@@ -137,6 +142,9 @@ export class BatchValidationRepository {
         return {
             testCases: Array.isArray(parsed.testCases) ? parsed.testCases : DEFAULT_STORAGE.testCases,
             selectedCaseIndex: typeof parsed.selectedCaseIndex === 'number' ? parsed.selectedCaseIndex : DEFAULT_STORAGE.selectedCaseIndex,
+            comprehensiveSelectedIndices: Array.isArray(parsed.comprehensiveSelectedIndices) ? parsed.comprehensiveSelectedIndices : DEFAULT_STORAGE.comprehensiveSelectedIndices,
+            comprehensivePresets: Array.isArray(parsed.comprehensivePresets) ? parsed.comprehensivePresets : DEFAULT_STORAGE.comprehensivePresets,
+            currentPresetId: typeof parsed.currentPresetId === 'string' ? parsed.currentPresetId : undefined,
             sourceTabIndex: typeof parsed.sourceTabIndex === 'number' ? parsed.sourceTabIndex : DEFAULT_STORAGE.sourceTabIndex,
             evaluationMode: parsed.evaluationMode === 'score' ? 'score' : 'pass-fail',
             resultGroups: Array.isArray(parsed.resultGroups) ? parsed.resultGroups : DEFAULT_STORAGE.resultGroups

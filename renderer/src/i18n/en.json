@@ -419,6 +419,18 @@
     "batch-validation-eval-tokens": "Eval tokens",
     "batch-validation-trace-input-token": "Input tokens (Trace only)",
     "batch-validation-trace-output-token": "Output tokens (Trace only)",
+    "batch-validation-comprehensive-hint": "Include in comprehensive test",
+    "batch-validation-run-comprehensive": "Run comprehensive test",
+    "batch-validation-save-as-preset": "Save as comprehensive test",
+    "batch-validation-preset-name-placeholder": "Preset name",
+    "batch-validation-preset-name-required": "Name is required",
+    "batch-validation-no-presets": "No saved comprehensive tests",
+    "batch-validation-preset-saved": "Saved",
+    "batch-validation-select-at-least-one": "Select at least one test case",
+    "batch-validation-comprehensive-count": "Run comprehensive ({n} items)",
+    "batch-validation-result-summary": "pass {pass}, fail {fail}",
+    "batch-validation-expand-detail": "Expand",
+    "batch-validation-collapse-detail": "Collapse",
     "chat-tab": "Chat",
     "add": "Add"
 }
