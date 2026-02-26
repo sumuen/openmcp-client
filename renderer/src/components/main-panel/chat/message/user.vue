@@ -1,6 +1,11 @@
 <template>
     <div class="message-role"></div>
     <div class="message-text">
+        <div class="message-body">
+        <!-- 当消息包含 skill 上下文时，在左侧显示 SKILL 标识 -->
+        <div v-if="hasSkillContext" class="skill-context-badge" :title="t('skill-context-included') || '此消息包含 SKILL 上下文'">
+            <span class="skill-badge-text">SKILL</span>
+        </div>
         <div v-if="!isEditing" class="message-content">
             <span>
                 <template v-if="hasRichContent">
@@ -40,6 +45,7 @@
             :placeholder="t('enter-message-dot')"
             @press-enter="handleKeydown"
         />
+        </div>
         <div class="message-actions" v-if="!isEditing">
             <el-button @click="copy">
                 <span class="iconfont icon-copy"></span>
@@ -97,6 +103,11 @@ const isEditing = ref(false);
 const hasRichContent = computed(() => {
     const msg = props.message as ICommonRenderMessage;
     return !!msg.richContent && msg.richContent.length > 0;
+});
+
+const hasSkillContext = computed(() => {
+    const msg = props.message as ICommonRenderMessage;
+    return !!(msg.extraInfo as any)?.hasSkillContext;
 });
 const richContentItems = computed(() => {
     const msg = props.message as ICommonRenderMessage;
@@ -384,6 +395,23 @@ const reload = async () => {
     position: relative;
 }
 
+.message-body {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user .message-body .skill-context-badge {
+    flex-shrink: 0;
+    padding: 3px 6px;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--main-light-color-70);
+    background: var(--main-light-color-20);
+    border: 1px solid var(--main-light-color-50);
+    border-radius: 4px;
+}
+
 .message-text:hover .message-actions {
     opacity: 1;
 }
@@ -440,7 +468,7 @@ const reload = async () => {
     gap: 2px 6px;
 }
 
-/* 与输入框、RichCardPrompt 一致的 prompt 卡片样式（含默认光标、悬停即弹窗） */
+/* 与输入框、RichCardPrompt 一致的 prompt 卡片样式（含 pointer 光标、点击即弹窗） */
 .user .rich-card-prompt {
     display: inline-flex;
     align-items: center;
@@ -449,7 +477,7 @@ const reload = async () => {
     font-size: var(--chat-font-size-sm, 13px);
     margin: 0 2px;
     user-select: none;
-    cursor: default;
+    cursor: pointer;
     background-color: #373839;
     border: 1px solid var(--foreground);
     max-width: 120px;

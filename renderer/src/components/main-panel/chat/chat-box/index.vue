@@ -2,6 +2,7 @@
 <footer class="chat-footer">
     <div class="input-area">
         <div class="input-wrapper">
+            <div class="input-main">
             <!-- Slash 命令面板：输入 / 时显示可选技能 -->
             <div v-if="showSlashMenu" class="slash-menu">
                 <div
@@ -37,6 +38,7 @@
                 <span v-if="!isLoading" class="iconfont icon-send"></span>
                 <span v-else class="iconfont icon-stop"></span>
             </el-button>
+            </div>
         </div>
     </div>
 </footer>
@@ -55,7 +57,8 @@ import { TaskLoop } from '../core/task-loop';
 import { llmManager, llms } from '@/views/setting/llm';
 import { ElMessage } from 'element-plus';
 import { v4 as uuidv4 } from 'uuid';
-import { listSkills, type SkillMetadata } from '@/api/skill';
+import { listSkills, loadSkillContent, type SkillMetadata } from '@/api/skill';
+import { mcpSetting } from '@/hook/mcp';
 
 const { t } = useI18n();
 
@@ -95,6 +98,25 @@ const filteredSlashSkills = computed(() => {
     return slashSkills.value.filter(s =>
         s.name.toLowerCase().includes(q) || (s.description && s.description.toLowerCase().includes(q))
     );
+});
+
+/** skill 文件是否有效（可加载） */
+const skillValid = ref(false);
+watch(() => mcpSetting.skillPath, async (path) => {
+    if (!path?.trim()) {
+        skillValid.value = false;
+        return;
+    }
+    const skill = await loadSkillContent();
+    skillValid.value = !!skill;
+}, { immediate: true });
+
+/** 当前输入的消息是否会包含 skill 上下文：仅当上下文为空且 skill 有效，或通过 /skillname 显式指定且 skill 有效时显示 */
+const willIncludeSkill = computed(() => {
+    if (!skillValid.value) return false;
+    const isContextEmpty = !tabStorage.messages.some((m: ChatMessage) => m.role === 'assistant');
+    const hasSlashSkill = !!parseSlashCommand(userInput.value);
+    return isContextEmpty || hasSlashSkill;
 });
 
 const isLoading = inject('isLoading') as Ref<boolean>;
@@ -185,7 +207,7 @@ function clearErrorMessage(errorMessage: string) {
     }
 }
 
-function handleSend(newMessage?: string, richContentOverride?: import('./chat').RichTextItem[]) {
+async function handleSend(newMessage?: string, richContentOverride?: import('./chat').RichTextItem[]) {
     let userMessage = newMessage || userInput.value;
 
     if (!userMessage || isLoading.value) {
@@ -198,6 +220,11 @@ function handleSend(newMessage?: string, richContentOverride?: import('./chat').
         (tabStorage as any)._skillOverrideForNextMessage = slashParsed.skillName;
         userMessage = slashParsed.actualMessage || userMessage;
     }
+
+    // 判断本次消息是否会包含 skill 上下文（用于在消息上显示 SKILL 标识）
+    const noHistory = !tabStorage.messages.some((m: ChatMessage) => m.role === 'assistant');
+    const skillContent = await loadSkillContent(slashParsed?.skillName);
+    const hasSkillContext = !!skillContent && (!!slashParsed || noHistory);
 
     // 重新回答时传入的 richContent 优先；否则用输入框最新 richContent 或现场提取，确保 prompt 卡片形态保存到历史
     const richContent = richContentOverride ?? (lastRichContent.value?.length ? lastRichContent.value : editorRef.value?.extractRichContent?.() ?? []);
@@ -212,9 +239,9 @@ function handleSend(newMessage?: string, richContentOverride?: import('./chat').
     }
 
     if (chatMode.value === 'parallel-chat' && parallelChats.value.length > 0) {
-        handleParallelSend(userMessage, richContent);
+        handleParallelSend(userMessage, richContent, hasSkillContext, slashParsed);
     } else {
-        handleSingleSend(userMessage, richContent);
+        handleSingleSend(userMessage, richContent, hasSkillContext);
     }
 }
 
@@ -225,7 +252,7 @@ function testReflux() {
 }
 
 
-function handleSingleSend(userMessage: string, richContent: import('./chat').RichTextItem[] = []) {
+function handleSingleSend(userMessage: string, richContent: import('./chat').RichTextItem[] = [], hasSkillContext = false) {
     isLoading.value = true;
     autoScroll.value = true;
 
@@ -238,7 +265,8 @@ function handleSingleSend(userMessage: string, richContent: import('./chat').Ric
             created: Date.now(),
             state: MessageState.Success,
             serverName: llms[llmManager.currentModelIndex].id || 'unknown',
-            enableXmlWrapper: tabStorage.settings.enableXmlWrapper
+            enableXmlWrapper: tabStorage.settings.enableXmlWrapper,
+            hasSkillContext
         }
     });
 
@@ -286,12 +314,15 @@ function handleSingleSend(userMessage: string, richContent: import('./chat').Ric
     });
 }
 
-function handleParallelSend(userMessage: string, richContent: import('./chat').RichTextItem[] = []) {
+function handleParallelSend(
+    userMessage: string,
+    richContent: import('./chat').RichTextItem[] = [],
+    hasSkillContext = false,
+    slashParsedFromSend?: { skillName: string; actualMessage: string } | null
+) {
     isLoading.value = true;
-
-    // 解析 /skillname 用于并行模式
-    const slashParsed = parseSlashCommand(userMessage);
-    const actualUserMessage = slashParsed ? slashParsed.actualMessage || userMessage : userMessage;
+    // handleSend 已剥离 /skillname，userMessage 即为实际内容
+    const actualUserMessage = userMessage;
 
     // 为每个并行聊天实例启动独立的对话
     const parallelPromises = parallelChats.value.map(async (chat, index) => {
@@ -304,7 +335,8 @@ function handleParallelSend(userMessage: string, richContent: import('./chat').R
                 created: Date.now(),
                 state: MessageState.Success,
                 serverName: chat.modelId,
-                enableXmlWrapper: tabStorage.settings.enableXmlWrapper
+                enableXmlWrapper: tabStorage.settings.enableXmlWrapper,
+                hasSkillContext
             }
         });
 
@@ -335,7 +367,7 @@ function handleParallelSend(userMessage: string, richContent: import('./chat').R
                     // 关闭并行工具调用，避免索引冲突
                     parallelToolCalls: false
                 },
-                _skillOverrideForNextMessage: slashParsed?.skillName
+                _skillOverrideForNextMessage: slashParsedFromSend?.skillName
             };
             
             // 动态注入模型索引到 chatLoop 的上下文中
@@ -484,10 +516,24 @@ onUnmounted(() => {
 
 .input-wrapper {
     position: relative;
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.input-main {
+    flex: 1;
+    position: relative;
+    min-width: 0;
+}
+
+
+.skill-badge-text {
+    letter-spacing: 0.5px;
 }
 
 /* 与批量测试输入框完全一致：Element Plus el-input__wrapper 风格 */
-:deep(.input-wrapper .k-rich-textarea) {
+:deep(.input-main .k-rich-textarea) {
     min-height: 160px;
     border: none !important;
     border-radius: 8px;
@@ -499,24 +545,24 @@ onUnmounted(() => {
     outline: none;
 }
 
-:deep(.input-wrapper .k-rich-textarea:hover) {
+:deep(.input-main .k-rich-textarea:hover) {
     box-shadow: 0 0 0 1px var(--main-light-color-70) inset !important;
     outline: none;
     transition: var(--el-transition-box-shadow);
 }
 
-:deep(.input-wrapper .k-rich-textarea:focus-within) {
+:deep(.input-main .k-rich-textarea:focus-within) {
     box-shadow: 0 0 0 1px var(--main-light-color-70) inset !important;
     outline: none;
     transition: var(--el-transition-box-shadow);
 }
 
-:deep(.input-wrapper .rich-editor) {
+:deep(.input-main .rich-editor) {
     min-height: 120px;
     color: var(--el-input-text-color, var(--el-text-color-regular));
 }
 
-:deep(.input-wrapper .rich-editor:empty::before) {
+:deep(.input-main .rich-editor:empty::before) {
     color: var(--el-input-placeholder-color, var(--el-text-color-placeholder));
 }
 

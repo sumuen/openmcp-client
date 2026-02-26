@@ -177,6 +177,7 @@
     "skill-path": "Skill Path",
     "skill-path-tip": "Path to SKILL.md file or skill directory. When set, skill content is added to system prompt and read_skill_file tool is enabled.",
     "skill-no-available": "No skills configured",
+    "skill-context-included": "This message will include SKILL context",
     "update-model-list": "Update Model List",
     "preset-env-sync.success": "Preset environment variables synced",
     "preset-env-sync.fail": "Preset environment variables sync failed",

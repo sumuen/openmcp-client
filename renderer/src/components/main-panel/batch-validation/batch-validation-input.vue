@@ -1,5 +1,6 @@
 <template>
     <div class="batch-validation-input-wrapper">
+        <div class="input-main">
         <!-- Slash 命令面板：与交互测试一致 -->
         <div v-if="showSlashMenu" class="slash-menu">
             <div
@@ -29,13 +30,15 @@
             @update:rich-content="onRichContentUpdate"
             @keydown="(e: KeyboardEvent) => handleSlashKeydown(e)"
         />
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, provide } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { listSkills, type SkillMetadata } from '@/api/skill';
+import { listSkills, loadSkillContent, type SkillMetadata } from '@/api/skill';
+import { mcpSetting } from '@/hook/mcp';
 import KRichTextarea from '../chat/chat-box/rich-textarea.vue';
 import type { ChatStorage, ChatSetting } from '../chat/chat-box/chat';
 import { llmManager } from '@/views/setting/llm';
@@ -157,6 +160,18 @@ function parseSlashCommand(text: string): { skillName: string; actualMessage: st
     return { skillName: match[1], actualMessage: (match[2] || '').trim() };
 }
 
+/** 当前输入的消息是否会包含 skill 上下文：批量验证每次运行上下文为空，仅当 skill 文件有效时显示 */
+const skillValid = ref(false);
+watch(() => mcpSetting.skillPath, async (path) => {
+    if (!path?.trim()) {
+        skillValid.value = false;
+        return;
+    }
+    const skill = await loadSkillContent();
+    skillValid.value = !!skill;
+}, { immediate: true });
+const willIncludeSkill = computed(() => skillValid.value);
+
 async function loadSlashSkills() {
     slashSkills.value = await listSkills();
 }
@@ -213,6 +228,15 @@ defineExpose({
 .batch-validation-input-wrapper {
     position: relative;
     width: 100%;
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.input-main {
+    flex: 1;
+    position: relative;
+    min-width: 0;
 }
 
 .slash-menu {
@@ -246,7 +270,7 @@ defineExpose({
 .slash-menu-empty { padding: 12px; color: var(--el-text-color-secondary); }
 
 /* 与 Element Plus el-input__wrapper 完全一致：默认 / hover / focus 均用 box-shadow */
-:deep(.k-rich-textarea) {
+:deep(.input-main .k-rich-textarea) {
     min-height: 160px;
     border: none !important;
     border-radius: var(--el-input-border-radius, var(--el-border-radius-base));
@@ -258,24 +282,24 @@ defineExpose({
     outline: none;
 }
 
-:deep(.k-rich-textarea:hover) {
+:deep(.input-main .k-rich-textarea:hover) {
     box-shadow: 0 0 0 1px var(--el-text-color-disabled) inset !important;
     outline: none;
     transition: var(--el-transition-box-shadow);
 }
 
-:deep(.k-rich-textarea:focus-within) {
+:deep(.input-main .k-rich-textarea:focus-within) {
     box-shadow: 0 0 0 1px var(--el-color-primary) inset !important;
     outline: none;
     transition: var(--el-transition-box-shadow);
 }
 
-:deep(.rich-editor) {
+:deep(.input-main .rich-editor) {
     min-height: 120px;
     color: var(--el-input-text-color, var(--el-text-color-regular));
 }
 
-:deep(.rich-editor:empty::before) {
+:deep(.input-main .rich-editor:empty::before) {
     color: var(--el-input-placeholder-color, var(--el-text-color-placeholder));
 }
 </style>

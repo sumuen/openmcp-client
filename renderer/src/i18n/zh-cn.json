@@ -176,6 +176,7 @@
     "skill-path": "Skill 路径",
     "skill-path-tip": "SKILL.md 文件或技能目录路径。设置后，技能内容会注入 system prompt，并启用 read_skill_file 工具。",
     "skill-no-available": "未配置技能",
+    "skill-context-included": "当前消息将包含 SKILL 上下文",
     "update-model-list": "更新模型列表",
     "preset-env-sync.success": "预设环境变量同步完成",
     "preset-env-sync.fail": "预设环境变量同步失败",

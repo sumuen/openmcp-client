@@ -81,7 +81,7 @@ function applyItemToDom(newItem: PromptTextItem) {
     border-radius: 0.3em;
     align-items: center;
     padding: 0 6px;
-    cursor: default;
+    cursor: pointer;
     background-color: #373839;
     border: 1px solid var(--foreground);
     font-size: var(--chat-font-size-sm, 13px);

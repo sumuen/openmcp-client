@@ -53,7 +53,7 @@ const displayText = computed(() => props.label ?? props.item.text);
     font-size: var(--chat-font-size-sm, 13px);
     margin: 0 2px;
     user-select: none;
-    cursor: default;
+    cursor: pointer;
     background-color: #373839;
     border: 1px solid var(--foreground);
     max-width: 120px;

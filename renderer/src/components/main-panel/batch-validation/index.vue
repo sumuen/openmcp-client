@@ -290,6 +290,7 @@ import { ArrowDown } from '@element-plus/icons-vue';
 import { v4 as uuidv4 } from 'uuid';
 import type { ChatMessage, ChatStorage, ChatSetting, EnableToolItem } from '../chat/chat-box/chat';
 import { TaskLoop } from '../chat/core/task-loop';
+import { loadSkillContent } from '@/api/skill';
 import { mcpClientAdapter } from '@/views/connect/core';
 import BatchValidationInput from './batch-validation-input.vue';
 import BatchValidationAgentTrace from './batch-validation-agent-trace.vue';
@@ -787,6 +788,10 @@ async function runValidation(comprehensive = false) {
                 (storage as any)._skillOverrideForNextMessage = slashParsed.skillName;
             }
 
+            // 判断本次消息是否会包含 skill 上下文（storage.messages 为空，即无历史对话）
+            const skillContent = await loadSkillContent(slashParsed?.skillName);
+            const hasSkillContext = !!skillContent && (!!slashParsed || storage.messages.length === 0);
+
             const loop = new TaskLoop({ maxEpochs: storage.settings?.contextLength || 50, verbose: 0 });
             const dummyContent = ref('');
             const dummyToolCalls = ref<any[]>([]);
@@ -799,7 +804,7 @@ async function runValidation(comprehensive = false) {
             const actualInput = slashParsed?.actualMessage !== undefined ? slashParsed.actualMessage || input : input;
             const loopStartTime = Date.now();
             currentTaskLoopRef.value = loop;
-            await loop.start(storage, actualInput, { mode: 'batch-validation' });
+            await loop.start(storage, actualInput, { mode: 'batch-validation', hasSkillContext });
             currentTaskLoopRef.value = null;
             if (abortRequested.value) break;
             const agentStats = extractAgentLoopStats(storage.messages, loopStartTime);
