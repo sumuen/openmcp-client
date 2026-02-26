@@ -126,6 +126,33 @@
                             {{ t('batch-validation-add-criterion') }}
                         </el-button>
                     </div>
+                    <!-- 历史验证结果：当有 lastResultGroup 时在底部展示汇总 -->
+                    <div v-if="currentResultGroups.length > 0" class="detail-history-stats">
+                        <div class="detail-history-stats-label">{{ t('batch-validation-last-run-summary') }}</div>
+                        <div class="detail-history-stats-content batch-results-header-stats">
+                            <span v-if="tabStorage.evaluationMode === 'pass-fail'" class="batch-results-header-stat pass">{{ t('batch-validation-pass') }}: {{ passFailSummary.pass }}</span>
+                            <span v-if="tabStorage.evaluationMode === 'pass-fail'" class="batch-results-header-stat fail">{{ t('batch-validation-fail') }}: {{ passFailSummary.fail }}</span>
+                            <span v-if="tabStorage.evaluationMode === 'score'" class="batch-results-header-stat">{{ t('batch-validation-mode-score') }}: {{ scoreSummaryText }}</span>
+                            <el-tooltip :content="t('batch-validation-agent-duration')" placement="top">
+                                <span class="batch-results-header-stat icon-stat">
+                                    <span class="batch-results-header-stat-icon iconfont icon-waiting"></span>
+                                    <span>{{ formatDuration(passFailSummary.durationMs) }}</span>
+                                </span>
+                            </el-tooltip>
+                            <el-tooltip :content="t('batch-validation-trace-input-token')" placement="top">
+                                <span class="batch-results-header-stat icon-stat">
+                                    <el-icon class="batch-results-header-stat-icon"><ArrowDown /></el-icon>
+                                    <span>{{ passFailSummary.inputTokens }}</span>
+                                </span>
+                            </el-tooltip>
+                            <el-tooltip :content="t('batch-validation-trace-output-token')" placement="top">
+                                <span class="batch-results-header-stat icon-stat">
+                                    <el-icon class="batch-results-header-stat-icon is-up"><ArrowDown /></el-icon>
+                                    <span>{{ passFailSummary.outputTokens }}</span>
+                                </span>
+                            </el-tooltip>
+                        </div>
+                    </div>
                 </div>
                 <div v-else class="no-selection">
                     <el-empty />
@@ -458,6 +485,22 @@ const passFailSummary = computed(() => {
         outputTokens += group.agentLoopStats?.outputTokens || 0;
     }
     return { pass, fail, durationMs, inputTokens, outputTokens };
+});
+
+/** 分数模式下的汇总文本（当前用例的 lastResultGroup） */
+const scoreSummaryText = computed(() => {
+    let total = 0;
+    let count = 0;
+    for (const group of currentResultGroups.value) {
+        for (const r of group.criterionResults || []) {
+            if (r.score !== undefined) {
+                total += r.score;
+                count++;
+            }
+        }
+    }
+    if (count === 0) return '-';
+    return ((total / count) / 10).toFixed(1) + '/1';
 });
 
 function formatDuration(ms: number): string {
@@ -1774,6 +1817,30 @@ watch(
     margin-right: 8px;
 }
 
+/* 测试样例配置底部：历史验证结果汇总（参考 batch-results-header-stats） */
+.detail-history-stats {
+    margin-top: 20px;
+    padding: 14px 16px;
+    background: color-mix(in srgb, var(--el-fill-color-light) 60%, var(--el-fill-color-blank));
+    border-radius: 10px;
+    border: 1px solid var(--el-border-color-lighter);
+}
+.detail-history-stats-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-secondary);
+    margin-bottom: 10px;
+    display: block;
+}
+.detail-history-stats-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    font-weight: 500;
+}
+
 .criterion-item {
     display: flex;
     gap: 8px;
@@ -1832,7 +1899,6 @@ watch(
 }
 
 .result-badge.pass {
-    background: var(--el-color-success-light-9);
     color: var(--el-color-success);
 }
 

@@ -432,6 +432,7 @@
     "batch-validation-result-summary": "pass {pass}, fail {fail}",
     "batch-validation-expand-detail": "展开详情",
     "batch-validation-collapse-detail": "收起详情",
+    "batch-validation-last-run-summary": "上次验证结果",
     "chat-tab": "聊天",
     "add": "添加"
 }

@@ -433,6 +433,7 @@
     "batch-validation-result-summary": "pass {pass}, fail {fail}",
     "batch-validation-expand-detail": "Expand",
     "batch-validation-collapse-detail": "Collapse",
+    "batch-validation-last-run-summary": "Last run",
     "chat-tab": "Chat",
     "add": "Add"
 }
