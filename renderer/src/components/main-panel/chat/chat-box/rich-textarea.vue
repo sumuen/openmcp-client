@@ -156,7 +156,11 @@ function syncModelValueToEditor() {
         renderRichContentToEditor(el, richItems);
         return;
     }
-    if (!props.modelValue) return;
+    if (!props.modelValue) {
+        /* 当 modelValue 为空时必须清空编辑器，避免切换用例时显示旧内容（如交互测试内容） */
+        if (el.textContent?.trim()) el.textContent = '';
+        return;
+    }
     const currentText = el.childNodes.length === 1 && el.childNodes[0].nodeType === Node.TEXT_NODE
         ? (el.childNodes[0].textContent || '')
         : Array.from(el.querySelectorAll('.real-text')).map(n => n.textContent || '').join(' ').trim();
@@ -174,6 +178,8 @@ onMounted(() => {
             renderRichContentToEditor(el, richItems);
         } else if (props.modelValue && !el.textContent?.trim()) {
             el.textContent = props.modelValue;
+        } else if (!props.modelValue && !richItems?.length) {
+            el.textContent = '';
         }
     });
 });
@@ -236,9 +242,7 @@ function handleInput(event: Event) {
     });
 
     emit('update:modelValue', fragments.join(' '));
-    if (props.syncValueToEditor) {
-        emit('update:richContent', extractRichContentFromEditor(editorElement));
-    }
+    emit('update:richContent', extractRichContentFromEditor(editorElement));
 }
 
 function extractTextFromCollection(collection: HTMLCollection) {

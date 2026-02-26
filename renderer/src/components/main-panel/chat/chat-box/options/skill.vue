@@ -61,9 +61,6 @@ const safeSaveSetting = debounce(() => {
     background-color: rgba(0, 0, 0, 0.1);
 }
 
-.setting-button.active {
-    color: var(--el-color-primary);
-}
 
 .skill-tip {
     margin-top: 12px;

@@ -68,15 +68,15 @@ const tabStorage = computed(() => {
     return tabItem.storage as BatchValidationStorage;
 });
 
-/** 输入内容：优先读写 tabStorage 当前用例的 input，否则回退到 modelValue/emit（草稿） */
+/** 输入内容：仅读写 tabStorage 当前用例的 input，与交互测试完全隔离（tabStorage 为空时返回空） */
 const inputValue = computed({
     get: () => {
         const st = tabStorage.value;
-        if (!st) return props.modelValue;
+        if (!st) return '';
         const idx = st.selectedCaseIndex;
         const arr = st.testCases || [];
         const tc = arr[idx];
-        return tc ? tc.input : props.modelValue;
+        return tc ? tc.input : (props.modelValue ?? '');
     },
     set: (v: string) => {
         const st = tabStorage.value;

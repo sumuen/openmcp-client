@@ -389,6 +389,7 @@
     "batch-validation-choose-skill": "选择 Skill",
     "batch-validation-no-test-cases": "暂无测试用例，请点击添加",
     "batch-validation-run": "执行验证",
+    "batch-validation-pause": "暂停",
     "batch-validation-results": "验证结果",
     "batch-validation-pass": "pass",
     "batch-validation-fail": "fail",

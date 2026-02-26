@@ -118,15 +118,6 @@ watch(showSkillDialog, async (v) => {
     color: var(--main-light-color-70);
 }
 
-.setting-button.active {
-    border-color: var(--main-light-color-90);
-    background-color: var(--main-light-color-40);
-}
-
-.setting-button.active .iconfont,
-.setting-button.active .skill-label {
-    color: var(--el-color-primary);
-}
 
 .skill-label {
     font-size: 11px;

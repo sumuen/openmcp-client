@@ -58,6 +58,11 @@
                                 @click.stop="openSettingsForTab(item.caseIndex)">
                                 <span class="iconfont icon-setting"></span>
                             </el-button>
+                            <div class="list-item-result-bar" :class="{
+                                'has-result': !!getListItemPassFail(item),
+                                'is-running': isRunning && runningCaseIndex === item.caseIndex
+                            }"
+                                :style="getListItemPassFail(item) ? { '--pass-pct': (getListItemPassFail(item)!.pass * 100) + '%' } : {}" />
                         </div>
                         <div v-if="listItems.length === 0" class="list-empty">
                             {{ t('batch-validation-no-cases-hint') }}
@@ -86,10 +91,14 @@
                                         <span class="iconfont icon-setting"></span>
                                     </el-button>
                                 </div>
-                                <el-button type="primary" :loading="isRunning" :disabled="!canRun"
-                                    class="detail-run-btn" @click="runValidation">
-                                    <span v-if="!isRunning" class="iconfont icon-play"></span>
+                                <el-button v-if="!isRunning" type="primary" :disabled="!canRun"
+                                    class="detail-run-btn" @click="runValidationCurrentCase">
+                                    <span class="iconfont icon-play"></span>
                                     {{ t('batch-validation-run') }}
+                                </el-button>
+                                <el-button v-else type="warning" class="detail-run-btn" @click="abortValidation">
+                                    <span class="iconfont icon-stop"></span>
+                                    {{ t('batch-validation-pause') }}
                                 </el-button>
                             </div>
                         </div>
@@ -127,7 +136,19 @@
                     <el-splitter-panel size="20%" :min="120" class="batch-results-panel">
                         <div class="batch-results-wrap">
                             <div class="batch-results-header">
-                                <span class="batch-results-header-title">{{ t('batch-validation-results') }}</span>
+                                <span class="batch-results-header-title">
+                                    {{ t('batch-validation-results') }}
+                                    <span v-if="isRunning && runningCaseIndex === tabStorage.selectedCaseIndex" class="batch-results-header-loading">
+                                        <svg class="batch-results-loading-spinner" viewBox="0 0 24 24" width="16" height="16">
+                                            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-dasharray="47 16" stroke-linecap="round" />
+                                        </svg>
+                                        <span class="batch-results-loading-text">{{ runStatusText }}</span>
+                                    </span>
+                                </span>
+                                <span v-if="isRunning && runningCaseIndex !== tabStorage.selectedCaseIndex" class="batch-results-header-running">
+                                    {{ runStatusText }}
+                                </span>
                                 <span v-if="tabStorage.evaluationMode === 'pass-fail'" class="batch-results-header-stats">
                                     <span class="batch-results-header-stat pass">pass: {{ passFailSummary.pass }}</span>
                                     <span class="batch-results-header-stat fail">fail: {{ passFailSummary.fail }}</span>
@@ -152,15 +173,13 @@
                                 </span>
                             </div>
                             <el-scrollbar class="batch-results-scroll">
-                                <div v-if="isRunning" class="batch-results-loading">
-                                    <el-icon class="batch-results-loading-icon"><Loading /></el-icon>
-                                    <span class="batch-results-loading-text">{{ runStatusText }}</span>
-                                </div>
-                                <div v-else-if="resultGroups.length === 0" class="batch-results-empty">
-                                    <span class="batch-results-empty-text">{{ t('batch-validation-results-empty-hint') }}</span>
-                                </div>
-                                <div v-else class="batch-log-history">
-                                    <div v-for="(group, gIdx) in resultGroups" :key="gIdx">
+                                <div class="batch-results-body">
+                                    <div class="batch-results-content">
+                                        <div v-if="currentResultGroups.length === 0" class="batch-results-empty">
+                                            <span class="batch-results-empty-text">{{ t('batch-validation-results-empty-hint') }}</span>
+                                        </div>
+                                        <div v-else class="batch-log-history">
+                                    <div v-for="(group, gIdx) in currentResultGroups" :key="gIdx">
                                         <div class="batch-log-evaluation">
                                             <div v-for="(r, rIdx) in group.criterionResults" :key="rIdx" class="batch-log-eval-item" :class="{ error: r.error }">
                                                 <div class="batch-log-eval-header">
@@ -203,6 +222,8 @@
                                             :fallback-input="group.agentMessages?.length ? undefined : group.testInput"
                                             :collapse-tools-by-default="true"
                                         />
+                                    </div>
+                                </div>
                                     </div>
                                 </div>
                             </el-scrollbar>
@@ -265,9 +286,9 @@ import { useMessageBridge } from '@/api/message-bridge';
 import { tabs } from '../panel';
 import { llms, llmManager } from '@/views/setting/llm';
 import { ElMessage, ElIcon } from 'element-plus';
-import { Loading, ArrowDown } from '@element-plus/icons-vue';
+import { ArrowDown } from '@element-plus/icons-vue';
 import { v4 as uuidv4 } from 'uuid';
-import type { ChatMessage, ChatStorage, ChatSetting } from '../chat/chat-box/chat';
+import type { ChatMessage, ChatStorage, ChatSetting, EnableToolItem } from '../chat/chat-box/chat';
 import { TaskLoop } from '../chat/core/task-loop';
 import { mcpClientAdapter } from '@/views/connect/core';
 import BatchValidationInput from './batch-validation-input.vue';
@@ -315,6 +336,12 @@ provide('updateChatRenderMessages', () => {});
 
 const isRunning = ref(false);
 const runStatusText = ref('');
+/** 当前正在执行的测试用例索引（单用例运行时），用于判断是否对当前选中用例显示 loading */
+const runningCaseIndex = ref<number | null>(null);
+/** 当前执行中的 TaskLoop，用于暂停 */
+const currentTaskLoopRef = ref<InstanceType<typeof TaskLoop> | null>(null);
+/** 用户请求中止当前执行 */
+const abortRequested = ref(false);
 const results = ref<ValidationResult[]>([]);
 const resultGroupsWithStats = ref<ResultGroup[]>(tabStorage.resultGroups ?? []);
 /** 从右往左拉出的配置抽屉（pass/score、描述等） */
@@ -326,12 +353,8 @@ const chatTabs = computed(() => {
         .filter(({ tab }) => tab.componentIndex === 3);
 });
 
-const sourceStorage = computed((): ChatStorage | null => {
-    const idx = tabStorage.sourceTabIndex ?? 0;
-    const item = chatTabs.value[idx];
-    if (!item) return null;
-    return item.tab.storage as ChatStorage;
-});
+/** 批量验证与交互测试隔离：不共享数据，始终为 null，由 BatchValidationInput 使用自身默认配置 */
+const sourceStorage = computed((): ChatStorage | null => null);
 
 function getTabLabel(tab: { name: string; icon: string }, idx: number) {
     const name = typeof tab.name === 'string' ? tab.name : (tab.name as any)?.value ?? '';
@@ -360,6 +383,21 @@ function getListItemPreview(caseIndex: number) {
     if (tc.description?.trim()) return tc.description;
     if (tc.input?.trim()) return tc.input.substring(0, 40) + (tc.input.length > 40 ? '...' : '');
     return '';
+}
+
+/** 列表项 pass/fail 比例（用于右侧可视化条） */
+function getListItemPassFail(item: { caseIndex: number; tc: TestCase }) {
+    const g = item.tc.lastResultGroup;
+    if (!g?.criterionResults?.length) return null;
+    let pass = 0;
+    let fail = 0;
+    for (const r of g.criterionResults) {
+        if (r.pass === true) pass++;
+        else if (r.pass === false || r.error) fail++;
+    }
+    const total = pass + fail;
+    if (total === 0) return null;
+    return { pass: pass / total, fail: fail / total };
 }
 
 /** 当前选中的测试用例（已持久化） */
@@ -396,8 +434,12 @@ function commitDraftToCase() {
     draftTestCase.value = null;
 }
 
-/** 按测试用例分组的结果（含 agent loop 统计） */
-const resultGroups = computed(() => resultGroupsWithStats.value);
+/** 当前选中测试用例的验证结果，切换用例时显示对应的结果 */
+const currentResultGroups = computed((): ResultGroup[] => {
+    const tc = currentTestCase.value;
+    const g = tc?.lastResultGroup;
+    return g ? [g] : [];
+});
 
 const passFailSummary = computed(() => {
     let pass = 0;
@@ -405,7 +447,7 @@ const passFailSummary = computed(() => {
     let durationMs = 0;
     let inputTokens = 0;
     let outputTokens = 0;
-    for (const group of resultGroups.value) {
+    for (const group of currentResultGroups.value) {
         for (const item of group.criterionResults || []) {
             if (item.pass === true) pass++;
             else if (item.pass === false || item.error) fail++;
@@ -559,14 +601,25 @@ function applyPreset(preset: { id: string; name: string; indices: number[] }) {
     tabStorage.currentPresetId = preset.id;
 }
 
-/** 综合测试可执行：至少勾选一个且勾选的均为有效用例 */
+/** 综合测试用例：有勾选时用勾选的，否则用全部有效用例（点击直接执行，无需勾选） */
 const comprehensiveTestCases = computed(() => {
     const indices = new Set(tabStorage.comprehensiveSelectedIndices ?? []);
-    return validTestCases.value.filter(({ caseIndex }) => indices.has(caseIndex));
+    const selected = validTestCases.value.filter(({ caseIndex }) => indices.has(caseIndex));
+    return selected.length > 0 ? selected : validTestCases.value;
 });
 const canRunComprehensive = computed(() => {
-    return comprehensiveTestCases.value.length > 0 && llms.length > 0 && mcpClientAdapter.connected;
+    return validTestCases.value.length > 0 && llms.length > 0 && mcpClientAdapter.connected;
 });
+
+function abortValidation() {
+    abortRequested.value = true;
+    currentTaskLoopRef.value?.abort();
+}
+
+/** 仅执行当前选中的测试样例（详情区「执行验证」按钮） */
+function runValidationCurrentCase() {
+    runValidation(false);
+}
 
 function selectTestCase(caseIndex: number) {
     if (caseIndex === tabStorage.selectedCaseIndex) return;
@@ -648,6 +701,7 @@ async function runValidation(comprehensive = false) {
     }
 
     isRunning.value = true;
+    abortRequested.value = false;
     results.value = [];
     resultGroupsWithStats.value = [];
     tabStorage.resultGroups = [];
@@ -660,68 +714,73 @@ async function runValidation(comprehensive = false) {
         temperature: 0
     };
 
-    const casesToRun = comprehensive ? comprehensiveTestCases.value : validTestCases.value;
+    /** 单用例：仅当前选中；综合：勾选或预设 */
+    const selectedIdx = tabStorage.selectedCaseIndex ?? 0;
+    const casesToRun = comprehensive
+        ? comprehensiveTestCases.value
+        : (() => {
+            const arr = tabStorage.testCases || [];
+            const tc = arr[selectedIdx];
+            if (!tc?.input?.trim() || !tc.criteria?.some((c: string) => c.trim())) return [];
+            return [{ caseIndex: selectedIdx, tc }];
+        })();
     if (casesToRun.length === 0) {
         ElMessage.warning(comprehensive ? t('batch-validation-select-at-least-one') : t('batch-validation-invalid-cases'));
         isRunning.value = false;
+        runningCaseIndex.value = null;
         return;
     }
+    runningCaseIndex.value = comprehensive ? null : casesToRun[0].caseIndex;
 
     try {
         const allResults: ValidationResult[] = [];
         const groupsWithStats: ResultGroup[] = [];
 
-        const activeChatTabIndex = chatTabs.value.findIndex(item => item.originalIndex === tabs.activeIndex);
-        const sourceTab = activeChatTabIndex >= 0 ? activeChatTabIndex : (tabStorage.sourceTabIndex ?? 0);
-        if (tabStorage.sourceTabIndex !== sourceTab) {
-            tabStorage.sourceTabIndex = sourceTab;
-        }
-        const tabItem = chatTabs.value[sourceTab];
-        if (!tabItem) {
-            ElMessage.warning(t('batch-validation-no-chat-tabs'));
-            isRunning.value = false;
-            return;
-        }
-        const chatStorage = tabItem.tab.storage as ChatStorage;
+        /** 与交互测试隔离：使用 MCP 已连接客户端的工具列表（与交互测试一致，默认全部启用） */
+        const tempLoop = new TaskLoop({ maxEpochs: 50, verbose: 0 });
+        const mcpTools = await tempLoop.listTools();
+        const defaultEnableTools: EnableToolItem[] = mcpTools.map(tool => ({
+            name: tool.name,
+            description: tool.description,
+            inputSchema: tool.inputSchema,
+            enabled: true
+        }));
 
-        for (let i = 0; i < casesToRun.length; i++) {
-            const { tc } = casesToRun[i];
-            const input = tc.input.trim();
-            const criteria = tc.criteria.filter((c) => c.trim());
-
-            runStatusText.value = t('batch-validation-status-agent');
-
-            const inputRef = tcInputRefs.get(tc.id);
-            const inputVirtualStorageSettings = (inputRef?.virtualStorage as any)?.value?.settings;
-            const sourceSettings = chatStorage.settings || ({} as ChatSetting);
-            const sourceEnableTools = Array.isArray(sourceSettings.enableTools) ? sourceSettings.enableTools : [];
-            const inputEnableTools = Array.isArray(inputVirtualStorageSettings?.enableTools)
-                ? inputVirtualStorageSettings.enableTools
-                : [];
-            const mergedEnableTools = (inputEnableTools.length > 0 ? inputEnableTools : sourceEnableTools);
-
-            let storage: ChatStorage = JSON.parse(JSON.stringify({
-                ...chatStorage,
-                id: uuidv4(),
-                messages: []
-            }));
-            const defaultSettings: ChatSetting = {
+        /** 与交互测试隔离：task loop 始终使用独立的默认配置，enableTools 来自 MCP */
+        const createDefaultBaseStorage = (): ChatStorage => ({
+            id: uuidv4(),
+            messages: [],
+            settings: {
                 modelIndex: llmManager.currentModelIndex,
-                enableTools: [],
+                enableTools: defaultEnableTools,
                 enableWebSearch: false,
                 temperature: 0.6,
                 contextLength: 100,
                 systemPrompt: '',
                 enableXmlWrapper: false,
                 parallelToolCalls: true
+            }
+        });
+
+        for (let i = 0; i < casesToRun.length; i++) {
+            const { caseIndex, tc } = casesToRun[i];
+            const input = tc.input.trim();
+            const criteria = tc.criteria.filter((c) => c.trim());
+
+            runStatusText.value = t('batch-validation-status-agent');
+
+            const inputRef = tcInputRefs.get(tc.id);
+            const inputVirtualStorageSettings = (inputRef?.virtualStorage as any)?.value?.settings ?? {};
+
+            const baseStorage = createDefaultBaseStorage();
+            const storage: ChatStorage = {
+                ...baseStorage,
+                id: uuidv4(),
+                messages: []
             };
             storage.settings = {
-                ...defaultSettings,
-                ...sourceSettings,
-                ...(inputVirtualStorageSettings || {}),
-                enableTools: mergedEnableTools,
-                enableXmlWrapper: inputVirtualStorageSettings?.enableXmlWrapper ?? sourceSettings.enableXmlWrapper ?? false,
-                parallelToolCalls: inputVirtualStorageSettings?.parallelToolCalls ?? sourceSettings.parallelToolCalls ?? true
+                ...baseStorage.settings,
+                ...inputVirtualStorageSettings
             };
             const slashParsed = inputRef?.parseSlashCommand?.(input);
             if (slashParsed?.skillName) {
@@ -739,14 +798,17 @@ async function runValidation(comprehensive = false) {
 
             const actualInput = slashParsed?.actualMessage !== undefined ? slashParsed.actualMessage || input : input;
             const loopStartTime = Date.now();
+            currentTaskLoopRef.value = loop;
             await loop.start(storage, actualInput, { mode: 'batch-validation' });
+            currentTaskLoopRef.value = null;
+            if (abortRequested.value) break;
             const agentStats = extractAgentLoopStats(storage.messages, loopStartTime);
 
             const trace = messagesToTrace(storage.messages);
             if (trace.length === 0) {
                 const errResult: ValidationResult = {
                     testCaseId: tc.id,
-                    testCaseIndex: i,
+                    testCaseIndex: caseIndex,
                     criterionIndex: 0,
                     testInput: input,
                     testCaseCriteria: criteria[0] || '',
@@ -754,14 +816,17 @@ async function runValidation(comprehensive = false) {
                     error: t('batch-validation-empty-trace')
                 };
                 allResults.push(errResult);
-                groupsWithStats.push({
-                    testCaseIndex: i,
+                const errGroup: ResultGroup = {
+                    testCaseIndex: caseIndex,
                     testInput: input,
                     inputRichContent: tc.inputRichContent,
                     agentMessages: storage.messages,
                     agentLoopStats: agentStats,
                     criterionResults: [errResult]
-                });
+                };
+                groupsWithStats.push(errGroup);
+                const tcArr = tabStorage.testCases;
+                if (tcArr && tcArr[caseIndex]) (tcArr[caseIndex] as any).lastResultGroup = errGroup;
                 continue;
             }
 
@@ -798,7 +863,7 @@ async function runValidation(comprehensive = false) {
                 apiResults.forEach((r, cIdx) => {
                     const vr: ValidationResult = {
                         testCaseId: r.testCaseId,
-                        testCaseIndex: i,
+                        testCaseIndex: caseIndex,
                         criterionIndex: cIdx,
                         testInput: input,
                         testCaseCriteria: r.testCaseCriteria,
@@ -813,20 +878,23 @@ async function runValidation(comprehensive = false) {
                     allResults.push(vr);
                     criterionResults.push(vr);
                 });
-                groupsWithStats.push({
-                    testCaseIndex: i,
+                const successGroup: ResultGroup = {
+                    testCaseIndex: caseIndex,
                     testInput: input,
                     inputRichContent: tc.inputRichContent,
                     agentMessages: storage.messages,
                     agentLoopStats: agentStats,
                     criterionResults
-                });
+                };
+                groupsWithStats.push(successGroup);
+                const tcArrS = tabStorage.testCases;
+                if (tcArrS && tcArrS[caseIndex]) (tcArrS[caseIndex] as any).lastResultGroup = successGroup;
             } else {
                 const criterionResults: ValidationResult[] = [];
                 criteria.forEach((c, cIdx) => {
                     const vr: ValidationResult = {
                         testCaseId: tc.id,
-                        testCaseIndex: i,
+                        testCaseIndex: caseIndex,
                         criterionIndex: cIdx,
                         testInput: input,
                         testCaseCriteria: c,
@@ -836,14 +904,17 @@ async function runValidation(comprehensive = false) {
                     allResults.push(vr);
                     criterionResults.push(vr);
                 });
-                groupsWithStats.push({
-                    testCaseIndex: i,
+                const failGroup: ResultGroup = {
+                    testCaseIndex: caseIndex,
                     testInput: input,
                     inputRichContent: tc.inputRichContent,
                     agentMessages: storage.messages,
                     agentLoopStats: agentStats,
                     criterionResults
-                });
+                };
+                groupsWithStats.push(failGroup);
+                const tcArrF = tabStorage.testCases;
+                if (tcArrF && tcArrF[caseIndex]) (tcArrF[caseIndex] as any).lastResultGroup = failGroup;
             }
         }
 
@@ -857,6 +928,9 @@ async function runValidation(comprehensive = false) {
         runStatusText.value = '';
     } finally {
         isRunning.value = false;
+        runningCaseIndex.value = null;
+        currentTaskLoopRef.value = null;
+        abortRequested.value = false;
     }
 }
 
@@ -883,7 +957,16 @@ async function loadBatchValidationFromDuckDb() {
     if (res.code === 200 && res.msg?.storage) {
         Object.assign(tab.storage, res.msg.storage);
         ensureBatchValidationStorage(tab.storage);
-        resultGroupsWithStats.value = tabStorage.resultGroups ?? [];
+        // 迁移：将旧的 resultGroups 按 testCaseIndex 写入各用例的 lastResultGroup
+        const groups = tabStorage.resultGroups ?? [];
+        const tcArr = tabStorage.testCases ?? [];
+        for (const g of groups) {
+            const idx = g.testCaseIndex;
+            if (idx >= 0 && idx < tcArr.length && !(tcArr[idx] as any).lastResultGroup) {
+                (tcArr[idx] as any).lastResultGroup = g;
+            }
+        }
+        resultGroupsWithStats.value = groups;
     }
 }
 onMounted(() => {
@@ -1008,7 +1091,16 @@ watch(
     gap: 12px;
 }
 
+.batch-results-header-running {
+    font-size: 12px;
+    opacity: 0.8;
+    margin-left: 8px;
+}
+
 .batch-results-header-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     font-weight: 600;
 }
 
@@ -1066,29 +1158,38 @@ watch(
     color: var(--el-text-color-secondary);
 }
 
-.batch-results-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 60px 20px;
-    gap: 16px;
+.batch-results-body {
+    min-height: 100%;
 }
 
-.batch-results-loading-icon {
-    font-size: 32px;
+.batch-results-content {
+    width: 100%;
+}
+
+
+.batch-results-header-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 4px;
+    font-size: 13px;
+    font-weight: normal;
     color: var(--el-color-primary);
-    animation: batch-loading-spin 1s linear infinite;
+}
+
+.batch-results-loading-spinner {
+    flex-shrink: 0;
+    color: var(--el-color-primary);
+    animation: batch-loading-spin 0.8s linear infinite;
 }
 
 @keyframes batch-loading-spin {
-    from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
 
 .batch-results-loading-text {
-    font-size: 14px;
-    color: var(--el-text-color-secondary);
+    font-size: 13px;
+    color: var(--el-color-primary);
 }
 
 .batch-log-history {
@@ -1312,6 +1413,33 @@ watch(
 
 .batch-list-panel .list-item-setting-btn .iconfont {
     margin: 0;
+}
+
+.batch-list-panel .list-item-result-bar {
+    width: 5px;
+    min-width: 5px;
+    align-self: stretch;
+    border-radius: 0.2em;
+    background: var(--el-bg-color);
+}
+
+.batch-list-panel .list-item-result-bar.has-result {
+    background: linear-gradient(
+        to bottom,
+        var(--batch-result-pass, #67c23a) 0,
+        var(--batch-result-pass, #67c23a) var(--pass-pct, 100%),
+        var(--batch-result-fail, #f56c6c) var(--pass-pct, 100%),
+        var(--batch-result-fail, #f56c6c) 100%
+    );
+}
+
+@keyframes batch-result-bar-color-flow {
+    0%, 100% { background: var(--main-light-color-70); }
+    50% { background: var(--main-light-color-10); }
+}
+
+.batch-list-panel .list-item-result-bar.is-running {
+    animation: batch-result-bar-color-flow 1.5s ease-in-out infinite;
 }
 
 .batch-list-panel .list-item:hover {

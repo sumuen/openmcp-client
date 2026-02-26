@@ -26,6 +26,7 @@
                 v-model="userInput"
                 :placeholder="t('enter-message-dot')"
                 :customClass="'chat-input'"
+                @update:rich-content="lastRichContent = $event"
                 @press-enter="handleSend()"
                 @keydown="(e: KeyboardEvent) => handleSlashKeydown(e)"
             />
@@ -77,6 +78,8 @@ if (!tabStorage.messages) {
 }
 
 const userInput = ref<string>('');
+/** 输入框最新的 richContent（prompt 卡片等），用于发送时保留卡片形态到历史 */
+const lastRichContent = ref<import('./chat').RichTextItem[]>([]);
 
 let loop: TaskLoop | undefined = undefined;
 
@@ -196,11 +199,12 @@ function handleSend(newMessage?: string, richContentOverride?: import('./chat').
         userMessage = slashParsed.actualMessage || userMessage;
     }
 
-    // 重新回答时传入的 richContent 优先，否则从输入框提取（用于历史记录渲染）
-    const richContent = richContentOverride ?? editorRef.value?.extractRichContent?.() ?? [];
+    // 重新回答时传入的 richContent 优先；否则用输入框最新 richContent 或现场提取，确保 prompt 卡片形态保存到历史
+    const richContent = richContentOverride ?? (lastRichContent.value?.length ? lastRichContent.value : editorRef.value?.extractRichContent?.() ?? []);
 
-    // 清空文本
+    // 清空文本（同时清空 lastRichContent 避免下次误用）
     userInput.value = '';
+    lastRichContent.value = [];
     showSlashMenu.value = false;
     const editor = editorRef.value?.editor;
     if (editor) {
@@ -238,8 +242,12 @@ function handleSingleSend(userMessage: string, richContent: import('./chat').Ric
         }
     });
 
+
     loop = new TaskLoop();
     loop.bindStreaming(streamingContent, streamingToolCalls);
+
+    console.log(tabStorage);
+    
 
     loop.registerOnError((error) => {
         const errorMessage = clearErrorMessage(error.msg);

@@ -390,6 +390,7 @@
     "batch-validation-choose-skill": "Choose Skill",
     "batch-validation-no-test-cases": "No test cases. Click Add to create",
     "batch-validation-run": "Run Validation",
+    "batch-validation-pause": "Pause",
     "batch-validation-results": "Validation Results",
     "batch-validation-pass": "Pass",
     "batch-validation-fail": "Fail",

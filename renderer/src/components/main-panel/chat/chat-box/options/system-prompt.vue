@@ -152,9 +152,6 @@ onMounted(async () => {
     background-color: rgba(0, 0, 0, 0.1);
 }
 
-.setting-button.active {
-    color: var(--el-color-primary);
-}
 
 .tool-use .el-input__wrapper {
     margin-bottom: 20px;

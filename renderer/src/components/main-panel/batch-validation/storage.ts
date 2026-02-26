@@ -9,6 +9,8 @@ export interface BatchValidationTestCase {
     /** 提词卡片等富文本结构，用于刷新后恢复卡片展示 */
     inputRichContent?: RichTextItem[];
     criteria: string[];
+    /** 该用例最近一次验证结果，切换用例时显示对应的结果 */
+    lastResultGroup?: BatchValidationResultGroup;
 }
 
 /** 用户保存的综合测试预设（名称 + 用例索引列表） */

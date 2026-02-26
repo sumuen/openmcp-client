@@ -2,8 +2,7 @@
     <el-popover
         :placement="placement"
         :width="popoverWidth"
-        trigger="hover"
-        :show-after="100"
+        trigger="click"
         popper-class="rich-card-prompt-popover"
         persistent
     >
