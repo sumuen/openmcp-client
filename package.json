@@ -265,7 +265,14 @@
         "prepare:ocr": "rollup -c rollup.tesseract.js --bundleConfigAsCjs",
         "build:news": "npx tsx scripts/update-news-data.mts",
         "build:task-loop": "npx vite build --config renderer/vite.config.task-loop.mjs && node renderer/scripts/task-loop.build.mjs",
-        "build:sdk": "npm run build && npm run build:task-loop"
+        "build:sdk": "npm run build && npm run build:task-loop",
+        "publish": "npx tsx scripts/publish.mts",
+        "publish:check": "npx tsx scripts/publish.mts --check-only",
+        "publish:quick": "npx tsx scripts/publish.mts --skip-news",
+        "publish:update": "npx tsx scripts/publish.mts --update",
+        "publish:vsce": "npx tsx scripts/publish.mts --publish-vsce",
+        "publish:github": "npx tsx scripts/publish.mts --publish-github",
+        "publish:all": "npx tsx scripts/publish.mts --all"
     },
     "dependencies": {
         "@modelcontextprotocol/sdk": "^1.12.1",
