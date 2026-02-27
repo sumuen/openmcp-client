@@ -5,33 +5,17 @@
                 <div class="batch-list-panel">
             <div class="list-header">
                 <div class="list-add-btn-wrap">
-                    <el-button class="list-add-btn" @click="addTestCaseFromList">
-                        <span class="iconfont icon-add"></span>
-                        <span class="list-add-btn-text">{{ t('add') }}</span>
-                    </el-button>
-                    <el-dropdown split-button type="primary" class="list-comprehensive-dropdown"
-                        :loading="isRunning" :disabled="!canRunComprehensive"
-                        @click="runValidation(true)">
-                        <span class="list-comprehensive-btn-text">{{ comprehensiveButtonLabel }}</span>
-                        <template #dropdown>
-                            <el-dropdown-menu>
-                                <el-dropdown-item @click="openSavePresetDialog">
-                                    <span class="iconfont icon-add"></span>
-                                    {{ t('batch-validation-save-as-preset') }}
-                                </el-dropdown-item>
-                                <el-dropdown-item v-if="comprehensivePresets.length === 0" disabled>
-                                    {{ t('batch-validation-no-presets') }}
-                                </el-dropdown-item>
-                                <template v-else>
-                                    <el-dropdown-item v-for="(preset, pIdx) in comprehensivePresets" :key="preset.id"
-                                        :divided="pIdx === 0"
-                                        @click="applyPreset(preset)">
-                                        {{ preset.name }}
-                                    </el-dropdown-item>
-                                </template>
-                            </el-dropdown-menu>
-                        </template>
-                    </el-dropdown>
+                    <el-button-group class="executor-actions-group list-header-btn-group">
+                        <el-button class="list-add-btn" @click="addTestCaseFromList">
+                            <span class="iconfont icon-add"></span>
+                            <span class="list-add-btn-text">{{ t('add') }}</span>
+                        </el-button>
+                        <el-button type="primary" class="list-comprehensive-btn"
+                            :loading="isRunning" :disabled="!canRunComprehensive"
+                            @click="runComprehensiveValidation">
+                            <span class="list-comprehensive-btn-text">{{ comprehensiveButtonLabel }}</span>
+                        </el-button>
+                    </el-button-group>
                 </div>
             </div>
             <div class="list-container">
@@ -60,7 +44,7 @@
                             </el-button>
                             <div class="list-item-result-bar" :class="{
                                 'has-result': !!getListItemPassFail(item),
-                                'is-running': isRunning && runningCaseIndex === item.caseIndex
+                                'is-running': runningCaseIndices.has(item.caseIndex)
                             }"
                                 :style="getListItemPassFail(item) ? { '--pass-pct': (getListItemPassFail(item)!.pass * 100) + '%' } : {}" />
                         </div>
@@ -91,7 +75,7 @@
                                         <span class="iconfont icon-setting"></span>
                                     </el-button>
                                 </div>
-                                <el-button v-if="!isRunning" type="primary" :disabled="!canRun"
+                                <el-button v-if="!isSelectedCaseRunning" type="primary" :disabled="!canRun"
                                     class="detail-run-btn" @click="runValidationCurrentCase">
                                     <span class="iconfont icon-play"></span>
                                     {{ t('batch-validation-run') }}
@@ -138,16 +122,13 @@
                             <div class="batch-results-header">
                                 <span class="batch-results-header-title">
                                     {{ t('batch-validation-results') }}
-                                    <span v-if="isRunning && runningCaseIndex === tabStorage.selectedCaseIndex" class="batch-results-header-loading">
+                                    <span v-if="isSelectedCaseRunning" class="batch-results-header-loading">
                                         <svg class="batch-results-loading-spinner" viewBox="0 0 24 24" width="16" height="16">
                                             <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"
                                                 stroke-dasharray="47 16" stroke-linecap="round" />
                                         </svg>
                                         <span class="batch-results-loading-text">{{ runStatusText }}</span>
                                     </span>
-                                </span>
-                                <span v-if="isRunning && runningCaseIndex !== tabStorage.selectedCaseIndex" class="batch-results-header-running">
-                                    {{ runStatusText }}
                                 </span>
                                 <span v-if="tabStorage.evaluationMode === 'pass-fail'" class="batch-results-header-stats">
                                     <span class="batch-results-header-stat pass">pass: {{ passFailSummary.pass }}</span>
@@ -179,51 +160,50 @@
                                             <span class="batch-results-empty-text">{{ t('batch-validation-results-empty-hint') }}</span>
                                         </div>
                                         <div v-else class="batch-log-history">
-                                    <div v-for="(group, gIdx) in currentResultGroups" :key="gIdx">
-                                        <div class="batch-log-evaluation">
-                                            <div v-for="(r, rIdx) in group.criterionResults" :key="rIdx" class="batch-log-eval-item" :class="{ error: r.error }">
-                                                <div class="batch-log-eval-header">
-                                                    <span class="batch-log-eval-index">{{ r.testCaseCriteria || `#${rIdx + 1}` }}</span>
-                                                    <span v-if="tabStorage.evaluationMode === 'pass-fail'" class="result-badge"
-                                                        :class="r.pass === true ? 'pass' : r.pass === false ? 'fail' : 'unknown'">
-                                                        {{ r.pass === true ? t('batch-validation-pass') : r.pass === false ? t('batch-validation-fail') : '?' }}
-                                                    </span>
-                                                    <span v-else class="result-score">
-                                                        {{ r.score !== undefined ? (r.score / 10).toFixed(1) + '/1' : '-' }}
-                                                    </span>
+                                            <div v-for="(group, gIdx) in currentResultGroups" :key="gIdx">
+                                                    <div class="batch-log-evaluation">
+                                                        <div v-for="(r, rIdx) in group.criterionResults" :key="rIdx" class="batch-log-eval-item" :class="{ error: r.error }">
+                                                            <div class="batch-log-eval-header">
+                                                                <span class="batch-log-eval-index">{{ r.testCaseCriteria || `#${rIdx + 1}` }}</span>
+                                                                <span v-if="tabStorage.evaluationMode === 'pass-fail'" class="result-badge"
+                                                                    :class="r.pass === true ? 'pass' : r.pass === false ? 'fail' : 'unknown'">
+                                                                    {{ r.pass === true ? t('batch-validation-pass') : r.pass === false ? t('batch-validation-fail') : '?' }}
+                                                                </span>
+                                                                <span v-else class="result-score">
+                                                                    {{ r.score !== undefined ? (r.score / 10).toFixed(1) + '/1' : '-' }}
+                                                                </span>
+                                                            </div>
+                                                            <div v-if="r.reason" class="batch-log-eval-reason markdown-body" v-html="markdownToHtml(r.reason)"></div>
+                                                            <div v-if="r.error" class="result-error">{{ r.error }}</div>
+                                                        </div>
+                                                        <div v-if="getGroupEvalTokens(group).total > 0" class="batch-log-eval-tokens">
+                                                            <span class="batch-log-eval-tokens-label">{{ t('batch-validation-eval-tokens') }}</span>
+                                                            <el-tooltip :content="t('input-token')" placement="top">
+                                                                <span class="batch-log-eval-tokens-stat">
+                                                                    <el-icon class="batch-log-eval-tokens-icon"><ArrowDown /></el-icon>
+                                                                    {{ getGroupEvalTokens(group).input }}
+                                                                </span>
+                                                            </el-tooltip>
+                                                            <el-tooltip :content="t('output-token')" placement="top">
+                                                                <span class="batch-log-eval-tokens-stat">
+                                                                    <el-icon class="batch-log-eval-tokens-icon is-up"><ArrowDown /></el-icon>
+                                                                    {{ getGroupEvalTokens(group).output }}
+                                                                </span>
+                                                            </el-tooltip>
+                                                        </div>
+                                                    </div>
+                                                    <hr>
+                                                    <h2>Trace</h2>
+                                                    <BatchValidationAgentTrace
+                                                        v-if="group.agentMessages?.length || group.testInput || group.inputRichContent?.length"
+                                                        :messages="group.agentMessages ?? []"
+                                                        :tab-id="props.tabId"
+                                                        :input-rich-content="group.inputRichContent"
+                                                        :fallback-input="group.agentMessages?.length ? undefined : group.testInput"
+                                                        :collapse-tools-by-default="true"
+                                                    />
                                                 </div>
-                                                <div v-if="r.reason" class="batch-log-eval-reason markdown-body" v-html="markdownToHtml(r.reason)"></div>
-                                                <div v-if="r.error" class="result-error">{{ r.error }}</div>
                                             </div>
-                                            <div v-if="getGroupEvalTokens(group).total > 0" class="batch-log-eval-tokens">
-                                                <span class="batch-log-eval-tokens-label">{{ t('batch-validation-eval-tokens') }}</span>
-                                                <el-tooltip :content="t('input-token')" placement="top">
-                                                    <span class="batch-log-eval-tokens-stat">
-                                                        <el-icon class="batch-log-eval-tokens-icon"><ArrowDown /></el-icon>
-                                                        {{ getGroupEvalTokens(group).input }}
-                                                    </span>
-                                                </el-tooltip>
-                                                <el-tooltip :content="t('output-token')" placement="top">
-                                                    <span class="batch-log-eval-tokens-stat">
-                                                        <el-icon class="batch-log-eval-tokens-icon is-up"><ArrowDown /></el-icon>
-                                                        {{ getGroupEvalTokens(group).output }}
-                                                    </span>
-                                                </el-tooltip>
-                                            </div>
-                                        </div>
-                                        <hr>
-
-                                        <h2>Trace</h2>
-                                        <BatchValidationAgentTrace
-                                            v-if="group.agentMessages?.length || group.testInput || group.inputRichContent?.length"
-                                            :messages="group.agentMessages ?? []"
-                                            :tab-id="props.tabId"
-                                            :input-rich-content="group.inputRichContent"
-                                            :fallback-input="group.agentMessages?.length ? undefined : group.testInput"
-                                            :collapse-tools-by-default="true"
-                                        />
-                                    </div>
-                                </div>
                                     </div>
                                 </div>
                             </el-scrollbar>
@@ -264,18 +244,6 @@
                     </div>
                 </Transition>
             </Teleport>
-            <!-- 保存为综合测试：输入名称 -->
-            <el-dialog v-model="savePresetDialogVisible" :title="t('batch-validation-save-as-preset')"
-                width="400px" append-to-body @closed="presetNameInput = ''">
-                <el-input v-model="presetNameInput" :placeholder="t('batch-validation-preset-name-placeholder')"
-                    maxlength="64" show-word-limit @keyup.enter="confirmSavePreset" />
-                <template #footer>
-                    <el-button @click="savePresetDialogVisible = false">{{ t('cancel') }}</el-button>
-                    <el-button type="primary" :disabled="!presetNameInput.trim()" @click="confirmSavePreset">
-                        {{ t('confirm') }}
-                    </el-button>
-                </template>
-            </el-dialog>
     </div>
 </template>
 
@@ -337,10 +305,10 @@ provide('updateChatRenderMessages', () => {});
 
 const isRunning = ref(false);
 const runStatusText = ref('');
-/** 当前正在执行的测试用例索引（单用例运行时），用于判断是否对当前选中用例显示 loading */
-const runningCaseIndex = ref<number | null>(null);
-/** 当前执行中的 TaskLoop，用于暂停 */
-const currentTaskLoopRef = ref<InstanceType<typeof TaskLoop> | null>(null);
+/** 当前正在执行的测试用例索引集合（综合测试时多个，单用例时一个），用于列表项和详情区 UI */
+const runningCaseIndices = ref<Set<number>>(new Set());
+/** 当前执行中的 TaskLoop 映射（caseIndex -> loop），用于暂停时 abort 所有 */
+const taskLoopRefsByCase = new Map<number, InstanceType<typeof TaskLoop>>();
 /** 用户请求中止当前执行 */
 const abortRequested = ref(false);
 const results = ref<ValidationResult[]>([]);
@@ -400,6 +368,11 @@ function getListItemPassFail(item: { caseIndex: number; tc: TestCase }) {
     if (total === 0) return null;
     return { pass: pass / total, fail: fail / total };
 }
+
+/** 当前选中的用例是否正在执行（用于详情区：仅此时显示暂停按钮和 running 状态） */
+const isSelectedCaseRunning = computed(() =>
+    runningCaseIndices.value.has(tabStorage.selectedCaseIndex ?? -1)
+);
 
 /** 当前选中的测试用例（已持久化） */
 const currentTestCase = computed(() => {
@@ -565,64 +538,19 @@ function toggleComprehensiveSelection(caseIndex: number) {
         set.add(caseIndex);
     }
     tabStorage.comprehensiveSelectedIndices = Array.from(set).sort((a, b) => a - b);
-    tabStorage.currentPresetId = undefined;
 }
 
-/** 用户保存的综合测试预设列表 */
-const comprehensivePresets = computed(() => tabStorage.comprehensivePresets ?? []);
-
-/** 综合测试按钮主区文案：当前预设名 或 “执行综合测试 (N 项)” */
+/** 综合测试按钮文案：“执行综合测试 (N 项)” 或 “执行综合测试” */
 const comprehensiveButtonLabel = computed(() => {
-    const pid = tabStorage.currentPresetId;
-    const presets = comprehensivePresets.value;
-    if (pid && presets.length > 0) {
-        const p = presets.find((x) => x.id === pid);
-        if (p) return p.name;
-    }
     const n = comprehensiveSelectedSet.value.size;
     if (n > 0) return t('batch-validation-comprehensive-count', { n });
     return t('batch-validation-run-comprehensive');
 });
 
-const savePresetDialogVisible = ref(false);
-const presetNameInput = ref('');
-
-function openSavePresetDialog() {
-    if (comprehensiveSelectedSet.value.size === 0) {
-        ElMessage.warning(t('batch-validation-select-at-least-one'));
-        return;
-    }
-    presetNameInput.value = '';
-    savePresetDialogVisible.value = true;
-}
-
-function confirmSavePreset() {
-    const name = presetNameInput.value.trim();
-    if (!name) {
-        ElMessage.warning(t('batch-validation-preset-name-required'));
-        return;
-    }
-    const indices = [...(tabStorage.comprehensiveSelectedIndices ?? [])].sort((a, b) => a - b);
-    const presets = tabStorage.comprehensivePresets ?? [];
-    const newPreset = { id: uuidv4(), name, indices };
-    tabStorage.comprehensivePresets = [...presets, newPreset];
-    tabStorage.currentPresetId = newPreset.id;
-    savePresetDialogVisible.value = false;
-    ElMessage.success(t('batch-validation-preset-saved'));
-}
-
-function applyPreset(preset: { id: string; name: string; indices: number[] }) {
-    const maxIndex = (tabStorage.testCases ?? []).length - 1;
-    const indices = preset.indices.filter((i) => i >= 0 && i <= maxIndex);
-    tabStorage.comprehensiveSelectedIndices = indices;
-    tabStorage.currentPresetId = preset.id;
-}
-
-/** 综合测试用例：有勾选时用勾选的，否则用全部有效用例（点击直接执行，无需勾选） */
+/** 综合测试用例：仅使用勾选的有效用例，必须至少勾选一个 */
 const comprehensiveTestCases = computed(() => {
     const indices = new Set(tabStorage.comprehensiveSelectedIndices ?? []);
-    const selected = validTestCases.value.filter(({ caseIndex }) => indices.has(caseIndex));
-    return selected.length > 0 ? selected : validTestCases.value;
+    return validTestCases.value.filter(({ caseIndex }) => indices.has(caseIndex));
 });
 const canRunComprehensive = computed(() => {
     return validTestCases.value.length > 0 && llms.length > 0 && mcpClientAdapter.connected;
@@ -630,12 +558,24 @@ const canRunComprehensive = computed(() => {
 
 function abortValidation() {
     abortRequested.value = true;
-    currentTaskLoopRef.value?.abort();
+    for (const loop of taskLoopRefsByCase.values()) {
+        loop?.abort();
+    }
 }
 
 /** 仅执行当前选中的测试样例（详情区「执行验证」按钮） */
 function runValidationCurrentCase() {
     runValidation(false);
+}
+
+/** 综合测试入口：必须至少勾选一个，执行后清空勾选 */
+async function runComprehensiveValidation() {
+    if (comprehensiveSelectedSet.value.size === 0) {
+        ElMessage.warning(t('batch-validation-select-at-least-one'));
+        return;
+    }
+    await runValidation(true);
+    tabStorage.comprehensiveSelectedIndices = [];
 }
 
 function selectTestCase(caseIndex: number) {
@@ -744,10 +684,11 @@ async function runValidation(comprehensive = false) {
     if (casesToRun.length === 0) {
         ElMessage.warning(comprehensive ? t('batch-validation-select-at-least-one') : t('batch-validation-invalid-cases'));
         isRunning.value = false;
-        runningCaseIndex.value = null;
+        runningCaseIndices.value = new Set();
         return;
     }
-    runningCaseIndex.value = comprehensive ? null : casesToRun[0].caseIndex;
+    runningCaseIndices.value = new Set(casesToRun.map((c) => c.caseIndex));
+    taskLoopRefsByCase.clear();
 
     try {
         const allResults: ValidationResult[] = [];
@@ -779,52 +720,37 @@ async function runValidation(comprehensive = false) {
             }
         });
 
-        for (let i = 0; i < casesToRun.length; i++) {
-            const { caseIndex, tc } = casesToRun[i];
+        async function runSingleCase(
+            { caseIndex, tc }: { caseIndex: number; tc: TestCase }
+        ): Promise<ResultGroup> {
             const input = tc.input.trim();
             const criteria = tc.criteria.filter((c) => c.trim());
-
-            runStatusText.value = t('batch-validation-status-agent');
-
             const inputRef = tcInputRefs.get(tc.id);
             const inputVirtualStorageSettings = (inputRef?.virtualStorage as any)?.value?.settings ?? {};
-
             const baseStorage = createDefaultBaseStorage();
             const storage: ChatStorage = {
                 ...baseStorage,
                 id: uuidv4(),
                 messages: []
             };
-            storage.settings = {
-                ...baseStorage.settings,
-                ...inputVirtualStorageSettings
-            };
+            storage.settings = { ...baseStorage.settings, ...inputVirtualStorageSettings };
             const slashParsed = inputRef?.parseSlashCommand?.(input);
             if (slashParsed?.skillName) {
                 (storage as any)._skillOverrideForNextMessage = slashParsed.skillName;
             }
-
-            // 判断本次消息是否会包含 skill 上下文（storage.messages 为空，即无历史对话）
             const skillContent = await loadSkillContent(slashParsed?.skillName);
             const hasSkillContext = !!skillContent && (!!slashParsed || storage.messages.length === 0);
-
             const loop = new TaskLoop({ maxEpochs: storage.settings?.contextLength || 50, verbose: 0 });
             const dummyContent = ref('');
             const dummyToolCalls = ref<any[]>([]);
             loop.bindStreaming(dummyContent, dummyToolCalls);
-
-            loop.registerOnError((err) => {
-                console.error('[BatchValidation] Agent error:', err);
-            });
-
+            loop.registerOnError((err) => console.error('[BatchValidation] Agent error:', err));
             const actualInput = slashParsed?.actualMessage !== undefined ? slashParsed.actualMessage || input : input;
             const loopStartTime = Date.now();
-            currentTaskLoopRef.value = loop;
+            taskLoopRefsByCase.set(caseIndex, loop);
             await loop.start(storage, actualInput, { mode: 'batch-validation', hasSkillContext });
-            currentTaskLoopRef.value = null;
-            if (abortRequested.value) break;
+            if (abortRequested.value) throw new Error('abort');
             const agentStats = extractAgentLoopStats(storage.messages, loopStartTime);
-
             const trace = messagesToTrace(storage.messages);
             if (trace.length === 0) {
                 const errResult: ValidationResult = {
@@ -836,7 +762,6 @@ async function runValidation(comprehensive = false) {
                     rawResponse: '',
                     error: t('batch-validation-empty-trace')
                 };
-                allResults.push(errResult);
                 const errGroup: ResultGroup = {
                     testCaseIndex: caseIndex,
                     testInput: input,
@@ -845,29 +770,24 @@ async function runValidation(comprehensive = false) {
                     agentLoopStats: agentStats,
                     criterionResults: [errResult]
                 };
-                groupsWithStats.push(errGroup);
                 const tcArr = tabStorage.testCases;
                 if (tcArr && tcArr[caseIndex]) (tcArr[caseIndex] as any).lastResultGroup = errGroup;
-                continue;
+                taskLoopRefsByCase.delete(caseIndex);
+                const nextErr = new Set(runningCaseIndices.value);
+                nextErr.delete(caseIndex);
+                runningCaseIndices.value = nextErr;
+                return errGroup;
             }
-
-            runStatusText.value = t('batch-validation-status-eval');
-
             const testCasesForApi = criteria.map((c, i) => ({
                 id: `${tc.id}-c-${i}`,
                 expectedCriteria: c
             }));
-
-            const { code, msg } = await bridge.commandRequest(
-                'batch-validation/run',
-                {
-                    messages: trace,
-                    testCases: testCasesForApi,
-                    evaluationMode: tabStorage.evaluationMode,
-                    llmConfig
-                }
-            );
-
+            const { code, msg } = await bridge.commandRequest('batch-validation/run', {
+                messages: trace,
+                testCases: testCasesForApi,
+                evaluationMode: tabStorage.evaluationMode,
+                llmConfig
+            });
             if (code === 200 && msg?.results) {
                 const apiResults = msg.results as Array<{
                     testCaseId: string;
@@ -880,25 +800,20 @@ async function runValidation(comprehensive = false) {
                     evalInputTokens?: number;
                     evalOutputTokens?: number;
                 }>;
-                const criterionResults: ValidationResult[] = [];
-                apiResults.forEach((r, cIdx) => {
-                    const vr: ValidationResult = {
-                        testCaseId: r.testCaseId,
-                        testCaseIndex: caseIndex,
-                        criterionIndex: cIdx,
-                        testInput: input,
-                        testCaseCriteria: r.testCaseCriteria,
-                        rawResponse: r.rawResponse,
-                        pass: r.pass,
-                        reason: r.reason,
-                        score: r.score,
-                        error: r.error,
-                        evalInputTokens: r.evalInputTokens,
-                        evalOutputTokens: r.evalOutputTokens
-                    };
-                    allResults.push(vr);
-                    criterionResults.push(vr);
-                });
+                const criterionResults: ValidationResult[] = apiResults.map((r, cIdx) => ({
+                    testCaseId: r.testCaseId,
+                    testCaseIndex: caseIndex,
+                    criterionIndex: cIdx,
+                    testInput: input,
+                    testCaseCriteria: r.testCaseCriteria,
+                    rawResponse: r.rawResponse,
+                    pass: r.pass,
+                    reason: r.reason,
+                    score: r.score,
+                    error: r.error,
+                    evalInputTokens: r.evalInputTokens,
+                    evalOutputTokens: r.evalOutputTokens
+                }));
                 const successGroup: ResultGroup = {
                     testCaseIndex: caseIndex,
                     testInput: input,
@@ -907,35 +822,63 @@ async function runValidation(comprehensive = false) {
                     agentLoopStats: agentStats,
                     criterionResults
                 };
-                groupsWithStats.push(successGroup);
                 const tcArrS = tabStorage.testCases;
                 if (tcArrS && tcArrS[caseIndex]) (tcArrS[caseIndex] as any).lastResultGroup = successGroup;
-            } else {
-                const criterionResults: ValidationResult[] = [];
-                criteria.forEach((c, cIdx) => {
-                    const vr: ValidationResult = {
-                        testCaseId: tc.id,
-                        testCaseIndex: caseIndex,
-                        criterionIndex: cIdx,
-                        testInput: input,
-                        testCaseCriteria: c,
-                        rawResponse: '',
-                        error: String(msg ?? 'Validation failed')
-                    };
-                    allResults.push(vr);
-                    criterionResults.push(vr);
-                });
-                const failGroup: ResultGroup = {
-                    testCaseIndex: caseIndex,
-                    testInput: input,
-                    inputRichContent: tc.inputRichContent,
-                    agentMessages: storage.messages,
-                    agentLoopStats: agentStats,
-                    criterionResults
-                };
-                groupsWithStats.push(failGroup);
-                const tcArrF = tabStorage.testCases;
-                if (tcArrF && tcArrF[caseIndex]) (tcArrF[caseIndex] as any).lastResultGroup = failGroup;
+                taskLoopRefsByCase.delete(caseIndex);
+                const nextOk = new Set(runningCaseIndices.value);
+                nextOk.delete(caseIndex);
+                runningCaseIndices.value = nextOk;
+                return successGroup;
+            }
+            const criterionResults: ValidationResult[] = criteria.map((c, cIdx) => ({
+                testCaseId: tc.id,
+                testCaseIndex: caseIndex,
+                criterionIndex: cIdx,
+                testInput: input,
+                testCaseCriteria: c,
+                rawResponse: '',
+                error: String(msg ?? 'Validation failed')
+            }));
+            const failGroup: ResultGroup = {
+                testCaseIndex: caseIndex,
+                testInput: input,
+                inputRichContent: tc.inputRichContent,
+                agentMessages: storage.messages,
+                agentLoopStats: agentStats,
+                criterionResults
+            };
+            const tcArrF = tabStorage.testCases;
+            if (tcArrF && tcArrF[caseIndex]) (tcArrF[caseIndex] as any).lastResultGroup = failGroup;
+            taskLoopRefsByCase.delete(caseIndex);
+            const nextFail = new Set(runningCaseIndices.value);
+            nextFail.delete(caseIndex);
+            runningCaseIndices.value = nextFail;
+            return failGroup;
+        }
+
+        runStatusText.value = t('batch-validation-status-agent');
+        if (comprehensive) {
+            const runPromises = casesToRun.map((c) => runSingleCase(c));
+            try {
+                const groups = await Promise.all(runPromises);
+                groupsWithStats.push(...groups);
+                for (const g of groups) {
+                    for (const r of g.criterionResults) allResults.push(r);
+                }
+            } catch (e) {
+                if (abortRequested.value) {
+                    runStatusText.value = '';
+                    return;
+                }
+                throw e;
+            }
+        } else {
+            for (let i = 0; i < casesToRun.length; i++) {
+                const group = await runSingleCase(casesToRun[i]);
+                groupsWithStats.push(group);
+                for (const r of group.criterionResults) allResults.push(r);
+                if (abortRequested.value) break;
+                runStatusText.value = t('batch-validation-status-eval');
             }
         }
 
@@ -949,8 +892,8 @@ async function runValidation(comprehensive = false) {
         runStatusText.value = '';
     } finally {
         isRunning.value = false;
-        runningCaseIndex.value = null;
-        currentTaskLoopRef.value = null;
+        runningCaseIndices.value = new Set();
+        taskLoopRefsByCase.clear();
         abortRequested.value = false;
     }
 }
@@ -1316,49 +1259,28 @@ watch(
 .batch-list-panel .list-add-btn-wrap {
     margin: 3px;
     width: calc(100% - 6px);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
 }
 
-.batch-list-panel .list-add-btn {
+.batch-list-panel .list-header-btn-group {
+    width: 100%;
     display: flex;
-    justify-content: flex-start;
+}
+
+.batch-list-panel .list-header-btn-group .list-add-btn {
+    flex: 1;
+    display: flex;
     align-items: center;
     padding-left: 12px;
-    border-radius: 8px;
+    border-radius: 8px 0 0 8px;
     border: 1px solid var(--vline-stroke-color);
-    width: 100%;
 }
 
-.batch-list-panel .list-comprehensive-dropdown {
-    display: block;
-    width: 100%;
-}
-
-.batch-list-panel .list-comprehensive-dropdown .el-dropdown-self-definition,
-.batch-list-panel .list-comprehensive-dropdown > .el-button-group {
-    display: flex !important;
-    width: 100% !important;
-}
-
-.batch-list-panel .list-comprehensive-dropdown .el-button-group {
-    width: 100%;
-    display: flex;
-}
-
-.batch-list-panel .list-comprehensive-dropdown .el-button-group .el-button:first-child {
+.batch-list-panel .list-comprehensive-btn {
     flex: 1;
     min-width: 0;
-    justify-content: flex-start;
-    padding-left: 12px;
 }
 
-.batch-list-panel .list-comprehensive-dropdown .el-button-group .el-button:last-child {
-    flex-shrink: 0;
-}
-
-.batch-list-panel .list-comprehensive-dropdown .list-comprehensive-btn-text {
+.batch-list-panel .list-comprehensive-btn .list-comprehensive-btn-text {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
