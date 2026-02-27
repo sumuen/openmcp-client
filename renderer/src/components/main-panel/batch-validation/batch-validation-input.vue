@@ -44,6 +44,7 @@ import type { ChatStorage, ChatSetting } from '../chat/chat-box/chat';
 import { llmManager } from '@/views/setting/llm';
 import { v4 as uuidv4 } from 'uuid';
 import { tabs } from '../panel';
+import { isModEnter } from '@/util/keyboard';
 import type { BatchValidationStorage } from './storage';
 import { ensureBatchValidationStorage } from './storage';
 
@@ -58,6 +59,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     (e: 'update:modelValue', v: string): void;
+    (e: 'mod-enter'): void;
 }>();
 
 const editorRef = ref<InstanceType<typeof KRichTextarea> | null>(null);
@@ -197,6 +199,11 @@ function selectSlashSkill(skill: SkillMetadata) {
 }
 
 function handleSlashKeydown(event: KeyboardEvent) {
+    if (isModEnter(event)) {
+        event.preventDefault();
+        emit('mod-enter');
+        return;
+    }
     if (!showSlashMenu.value) return;
     if (event.key === 'ArrowDown') {
         event.preventDefault();

@@ -1,5 +1,5 @@
 <template>
-    <div style="padding: 10px;" @keydown.ctrl.enter.prevent="handleSubmit">
+    <div style="padding: 10px;" @keydown="(e) => (e.ctrlKey || e.metaKey) && e.key === 'Enter' && (e.preventDefault(), handleSubmit())">
         <div class="prompt-executor-header">
             <span class="prompt-executor-header-label">{{ t('select-prompt') }}</span>
             <el-tree-select

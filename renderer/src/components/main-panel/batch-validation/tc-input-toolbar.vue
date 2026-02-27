@@ -10,9 +10,9 @@
             </div>
         </el-tooltip>
 
-        <!-- Skill 对话框：无取消按钮，确认右对齐，与提示词调试按钮组一致 + Ctrl+Enter -->
+        <!-- Skill 对话框：无取消按钮，确认右对齐，与提示词调试按钮组一致 + Ctrl/Cmd+Enter -->
         <el-dialog v-model="showSkillDialog" :title="t('skill-path')" width="480px" class="chat-option-dialog">
-            <div @keydown.ctrl.enter.prevent="confirmSkill">
+            <div @keydown="(e) => (e.ctrlKey || e.metaKey) && e.key === 'Enter' && (e.preventDefault(), confirmSkill())">
                 <el-select
                     v-model="localSkillName"
                     :placeholder="t('batch-validation-choose-skill')"
@@ -36,8 +36,7 @@
                 <div class="dialog-footer-right">
                     <el-button type="primary" class="btn-execute" @click="confirmSkill">
                         <span>{{ t('confirm') }}</span>
-                        <span class="ctrl">CTRL</span>
-                        <span class="iconfont icon-enter"></span>
+                        <span class="ctrl">{{ modEnterShortcutText }}</span>
                     </el-button>
                 </div>
             </template>
@@ -49,8 +48,10 @@
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { listSkills, type SkillMetadata } from '@/api/skill';
+import { getModEnterShortcutText } from '@/util/keyboard';
 
 const { t } = useI18n();
+const modEnterShortcutText = getModEnterShortcutText();
 
 interface TcOverrides {
     skillName?: string;

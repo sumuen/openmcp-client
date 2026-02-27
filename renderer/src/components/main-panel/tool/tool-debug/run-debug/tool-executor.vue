@@ -24,7 +24,7 @@
                         <template v-if="property.type === 'string'">
                             <el-input v-model="tabStorage.formData[name]" type="textarea" :rows="3"
                                 :placeholder="property.description || t('enter') + ' ' + (property.title || name)"
-                                @keydown.enter.ctrl.prevent="handleExecute" />
+                                @keydown="(e) => (e.ctrlKey || e.metaKey) && e.key === 'Enter' && (e.preventDefault(), handleExecute())" />
                         </template>
 
                         <el-input-number v-else-if="property.type === 'number' || property.type === 'integer'"

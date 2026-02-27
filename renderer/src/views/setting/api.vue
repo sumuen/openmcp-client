@@ -389,14 +389,14 @@ function handleCommand(command: {type: string, index: number}) {
 }
 
 function onKeydown(e: KeyboardEvent) {
-	if (e.ctrlKey && e.key === 'Enter') {
+	if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
 		e.preventDefault();
 		if (!simpleTestResult.start) {
 			makeSimpleTalk();
 		}
 		return;
 	}
-	if (e.ctrlKey && (e.key === 's' || e.key === 'S')) {
+	if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
 		e.preventDefault();
 		saveLlmSetting();
 	}

@@ -7,13 +7,17 @@
                 <div class="list-add-btn-wrap">
                     <el-button-group class="executor-actions-group list-header-btn-group">
                         <el-button class="list-add-btn" @click="addTestCaseFromList">
-                            <span class="iconfont icon-add"></span>
-                            <span class="list-add-btn-text">{{ t('add') }}</span>
+                            <span class="list-add-btn-text">{{ t('batch-validation-add-sample') }}</span>
                         </el-button>
                         <el-button type="primary" class="list-comprehensive-btn"
                             :loading="isRunning" :disabled="!canRunComprehensive"
                             @click="runComprehensiveValidation">
                             <span class="list-comprehensive-btn-text">{{ comprehensiveButtonLabel }}</span>
+                        </el-button>
+                        <el-button type="danger" class="list-delete-btn"
+                            :disabled="comprehensiveSelectedSet.size === 0 || isRunning"
+                            @click="deleteSelectedTestCases">
+                            <span class="iconfont icon-delete"></span>
                         </el-button>
                     </el-button-group>
                 </div>
@@ -69,21 +73,23 @@
                             <el-input v-model="formModel.name" :placeholder="defaultTestCaseName"
                                 class="detail-name-input" />
                             <div class="detail-actions-right">
-                                <div class="detail-actions-center">
-                                    <el-button type="default" :title="t('batch-validation-settings-drawer-title')"
-                                        circle class="detail-setting-btn" @click="settingsDrawerVisible = true">
-                                        <span class="iconfont icon-setting"></span>
+                                <el-button-group class="detail-run-btn-group">
+                                    <el-button type="default" class="detail-setting-btn"
+                                        :title="t('batch-validation-settings-drawer-title')"
+                                        @click="settingsDrawerVisible = true">
+                                        {{ t('batch-validation-configure-sample') }}
                                     </el-button>
-                                </div>
-                                <el-button v-if="!isSelectedCaseRunning" type="primary" :disabled="!canRun"
-                                    class="detail-run-btn" @click="runValidationCurrentCase">
-                                    <span class="iconfont icon-play"></span>
-                                    {{ t('batch-validation-run') }}
-                                </el-button>
-                                <el-button v-else type="warning" class="detail-run-btn" @click="abortValidation">
-                                    <span class="iconfont icon-stop"></span>
-                                    {{ t('batch-validation-pause') }}
-                                </el-button>
+                                    <el-button v-if="!isSelectedCaseRunning" type="primary" :disabled="!canRun"
+                                        class="detail-run-btn" @click="runValidationCurrentCase">
+                                        <span>{{ t('batch-validation-run') }}</span>
+                                        <span class="ctrl">CTRL</span>
+                                        <span class="iconfont icon-enter"></span>
+                                    </el-button>
+                                    <el-button v-else type="warning" class="detail-run-btn" @click="abortValidation">
+                                        <span class="iconfont icon-stop"></span>
+                                        {{ t('batch-validation-pause') }}
+                                    </el-button>
+                                </el-button-group>
                             </div>
                         </div>
                         <div v-if="!canRun && runDisabledReason" class="detail-hint">{{ runDisabledReason }}</div>
@@ -92,7 +98,8 @@
                         <label class="detail-section-label">{{ t('batch-validation-test-input') }}</label>
                         <BatchValidationInput :ref="el => setTcInputRef(formModel?.id ?? '', el)" :tab-id="props.tabId" v-model="formModel.input"
                             :source-storage="sourceStorage"
-                            :placeholder="t('batch-validation-test-input-placeholder')" />
+                            :placeholder="t('batch-validation-test-input-placeholder')"
+                            @mod-enter="runValidationCurrentCase" />
                     </div>
                     <div class="detail-section">
                         <label class="detail-section-label">{{ t('batch-validation-criteria-list') }}</label>
@@ -253,7 +260,7 @@ import { useI18n } from 'vue-i18n';
 import { useMessageBridge } from '@/api/message-bridge';
 import { tabs } from '../panel';
 import { llms, llmManager } from '@/views/setting/llm';
-import { ElMessage, ElIcon } from 'element-plus';
+import { ElMessage, ElMessageBox, ElIcon } from 'element-plus';
 import { ArrowDown } from '@element-plus/icons-vue';
 import { v4 as uuidv4 } from 'uuid';
 import type { ChatMessage, ChatStorage, ChatSetting, EnableToolItem } from '../chat/chat-box/chat';
@@ -271,8 +278,10 @@ import type {
     BatchValidationResultGroup
 } from './storage';
 import { ensureBatchValidationStorage } from './storage';
+import { getModEnterShortcutText } from '@/util/keyboard';
 
 const { t } = useI18n();
+const modEnterShortcutText = getModEnterShortcutText();
 const props = defineProps({
     tabId: { type: Number, required: true }
 });
@@ -543,7 +552,6 @@ function toggleComprehensiveSelection(caseIndex: number) {
 /** 综合测试按钮文案：“执行综合测试 (N 项)” 或 “执行综合测试” */
 const comprehensiveButtonLabel = computed(() => {
     const n = comprehensiveSelectedSet.value.size;
-    if (n > 0) return t('batch-validation-comprehensive-count', { n });
     return t('batch-validation-run-comprehensive');
 });
 
@@ -576,6 +584,53 @@ async function runComprehensiveValidation() {
     }
     await runValidation(true);
     tabStorage.comprehensiveSelectedIndices = [];
+}
+
+/** 删除所有框选的测试样例 */
+async function deleteSelectedTestCases() {
+    const selected = comprehensiveSelectedSet.value;
+    if (selected.size === 0) return;
+    try {
+        await ElMessageBox.confirm(
+            t('batch-validation-delete-selected-confirm', { count: selected.size }),
+            t('batch-validation-delete-selected-title'),
+            {
+                confirmButtonText: t('confirm'),
+                cancelButtonText: t('cancel'),
+                type: 'warning'
+            }
+        );
+    } catch {
+        return;
+    }
+    if (draftTestCase.value) {
+        commitDraftToCase();
+    }
+    const arr = tabStorage.testCases || [];
+    const toDelete = new Set(selected);
+    const remaining = arr.filter((_, i) => !toDelete.has(i));
+    const indexMap = new Map<number, number>();
+    let newIdx = 0;
+    for (let i = 0; i < arr.length; i++) {
+        if (!toDelete.has(i)) {
+            indexMap.set(i, newIdx);
+            newIdx++;
+        }
+    }
+    tabStorage.testCases = remaining;
+    tabStorage.comprehensiveSelectedIndices = [];
+    const oldSelected = tabStorage.selectedCaseIndex;
+    if (toDelete.has(oldSelected)) {
+        tabStorage.selectedCaseIndex = 0;
+        if (remaining.length === 0) draftTestCase.value = null;
+    } else {
+        tabStorage.selectedCaseIndex = indexMap.get(oldSelected) ?? 0;
+    }
+    const resultGroups = tabStorage.resultGroups ?? [];
+    tabStorage.resultGroups = resultGroups
+        .filter((g) => indexMap.has(g.testCaseIndex))
+        .map((g) => ({ ...g, testCaseIndex: indexMap.get(g.testCaseIndex)! }));
+    resultGroupsWithStats.value = tabStorage.resultGroups;
 }
 
 function selectTestCase(caseIndex: number) {
@@ -1170,7 +1225,7 @@ watch(
 }
 
 .batch-log-eval-item {
-    padding: 10px 12px;
+    padding: 5px 12px 0;
     border-radius: 8px;
     border: 1px solid var(--el-border-color-lighter);
     margin-bottom: 8px;
@@ -1272,12 +1327,11 @@ watch(
     align-items: center;
     padding-left: 12px;
     border-radius: 8px 0 0 8px;
-    border: 1px solid var(--vline-stroke-color);
+    border: 1px solid var(--window-button-active);
 }
 
 .batch-list-panel .list-comprehensive-btn {
     flex: 1;
-    min-width: 0;
 }
 
 .batch-list-panel .list-comprehensive-btn .list-comprehensive-btn-text {
@@ -1286,12 +1340,10 @@ watch(
     white-space: nowrap;
 }
 
-.batch-list-panel .list-add-btn:hover {
-    color: var(--main-light-color-100) !important;
-    border: 1px solid var(--main-light-color-70);
-    background-color: var(--main-light-color-20);
+.batch-list-panel .list-delete-btn {
+    flex-shrink: 0;
+    border: 1px solid var(--window-button-active) !important;
 }
-
 
 .batch-list-panel .list-container {
     flex: 1;
@@ -1446,49 +1498,53 @@ watch(
     min-width: 0;
 }
 
-.batch-detail-panel .detail-actions-top .detail-actions-row .detail-actions-center {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.batch-detail-panel .detail-actions-top .detail-actions-row .detail-setting-btn {
-    flex-shrink: 0;
+/* 设置 + 执行验证 按钮组 */
+.batch-detail-panel .detail-run-btn-group {
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-.batch-detail-panel .detail-actions-top .detail-actions-row .detail-setting-btn:hover {
-    border: 1px solid var(--main-light-color-70);
-    background-color: var(--main-light-color-20);
-    color: var(--main-light-color-100) !important;
-}
-.batch-detail-panel .detail-actions-top .detail-actions-row .detail-setting-btn:hover .iconfont {
-    color: var(--main-light-color-100) !important;
 }
 
-.batch-detail-panel .detail-actions-top .detail-actions-row .detail-setting-btn .iconfont {
-    margin: 0;
+.batch-detail-panel .detail-run-btn-group .el-button:first-child {
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
 }
 
-.batch-detail-panel .detail-actions-top .detail-actions-row .el-button {
-    flex-shrink: 0;
+.batch-detail-panel .detail-run-btn-group .el-button:last-child {
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+}
+
+.batch-detail-panel .detail-run-btn-group .detail-setting-btn {
+    border: 1px solid var(--window-button-active);
+    background-color: var(--el-fill-color-blank);
+    color: var(--el-text-color-regular);
+}
+
+.batch-detail-panel .detail-run-btn-group .detail-setting-btn:hover {
+    border-color: var(--el-border-color-hover);
+    background-color: var(--main-light-color-50);
+    color: var(--el-text-color-primary);
 }
 
 /* 执行验证按钮：与 list-add-btn hover 一致，hover 时颜色 +20 */
-.batch-detail-panel .detail-actions-top .detail-actions-row .detail-run-btn {
-    border: 1px solid var(--main-light-color-70);
-    background-color: var(--main-light-color-20);
-    color: var(--main-light-color-100) !important;
-}
-.batch-detail-panel .detail-actions-top .detail-actions-row .detail-run-btn:hover:not(:disabled) {
-    border: 1px solid var(--main-light-color-90);
-    background-color: var(--main-light-color-40);
-    color: var(--main-light-color-100) !important;
+.batch-detail-panel .detail-run-btn-group .detail-run-btn {
+    border: 1px solid var(--main-light-color-70) !important;
+    background-color: var(--main-light-color-20) !important;
+    color: var(--el-text-color-primary) !important;
 }
 
-.batch-detail-panel .detail-actions-top .iconfont {
+.batch-detail-panel .detail-run-btn-group .detail-run-btn:hover:not(:disabled) {
+    border-color: var(--main-light-color-90) !important;
+    background-color: var(--main-light-color-40) !important;
+}
+
+.batch-detail-panel .detail-run-btn-group .detail-run-btn .shortcut-hint {
+    margin-left: 6px;
+    opacity: 0.65;
+    font-weight: 400;
+    font-size: 12px;
+}
+
+.batch-detail-panel .detail-run-btn-group .detail-run-btn .iconfont {
     margin-right: 6px;
 }
 
@@ -1805,5 +1861,14 @@ watch(
     font-size: 12px;
     color: var(--foreground);
     white-space: pre-wrap;
+}
+
+.ctrl {
+    margin-left: 5px;
+    opacity: 0.6;
+}
+
+.detail-run-btn .iconfont {
+    color: var(--main-color);
 }
 </style>

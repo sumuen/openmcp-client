@@ -44,8 +44,7 @@
                 class="btn-execute"
             >
                 <span>{{ executor.t('read-prompt') }}</span>
-                <span class="ctrl">CTRL</span>
-                <span class="iconfont icon-enter"></span>
+                <span class="ctrl">{{ modEnterShortcutText }}</span>
             </el-button>
         </el-button-group>
     </div>
@@ -54,8 +53,10 @@
 <script setup lang="ts">
 import { inject, computed } from 'vue';
 import { ArrowDown } from '@element-plus/icons-vue';
+import { getModEnterShortcutText } from '@/util/keyboard';
 
 const executorRef = inject<{ value?: any }>('promptExecutorRef', { value: null });
+const modEnterShortcutText = getModEnterShortcutText();
 const executor = computed(() => executorRef?.value ?? null);
 const executorReset = inject<() => void>('promptExecutorReset', () => {});
 
@@ -110,7 +111,7 @@ function onReset() {
 
 .executor-actions-group .el-button:hover:not(:disabled):not(.btn-execute) {
     border-color: var(--el-border-color-hover);
-    background-color: var(--main-light-color-50);
+    background-color: var(--main-light-color-30);
     color: var(--el-text-color-primary);
 }
 
