@@ -26,6 +26,7 @@
 				<div class="setting-detail-panel">
 					<el-scrollbar height="100%">
 						<div class="setting-content">
+							<Service v-show="settingSections.current === 'service'" />
 							<General v-show="settingSections.current === 'general'" />
 							<Api v-show="settingSections.current === 'api'" />
 							<Appearance v-show="settingSections.current === 'appearance'" />
@@ -42,6 +43,7 @@ import { defineComponent, onMounted } from 'vue';
 
 import { colorManager } from './color';
 
+import Service from './service.vue';
 import General from './general.vue';
 import Api from './api.vue';
 import Appearance from './appearance.vue';

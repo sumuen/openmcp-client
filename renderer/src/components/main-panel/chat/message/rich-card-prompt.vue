@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { PromptTextItem } from '../../chat-box/chat';
+import type { PromptTextItem } from '../chat-box/chat';
 import RichCardPromptPopoverContent from './rich-card-prompt-popover-content.vue';
 
 const props = withDefaults(

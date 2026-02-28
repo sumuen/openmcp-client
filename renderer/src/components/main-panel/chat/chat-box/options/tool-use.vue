@@ -226,7 +226,7 @@ onMounted(async () => {
 }
 .executor-actions-group .el-button:hover:not(:disabled):not(.btn-execute) {
     border-color: var(--el-border-color-hover);
-    background-color: var(--main-light-color-50);
+    background-color: var(--main-light-color-30);
     color: var(--el-text-color-primary);
 }
 .btn-danger-secondary {

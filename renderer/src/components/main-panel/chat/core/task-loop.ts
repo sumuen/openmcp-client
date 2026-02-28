@@ -970,9 +970,12 @@ export class TaskLoop {
 
     public async getPrompt(promptId: string, args?: Record<string, any>) {
         const prompt = await mcpClientAdapter.readPromptTemplate(promptId, args);
-        // transform prompt to string
-        const promptString = prompt.messages.map(m => m.content.text).join('\n');
-        return promptString;
+        if (!prompt) return '';
+        const messages = prompt.messages;
+        if (!Array.isArray(messages) || messages.length === 0) {
+            return (prompt as { description?: string }).description ?? '';
+        }
+        return messages.map(m => (m.content as { text?: string })?.text ?? '').filter(Boolean).join('\n');
     }
 
     public async getResource(resourceUri: string) {

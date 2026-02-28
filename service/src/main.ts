@@ -79,7 +79,17 @@ async function updateConnectionOption(data: any) {
 
 // 设置运行时路径
 import { setRunningCWD } from './hook/setting.js';
+import { loadDebuggerMcpConfig } from './debugger-mcp/debugger-mcp-storage.service.js';
+import { ensureDebuggerMcpServer } from './debugger-mcp/debugger-mcp.service.js';
 setRunningCWD(devHome);
+
+// 若配置开启，则启动 OpenMCP Debugger MCP 服务
+const debuggerConfig = loadDebuggerMcpConfig();
+if (debuggerConfig.enabled) {
+    ensureDebuggerMcpServer(debuggerConfig).then(r => {
+        if (r) console.log('[main] OpenMCP Debugger MCP started on port', r.port);
+    });
+}
 
 // 启动 WebSocket 服务器
 const wss = new WebSocketServer({ port: 8282 });

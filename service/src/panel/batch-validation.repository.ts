@@ -1,6 +1,7 @@
-import duckdb from 'duckdb';
+import type duckdb from 'duckdb';
 import * as path from 'path';
 import * as fs from 'fs';
+import { loadDuckDb } from '../common/duckdb-loader.js';
 import { VSCODE_WORKSPACE } from '../hook/setting.js';
 
 /** 将 MCP 服务器名转为安全文件名（不含非法路径字符） */
@@ -64,8 +65,9 @@ const DEFAULT_STORAGE: BatchValidationStorageRow = {
 };
 
 export class BatchValidationRepository {
-    private db: duckdb.Database;
+    private db: duckdb.Database | null = null;
     private dbPath: string;
+    private initPromise: Promise<void> | null = null;
 
     constructor(serverName: string) {
         const dbDir = path.join(VSCODE_WORKSPACE || process.cwd(), '.openmcp', 'data');
@@ -74,12 +76,25 @@ export class BatchValidationRepository {
         }
         const safeName = escapeServerName(serverName);
         this.dbPath = path.join(dbDir, `${safeName}.batch-validation.omdb`);
-        this.db = new duckdb.Database(this.dbPath);
-        this.initTable();
+    }
+
+    private async ensureDb(): Promise<duckdb.Database> {
+        if (this.db) return this.db;
+        if (this.initPromise) {
+            await this.initPromise;
+            return this.db!;
+        }
+        this.initPromise = (async () => {
+            const duckdb = await loadDuckDb();
+            this.db = new duckdb.Database(this.dbPath);
+            this.initTable();
+        })();
+        await this.initPromise;
+        return this.db!;
     }
 
     private initTable(): void {
-        const conn = this.db.connect();
+        const conn = this.db!.connect();
         conn.run(`
             CREATE TABLE IF NOT EXISTS batch_validation_storage (
                 k VARCHAR PRIMARY KEY,
@@ -92,9 +107,10 @@ export class BatchValidationRepository {
 
     private static readonly ROW_KEY = 'config';
 
-    private runAll(sql: string, ...params: any[]): Promise<any[]> {
+    private async runAll(sql: string, ...params: any[]): Promise<any[]> {
+        const db = await this.ensureDb();
         return new Promise((resolve, reject) => {
-            const conn = this.db.connect();
+            const conn = db.connect();
             conn.all(sql, ...params, (err, rows) => {
                 conn.close();
                 if (err) return reject(err);
@@ -103,9 +119,10 @@ export class BatchValidationRepository {
         });
     }
 
-    private run(sql: string, ...params: any[]): Promise<void> {
+    private async run(sql: string, ...params: any[]): Promise<void> {
+        const db = await this.ensureDb();
         return new Promise((resolve, reject) => {
-            const conn = this.db.connect();
+            const conn = db.connect();
             conn.run(sql, ...params, (err) => {
                 conn.close();
                 if (err) return reject(err);
@@ -188,7 +205,7 @@ export class BatchValidationRepository {
         );
     }
 
-    close(): Promise<void> {
+    async close(): Promise<void> {
         return new Promise((resolve, reject) => {
             if (this.db) {
                 this.db.close((e) => (e ? reject(e) : resolve()));

@@ -24,7 +24,7 @@
                         <template v-if="property.type === 'string'">
                             <el-input v-model="tabStorage.formData[name]" type="textarea" :rows="3"
                                 :placeholder="property.description || t('enter') + ' ' + (property.title || name)"
-                                @keydown="(e) => (e.ctrlKey || e.metaKey) && e.key === 'Enter' && (e.preventDefault(), handleExecute())" />
+                                @keydown="onTextareaKeydown" />
                         </template>
 
                         <el-input-number v-else-if="property.type === 'number' || property.type === 'integer'"
@@ -491,6 +491,13 @@ async function handleExecute() {
         tabStorage.lastToolCallResponse = toolResponse;
     } finally {
         loading.value = false;
+    }
+}
+
+function onTextareaKeydown(e: KeyboardEvent) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleExecute();
     }
 }
 

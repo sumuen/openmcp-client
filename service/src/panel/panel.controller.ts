@@ -179,7 +179,7 @@ export class PanelController {
     }
 
     @Controller('batch-validation/load')
-    async loadBatchValidation(data: RequestData) {
+    async loadBatchValidation(data: RequestData, _webview: PostMessageble) {
         const clientId = data.clientId as string;
         if (!clientId) {
             return { code: 400, msg: { storage: null } };
@@ -192,7 +192,7 @@ export class PanelController {
     }
 
     @Controller('batch-validation/save')
-    async saveBatchValidation(data: RequestData) {
+    async saveBatchValidation(data: RequestData, _webview: PostMessageble) {
         const clientId = data.clientId as string;
         const storage = data.storage as any;
         if (!clientId || !storage) {
@@ -206,7 +206,9 @@ export class PanelController {
             selectedCaseIndex: typeof storage.selectedCaseIndex === 'number' ? storage.selectedCaseIndex : 0,
             sourceTabIndex: typeof storage.sourceTabIndex === 'number' ? storage.sourceTabIndex : 0,
             evaluationMode: storage.evaluationMode === 'score' ? 'score' : 'pass-fail',
-            resultGroups: Array.isArray(storage.resultGroups) ? storage.resultGroups : []
+            resultGroups: Array.isArray(storage.resultGroups) ? storage.resultGroups : [],
+            comprehensiveSelectedIndices: Array.isArray(storage.comprehensiveSelectedIndices) ? storage.comprehensiveSelectedIndices : [],
+            comprehensivePresets: Array.isArray(storage.comprehensivePresets) ? storage.comprehensivePresets : []
         });
         return { code: 200, msg: 'ok' };
     }

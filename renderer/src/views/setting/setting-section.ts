@@ -8,6 +8,10 @@ export const settingSections = reactive({
 	current: 'api',
 	data: [
 		{
+			value: 'service',
+			label: computed(() => t('debugger-mcp-service'))
+		},
+		{
 			value: 'api',
 			label: 'API'
 		},

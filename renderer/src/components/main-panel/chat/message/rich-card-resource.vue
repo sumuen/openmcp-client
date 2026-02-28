@@ -31,7 +31,7 @@
 
 <script setup lang="ts">
 import { computed, type PropType } from 'vue';
-import type { ResourceTextItem } from '../../chat-box/chat';
+import type { ResourceTextItem } from '../chat-box/chat';
 
 const props = withDefaults(
     defineProps<{

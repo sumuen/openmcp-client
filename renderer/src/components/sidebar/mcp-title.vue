@@ -24,12 +24,12 @@ function clickLogo() {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 0 10px;
 	border-bottom: 1px solid var(--sidebar-border);
 	user-select: none;
 	-webkit-user-drag: none;
 	transition: var(--animation-3s);
 	cursor: pointer;
+    margin-bottom: 100px;
 	color: var(--foreground);
 }
 

@@ -1,4 +1,4 @@
-import duckdb from 'duckdb';
+import type duckdb from 'duckdb';
 
 import * as path from 'path';
 import * as fs from 'fs';
@@ -6,13 +6,15 @@ import * as crypto from 'crypto';
 
 import chalk from 'chalk';
 
+import { loadDuckDb } from '../common/duckdb-loader.js';
 import { REFLUX_HOME, VSCODE_WORKSPACE } from '../hook/setting.js';
 import { ChatStorage, TokenConsumption } from './reflux.dto.js';
 import { logTimeStampString } from '../hook/util.js';
 
 export class RefluxDB {
-    private db: duckdb.Database;
+    private db: duckdb.Database | null = null;
     private dbPath: string;
+    private initPromise: Promise<void> | null = null;
 
     constructor(tableName: string = 'storage') {
         const dbDir = REFLUX_HOME || path.join(VSCODE_WORKSPACE, '.openmcp', 'data');
@@ -21,17 +23,29 @@ export class RefluxDB {
         }
 
         this.dbPath = path.join(dbDir, `${tableName}.reflux.omdb`);
-        this.db = new duckdb.Database(this.dbPath);
-        console.log(
-            chalk.gray(`${logTimeStampString()} |`),
-            'connect reflux db ' + this.dbPath
-        );
+    }
 
-        this.initTable();
+    private async ensureDb(): Promise<duckdb.Database> {
+        if (this.db) return this.db;
+        if (this.initPromise) {
+            await this.initPromise;
+            return this.db!;
+        }
+        this.initPromise = (async () => {
+            const duckdb = await loadDuckDb();
+            this.db = new duckdb.Database(this.dbPath);
+            console.log(
+                chalk.gray(`${logTimeStampString()} |`),
+                'connect reflux db ' + this.dbPath
+            );
+            this.initTable();
+        })();
+        await this.initPromise;
+        return this.db!;
     }
 
     private initTable() {
-        const connection = this.db.connect();
+        const connection = this.db!.connect();
 
         // 创建 chat_storage 表
         connection.run(`
@@ -93,8 +107,9 @@ export class RefluxDB {
     }
 
     private async runAsync(sql: string, ...params: any[]): Promise<any[]> {
+        const db = await this.ensureDb();
         return new Promise((resolve, reject) => {
-            const connection = this.db.connect();
+            const connection = db.connect();
             connection.all(sql, ...params, (err, rows) => {
                 connection.close();
                 if (err) return reject(err);
@@ -104,8 +119,9 @@ export class RefluxDB {
     }
 
     private async runAsyncWithoutResult(sql: string, ...params: any[]): Promise<void> {
+        const db = await this.ensureDb();
         return new Promise((resolve, reject) => {
-            const connection = this.db.connect();
+            const connection = db.connect();
             connection.run(sql, ...params, (err) => {
                 connection.close();
                 if (err) return reject(err);
