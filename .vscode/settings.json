@@ -13,14 +13,6 @@
 
 	"i18n-haru.root": "./renderer/src/i18n",
     "i18n-haru.main": "zh",
-    "sqltools.connections": [
-        {
-            "previewLimit": 50,
-            "driver": "DuckDB",
-            "database": "${workspaceFolder:openmcp-client}/service/.openmcp/data/word-mcp.duckdb",
-            "name": "test",
-            "group": "test"
-        }
-    ],
+    "sqltools.connections": [],
     "sqltools.useNodeRuntime": true
 }

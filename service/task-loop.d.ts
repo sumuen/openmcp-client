@@ -340,6 +340,12 @@ export class TaskLoop {
     setRefluxSetting(enableDatasetReflux: boolean): void;
 
     /**
+     * @description 设置回流数据集名称（用于 JSON 归档目录）
+     * @param name 
+     */
+    setDatasetName(name: string): void;
+
+    /**
      * @description Get all available tool list
      */
     listTools(): Promise<ToolItem[]>;

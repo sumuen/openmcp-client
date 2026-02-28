@@ -298,6 +298,10 @@ export class TaskLoop {
         mcpSetting.enableDatasetReflux = enableDatasetReflux;
     }
 
+    public setDatasetName(name: string) {
+        mcpSetting.datasetName = name;
+    }
+
     public async makeChatData(tabStorage: ChatStorage): Promise<ChatCompletionCreateParamsBase | undefined> {
         const baseURL = this.getLlmConfig().baseUrl;
         const apiKey = this.getLlmConfig().userToken || '';

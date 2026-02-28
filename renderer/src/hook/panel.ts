@@ -61,7 +61,7 @@ export async function loadPanels(client: McpClient | Reactive<McpClient>) {
 
 		tabs.activeIndex = persistTab.currentIndex;
 
-		// 批量验证：从 DuckDB 加载同一份数据，同步到所有批量验证 tab，使左侧列表一致
+		// 批量验证：从 JSON 归档加载同一份数据，同步到所有批量验证 tab，使左侧列表一致
 		const bvRes = await bridge.commandRequest<{ storage: BatchValidationStorage }>('batch-validation/load', {
 			clientId: client.clientId
 		});

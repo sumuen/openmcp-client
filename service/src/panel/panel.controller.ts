@@ -208,7 +208,8 @@ export class PanelController {
             evaluationMode: storage.evaluationMode === 'score' ? 'score' : 'pass-fail',
             resultGroups: Array.isArray(storage.resultGroups) ? storage.resultGroups : [],
             comprehensiveSelectedIndices: Array.isArray(storage.comprehensiveSelectedIndices) ? storage.comprehensiveSelectedIndices : [],
-            comprehensivePresets: Array.isArray(storage.comprehensivePresets) ? storage.comprehensivePresets : []
+            comprehensivePresets: Array.isArray(storage.comprehensivePresets) ? storage.comprehensivePresets : [],
+            currentPresetId: typeof storage.currentPresetId === 'string' ? storage.currentPresetId : undefined
         });
         return { code: 200, msg: 'ok' };
     }

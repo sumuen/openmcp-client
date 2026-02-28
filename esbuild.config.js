@@ -10,7 +10,6 @@ build({
   sourcemap: true,
   external: [
     'vscode',
-    'duckdb',
     '@mapbox/node-pre-gyp',
     'mock-aws-s3',
     'aws-sdk',

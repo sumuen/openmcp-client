@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, provide, computed, inject } from 'vue';
+import { provide, computed, inject } from 'vue';
 import type { Ref } from 'vue';
 import { llmManager } from '@/views/setting/llm';
 import { tabs } from '@/components/main-panel/panel';

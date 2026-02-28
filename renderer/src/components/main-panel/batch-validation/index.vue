@@ -967,7 +967,7 @@ watch(() => tabStorage.testCases?.length ?? 0, (len) => {
     }
 }, { immediate: true });
 
-// 批量验证持久化：从 DuckDB 加载（新 tab 或切换到此 tab 时），变更时防抖写入 DuckDB
+// 批量验证持久化：从 JSON 归档加载（新 tab 或切换到此 tab 时），变更时防抖写入
 const bridge = useMessageBridge();
 async function loadBatchValidationFromDuckDb() {
     const clientId = mcpClientAdapter.masterNode?.clientId;
@@ -995,7 +995,7 @@ onMounted(() => {
 onUnmounted(() => {
     window.removeEventListener('beforeunload', onBeforeUnload);
 });
-// 切换到此批量验证 tab 时重新从 DuckDB 拉取，保证与其它 tab 一致
+// 切换到此批量验证 tab 时重新拉取，保证与其它 tab 一致
 watch(
     () => tabs.activeIndex === props.tabId,
     (isActive) => {
@@ -1003,13 +1003,13 @@ watch(
     }
 );
 
-let saveToDuckDbTimer: ReturnType<typeof setTimeout> | null = null;
-function flushSaveToDuckDb() {
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+function flushSave() {
     const clientId = mcpClientAdapter.masterNode?.clientId;
     if (!clientId) return;
-    if (saveToDuckDbTimer) {
-        clearTimeout(saveToDuckDbTimer);
-        saveToDuckDbTimer = null;
+    if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = null;
     }
     bridge.commandRequest('batch-validation/save', {
         clientId,
@@ -1025,12 +1025,12 @@ function flushSaveToDuckDb() {
 function scheduleSaveToDuckDb() {
     const clientId = mcpClientAdapter.masterNode?.clientId;
     if (!clientId) return;
-    if (saveToDuckDbTimer) clearTimeout(saveToDuckDbTimer);
-    saveToDuckDbTimer = setTimeout(flushSaveToDuckDb, 400);
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(flushSave, 400);
 }
 
 function onBeforeUnload() {
-    flushSaveToDuckDb();
+    flushSave();
 }
 
 watch(

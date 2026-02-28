@@ -53,7 +53,7 @@
                         v-model="mcpSetting.datasetName"
                         @input="safeSaveConnection"
                     >
-                        <template #append>.duckdb</template>
+                        <template #append> (JSON)</template>
                     </el-input>
                 </div>
             </div>

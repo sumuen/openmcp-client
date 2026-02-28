@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "test": "npx tsx src/base.test.ts",
-    "test:base": "npx tsx src/base.test.ts"
+    "test:base": "npx tsx src/base.test.ts",
+    "test:skill": "npx tsx src/skill.test.ts",
+    "test:omdb": "npx tsx src/omdb.test.ts"
   },
   "keywords": [],
   "author": "",

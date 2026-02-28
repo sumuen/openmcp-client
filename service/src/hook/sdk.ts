@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { routeMessage } from '../common/router.js';
 import * as fs from 'fs';
 import { loadSetting, saveSetting } from '../setting/setting.service.js';
+import { OmdbStore } from '../common/omdb-store.js';
 
 import {
     MessageState,
@@ -150,6 +151,8 @@ export interface AinvokeConfig {
     reflux?: {
         enabled?: boolean;
         saveDir?: string;
+        /** 回流数据集名称，用于 omdb 文件名，如 'word-mcp' */
+        datasetName?: string;
     }
 }
 
@@ -182,6 +185,8 @@ export function AssistantMessage(content: string): TextMessage {
         }
     }
 }
+
+export { OmdbStore };
 
 export class OmAgent {
     private _adapter: TaskLoopAdapter;
@@ -227,11 +232,10 @@ export class OmAgent {
         // set default llm
         this.setDefaultLLM(defaultLLM);
 
-        // persist skillPath to setting so skills/load can read it
-        if (skillPath && skillPath.trim()) {
-            const currentConfig = loadSetting();
-            saveSetting({ ...currentConfig, SKILL_PATH: skillPath.trim() });
-        }
+        // 始终同步 skillPath 到 setting：若配置中未显式传入 skillPath，则清除 SKILL_PATH，避免沿用上次会话的 skill 导致误添加 read_skill_file
+        const currentConfig = loadSetting();
+        const resolvedSkillPath = skillPath && skillPath.trim() ? skillPath.trim() : '';
+        saveSetting({ ...currentConfig, SKILL_PATH: resolvedSkillPath });
 
         for (const key in mcpServers) {
             const mcpConfig = mcpServers[key];
@@ -378,10 +382,14 @@ export class OmAgent {
         const {
             enabled = false,
             saveDir = '',
+            datasetName = '',
         } = reflux || {};
 
         if (saveDir) {
             setRefluxHome(saveDir);
+        }
+        if (datasetName) {
+            loop.setDatasetName(datasetName);
         }
 
         const loopMode = enabled ? 'single-chat' : 'normal';

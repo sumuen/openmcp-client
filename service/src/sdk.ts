@@ -1,1 +1,1 @@
-export { TaskLoopAdapter, OmAgent, OmAgentConfiguration, UserMessage, AssistantMessage } from './hook/sdk.js';
+export { TaskLoopAdapter, OmAgent, OmAgentConfiguration, UserMessage, AssistantMessage, OmdbStore } from './hook/sdk.js';

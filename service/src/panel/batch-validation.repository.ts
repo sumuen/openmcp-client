@@ -1,15 +1,14 @@
-import type duckdb from 'duckdb';
 import * as path from 'path';
 import * as fs from 'fs';
-import { loadDuckDb } from '../common/duckdb-loader.js';
+import { JsonArchiveStore } from '../common/json-archive-store.js';
 import { VSCODE_WORKSPACE } from '../hook/setting.js';
 
-/** 将 MCP 服务器名转为安全文件名（不含非法路径字符） */
+/** 将 MCP 服务器名转为安全文件名 */
 function escapeServerName(name: string): string {
     return (name || 'default').replace(/[\\/:*?"<>|]/g, '_');
 }
 
-/** 与 renderer 侧 BatchValidationStorage 结构一致，按 client 维度持久化到 DuckDB */
+/** 与 renderer 侧 BatchValidationStorage 结构一致 */
 export interface BatchValidationStorageRow {
     testCases: Array<{
         id: string;
@@ -54,6 +53,7 @@ export interface BatchValidationStorageRow {
     }>;
 }
 
+const ROW_KEY = 'config';
 const DEFAULT_STORAGE: BatchValidationStorageRow = {
     testCases: [],
     selectedCaseIndex: 0,
@@ -65,9 +65,8 @@ const DEFAULT_STORAGE: BatchValidationStorageRow = {
 };
 
 export class BatchValidationRepository {
-    private db: duckdb.Database | null = null;
-    private dbPath: string;
-    private initPromise: Promise<void> | null = null;
+    private store: JsonArchiveStore;
+    private baseDir: string;
 
     constructor(serverName: string) {
         const dbDir = path.join(VSCODE_WORKSPACE || process.cwd(), '.openmcp', 'data');
@@ -75,80 +74,15 @@ export class BatchValidationRepository {
             fs.mkdirSync(dbDir, { recursive: true });
         }
         const safeName = escapeServerName(serverName);
-        this.dbPath = path.join(dbDir, `${safeName}.batch-validation.omdb`);
+        this.baseDir = path.join(dbDir, `batch-validation-${safeName}`);
+        this.store = new JsonArchiveStore(this.baseDir, 'config', { maxSize: '5m', maxFiles: 7 });
     }
 
-    private async ensureDb(): Promise<duckdb.Database> {
-        if (this.db) return this.db;
-        if (this.initPromise) {
-            await this.initPromise;
-            return this.db!;
-        }
-        this.initPromise = (async () => {
-            const duckdb = await loadDuckDb();
-            this.db = new duckdb.Database(this.dbPath);
-            this.initTable();
-        })();
-        await this.initPromise;
-        return this.db!;
-    }
-
-    private initTable(): void {
-        const conn = this.db!.connect();
-        conn.run(`
-            CREATE TABLE IF NOT EXISTS batch_validation_storage (
-                k VARCHAR PRIMARY KEY,
-                storage_json TEXT,
-                updated_at BIGINT
-            )
-        `);
-        conn.close();
-    }
-
-    private static readonly ROW_KEY = 'config';
-
-    private async runAll(sql: string, ...params: any[]): Promise<any[]> {
-        const db = await this.ensureDb();
-        return new Promise((resolve, reject) => {
-            const conn = db.connect();
-            conn.all(sql, ...params, (err, rows) => {
-                conn.close();
-                if (err) return reject(err);
-                resolve(rows || []);
-            });
-        });
-    }
-
-    private async run(sql: string, ...params: any[]): Promise<void> {
-        const db = await this.ensureDb();
-        return new Promise((resolve, reject) => {
-            const conn = db.connect();
-            conn.run(sql, ...params, (err) => {
-                conn.close();
-                if (err) return reject(err);
-                resolve();
-            });
-        });
-    }
-
-    /** 按服务器维度加载（同一服务器仅一份数据，不依赖会变化的 clientId） */
     async load(): Promise<BatchValidationStorageRow> {
-        let rows: any[];
         try {
-            rows = await this.runAll(
-                'SELECT storage_json FROM batch_validation_storage WHERE k = ?',
-                BatchValidationRepository.ROW_KEY
-            );
-        } catch (err) {
-            // 旧表为 client_id 主键，无 k 列，需迁移
-            const migrated = await this.migrateFromClientIdTable();
-            return migrated;
-        }
-        if (!rows.length || !rows[0].storage_json) {
-            return { ...DEFAULT_STORAGE };
-        }
-        try {
-            const parsed = JSON.parse(rows[0].storage_json) as BatchValidationStorageRow;
+            const rec = await this.store.read(ROW_KEY);
+            if (!rec || !rec.data) return { ...DEFAULT_STORAGE };
+            const parsed = JSON.parse(String(rec.data)) as BatchValidationStorageRow;
             return this.normalizeStorage(parsed);
         } catch {
             return { ...DEFAULT_STORAGE };
@@ -168,51 +102,12 @@ export class BatchValidationRepository {
         };
     }
 
-    /** 从旧表（client_id 主键）迁移到新表（k 主键） */
-    private async migrateFromClientIdTable(): Promise<BatchValidationStorageRow> {
-        let rows: any[];
-        try {
-            rows = await this.runAll(
-                'SELECT storage_json FROM batch_validation_storage ORDER BY updated_at DESC LIMIT 1'
-            );
-        } catch {
-            await this.run('DROP TABLE IF EXISTS batch_validation_storage');
-            this.initTable();
-            return { ...DEFAULT_STORAGE };
-        }
-        const storage = rows?.length && rows[0].storage_json
-            ? this.normalizeStorage(JSON.parse(rows[0].storage_json) as BatchValidationStorageRow)
-            : { ...DEFAULT_STORAGE };
-        await this.run('DROP TABLE IF EXISTS batch_validation_storage');
-        this.initTable();
-        await this.save(storage);
-        return storage;
-    }
-
-    /** 按服务器维度保存（同一服务器仅一份数据） */
     async save(storage: BatchValidationStorageRow): Promise<void> {
-        const now = Date.now();
-        const json = JSON.stringify(storage);
-        await this.run(
-            `INSERT INTO batch_validation_storage (k, storage_json, updated_at)
-             VALUES (?, ?, ?)
-             ON CONFLICT (k) DO UPDATE SET
-                storage_json = EXCLUDED.storage_json,
-                updated_at = EXCLUDED.updated_at`,
-            BatchValidationRepository.ROW_KEY,
-            json,
-            now
-        );
+        await this.store.write(ROW_KEY, JSON.stringify(storage));
     }
 
     async close(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            if (this.db) {
-                this.db.close((e) => (e ? reject(e) : resolve()));
-            } else {
-                resolve();
-            }
-        });
+        this.store.close();
     }
 }
 
