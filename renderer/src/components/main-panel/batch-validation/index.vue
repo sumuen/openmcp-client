@@ -137,7 +137,7 @@
                                         <span class="batch-results-loading-text">{{ runStatusText }}</span>
                                     </span>
                                 </span>
-                                <span v-if="tabStorage.evaluationMode === 'pass-fail'" class="batch-results-header-stats">
+                                <span v-if="(currentTestCase?.evaluationMode ?? 'pass-fail') === 'pass-fail'" class="batch-results-header-stats">
                                     <span class="batch-results-header-stat pass">pass: {{ passFailSummary.pass }}</span>
                                     <span class="batch-results-header-stat fail">fail: {{ passFailSummary.fail }}</span>
                                     <el-tooltip :content="t('batch-validation-agent-duration')" placement="top">
@@ -172,7 +172,7 @@
                                                         <div v-for="(r, rIdx) in group.criterionResults" :key="rIdx" class="batch-log-eval-item" :class="{ error: r.error }">
                                                             <div class="batch-log-eval-header">
                                                                 <span class="batch-log-eval-index">{{ r.testCaseCriteria || `#${rIdx + 1}` }}</span>
-                                                                <span v-if="tabStorage.evaluationMode === 'pass-fail'" class="result-badge"
+                                                                <span v-if="(currentTestCase?.evaluationMode ?? 'pass-fail') === 'pass-fail'" class="result-badge"
                                                                     :class="r.pass === true ? 'pass' : r.pass === false ? 'fail' : 'unknown'">
                                                                     {{ r.pass === true ? t('batch-validation-pass') : r.pass === false ? t('batch-validation-fail') : '?' }}
                                                                 </span>
@@ -235,7 +235,7 @@
                             <div class="settings-drawer-body">
                                 <div class="settings-drawer-section">
                                     <label class="settings-drawer-section-label">{{ t('batch-validation-evaluation-mode') }}</label>
-                                    <el-select v-model="tabStorage.evaluationMode" class="settings-drawer-mode-select"
+                                    <el-select v-model="formModel.evaluationMode" class="settings-drawer-mode-select"
                                         :placeholder="t('batch-validation-evaluation-mode')">
                                         <el-option :value="'pass-fail'" :label="t('batch-validation-mode-pass-fail')" />
                                         <el-option :value="'score'" :label="t('batch-validation-mode-score')" />
@@ -399,7 +399,7 @@ const formModel = computed(() => {
 const draftTestCase = ref<TestCase | null>(null);
 
 function createEmptyTestCase(): TestCase {
-    return { id: uuidv4(), name: '', description: '', input: '', criteria: [''] };
+    return { id: uuidv4(), name: '', description: '', input: '', criteria: [''], evaluationMode: 'pass-fail' };
 }
 
 /** 将草稿持久化到当前选中的测试用例位 */
@@ -840,7 +840,7 @@ async function runValidation(comprehensive = false) {
             const { code, msg } = await bridge.commandRequest('batch-validation/run', {
                 messages: trace,
                 testCases: testCasesForApi,
-                evaluationMode: tabStorage.evaluationMode,
+                evaluationMode: tc.evaluationMode ?? 'pass-fail',
                 llmConfig
             });
             if (code === 200 && msg?.results) {
@@ -1017,7 +1017,6 @@ function flushSave() {
             testCases: tabStorage.testCases ?? [],
             selectedCaseIndex: tabStorage.selectedCaseIndex ?? 0,
             sourceTabIndex: tabStorage.sourceTabIndex ?? 0,
-            evaluationMode: tabStorage.evaluationMode ?? 'pass-fail',
             resultGroups: tabStorage.resultGroups ?? []
         }
     });
@@ -1038,7 +1037,6 @@ watch(
         JSON.stringify(tabStorage.testCases ?? []),
         tabStorage.selectedCaseIndex,
         tabStorage.sourceTabIndex,
-        tabStorage.evaluationMode,
         JSON.stringify(tabStorage.resultGroups ?? [])
     ],
     () => scheduleSaveToDuckDb(),

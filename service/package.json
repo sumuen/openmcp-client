@@ -39,7 +39,7 @@
 	},
 	"dependencies": {
 		"rotating-file-stream": "^3.2.0",
-		"@modelcontextprotocol/sdk": "^1.12.1",
+		"@modelcontextprotocol/sdk": "^1.18.2",
 		"@seald-io/nedb": "^4.1.1",
 		"axios": "^1.9.0",
 		"cli-table3": "^0.6.5",

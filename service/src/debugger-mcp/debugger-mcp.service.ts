@@ -1,8 +1,7 @@
-import express from 'express';
-import { randomUUID } from 'node:crypto';
+import type { Server as HttpServer } from 'node:http';
+import express, { Request, Response } from 'express';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { clientMap, getClient } from '../mcp/connect.service.js';
 import { loadSetting } from '../setting/setting.service.js';
@@ -12,10 +11,25 @@ import { OpenAI } from 'openai';
 import type { DebuggerMcpConfig } from './debugger-mcp.dto.js';
 import { loadDebuggerMcpConfig, saveDebuggerMcpConfig } from './debugger-mcp-storage.service.js';
 
-const transports: Record<string, StreamableHTTPServerTransport> = {};
-let httpServer: ReturnType<express.Application['listen']> | null = null;
+/** Tool call content item (MCP) */
+interface ToolCallContentItem {
+    type?: string;
+    text?: string;
+    [key: string]: unknown;
+}
+
+/** Batch validation test case */
+interface BatchTestCase {
+    id?: string;
+    name?: string;
+    input?: string;
+    criteria?: string[];
+}
+
+let httpServer: HttpServer | null = null;
 let currentPort: number | null = null;
-let currentConfig: DebuggerMcpConfig | null = null;
+let currentMcpServer: McpServer | null = null;
+const transports: Record<string, StreamableHTTPServerTransport> = {};
 
 const ALL_TOOL_NAMES = [
     'openmcp_debugger_list_all_tools',
@@ -84,18 +98,18 @@ async function runSimpleAgent(
         }
 
         for (const tc of toolCalls) {
-            const fn = tc.function || tc;
-            const name = fn.name || (tc as any).name;
-            const argsStr = fn.arguments || (tc as any).arguments || '{}';
-            const toolCallId = (tc as any).id ?? `call_${i}_${name}`;
-            let args: Record<string, any> = {};
+            const fn = tc.function ?? tc;
+            const name = fn?.name ?? (tc as { name?: string }).name ?? '';
+            const argsStr = fn?.arguments ?? (tc as { arguments?: string }).arguments ?? '{}';
+            const toolCallId = (tc as { id?: string }).id ?? `call_${i}_${name}`;
+            let args: Record<string, unknown> = {};
             try {
-                args = typeof argsStr === 'string' ? JSON.parse(argsStr) : argsStr;
+                args = typeof argsStr === 'string' ? (JSON.parse(argsStr) as Record<string, unknown>) : (argsStr as Record<string, unknown>);
             } catch { }
             const toolResult = await client.callTool({ name, arguments: args });
             const contentArray = Array.isArray(toolResult.content) ? toolResult.content : [];
             const content = contentArray
-                .map((c: any) => (c.type === 'text' ? c.text : JSON.stringify(c)))
+                .map((c: ToolCallContentItem) => (c.type === 'text' ? c.text : JSON.stringify(c)))
                 .join('\n') || JSON.stringify(toolResult);
             messages.push({
                 role: 'tool',
@@ -125,7 +139,7 @@ async function createMcpServerInstance(config: DebuggerMcpConfig) {
         server.registerTool(TOOL_NAMES.list_all_tools, {
             title: 'List All Tools',
             description: 'List all tools from all connected MCP servers',
-            inputSchema: z.object({}) as any
+            inputSchema: z.object({}) as unknown as z.ZodRawShape
         }, async () => {
             const items: Array<{ clientId: string; serverName: string; serverVersion: string; name: string; description?: string }> = [];
             for (const [clientId, client] of clientMap) {
@@ -161,11 +175,11 @@ async function createMcpServerInstance(config: DebuggerMcpConfig) {
             inputSchema: z.object({
                 clientId: z.string().describe('The MCP client ID'),
                 toolName: z.string().describe('Tool name to call'),
-                toolArgs: z.record(z.any()).optional().describe('Tool arguments as JSON object')
-            }) as any
+                toolArgs: z.record(z.unknown()).optional().describe('Tool arguments as JSON object')
+            }) as unknown as z.ZodRawShape
         },
-            async (args: any, _extra?: any) => {
-                const { clientId, toolName, toolArgs } = args;
+            async (args: Record<string, unknown>) => {
+                const { clientId, toolName, toolArgs } = args as { clientId: string; toolName: string; toolArgs?: Record<string, unknown> };
                 const client = getClient(clientId);
                 if (!client) {
                     return {
@@ -175,7 +189,7 @@ async function createMcpServerInstance(config: DebuggerMcpConfig) {
                 try {
                     const res = await client.callTool({ name: toolName, arguments: toolArgs ?? {} });
                     const contentArr = Array.isArray(res.content) ? res.content : [];
-                    const text = contentArr.map((c: any) => (c.type === 'text' ? c.text : JSON.stringify(c))).join('\n') || JSON.stringify(res);
+                    const text = contentArr.map((c: ToolCallContentItem) => (c.type === 'text' ? c.text : JSON.stringify(c))).join('\n') || JSON.stringify(res);
                     return {
                         content: [{ type: 'text' as const, text }],
                         isError: Boolean(res.isError)
@@ -193,7 +207,7 @@ async function createMcpServerInstance(config: DebuggerMcpConfig) {
         server.registerTool(TOOL_NAMES.list_batch_test_samples, {
             title: 'List Batch Test Samples',
             description: 'List all batch validation test samples from all servers',
-            inputSchema: z.object({}) as any
+            inputSchema: z.object({}) as unknown as z.ZodRawShape
         }, async () => {
             const result: Array<{ serverName: string; testCases: Array<{ id: string; name?: string; input: string; criteria: string[] }> }> = [];
             const seenServers = new Set<string>();
@@ -207,11 +221,11 @@ async function createMcpServerInstance(config: DebuggerMcpConfig) {
                     const repo = getBatchValidationRepository(serverName);
                     const storage = await repo.load();
                     const testCasesList = Array.isArray(storage?.testCases) ? storage.testCases : [];
-                    const testCases = testCasesList.map((tc: any) => ({
-                        id: tc.id,
+                    const testCases = testCasesList.map((tc: BatchTestCase) => ({
+                        id: tc.id ?? '',
                         name: tc.name,
-                        input: tc.input,
-                        criteria: tc.criteria || []
+                        input: tc.input ?? '',
+                        criteria: tc.criteria ?? []
                     }));
                     result.push({ serverName, testCases });
                 } catch (e) {
@@ -231,10 +245,10 @@ async function createMcpServerInstance(config: DebuggerMcpConfig) {
             inputSchema: z.object({
                 serverName: z.string().describe('MCP server name'),
                 testCaseIndex: z.number().int().min(0).describe('0-based index of the test case')
-            }) as any
+            }) as unknown as z.ZodRawShape
         },
-            async (args: any, _extra?: any) => {
-                const { serverName, testCaseIndex } = args;
+            async (args: Record<string, unknown>) => {
+                const { serverName, testCaseIndex } = args as { serverName: string; testCaseIndex: number };
                 let clientId: string | null = null;
                 for (const [cid, client] of clientMap) {
                     if (!client) continue;
@@ -316,9 +330,10 @@ export async function startDebuggerMcpServer(config: DebuggerMcpConfig): Promise
     logDebuggerMcp('启动中...');
     if (httpServer) {
         logDebuggerMcp('关闭已有实例');
-        (httpServer as any).close();
+        httpServer.close();
         httpServer = null;
         currentPort = null;
+        Object.keys(transports).forEach(k => delete transports[k]);
     }
     const enabledSet = getEnabledToolsSet(config);
     if (enabledSet.size === 0) {
@@ -328,59 +343,61 @@ export async function startDebuggerMcpServer(config: DebuggerMcpConfig): Promise
     logDebuggerMcp('查找可用端口，起始端口:', config.port);
     const port = await findAvailablePort(config.port);
     logDebuggerMcp('使用端口:', port, '已启用工具:', [...enabledSet].join(', '));
-    currentConfig = config;
     const app = express();
-    app.use(express.json({ limit: '4mb' }));
+    app.use(express.json({ limit: '5mb' }));
 
-    app.post('/mcp', async (req: any, res: any) => {
-        const sessionId = req.headers['mcp-session-id'] as string | undefined;
-        let transport: StreamableHTTPServerTransport;
+    // 参考 Lagrange.onebot transport.ts: 无状态模式，每次请求创建新 transport，复用同一 server，使用 JSON 响应
+    currentMcpServer = await createMcpServerInstance(config);
 
-        if (sessionId && transports[sessionId]) {
-            transport = transports[sessionId];
-        } else if (!sessionId && isInitializeRequest(req.body)) {
-            transport = new StreamableHTTPServerTransport({
-                sessionIdGenerator: () => randomUUID(),
-                onsessioninitialized: (sid) => {
-                    transports[sid] = transport;
-                }
+    app.post('/mcp', async (req: Request, res: Response) => {
+        try {
+            const transport = new StreamableHTTPServerTransport({
+                sessionIdGenerator: undefined,
+                enableJsonResponse: true
             });
-            (transport as any).onclose = () => {
-                if (transport.sessionId) delete transports[transport.sessionId];
-            };
-            const server = await createMcpServerInstance(config);
-            await server.connect(transport);
-        } else {
-            res.status(400).json({
-                jsonrpc: '2.0',
-                error: { code: -32000, message: 'Bad Request' },
-                id: null
+
+            res.on('close', () => {
+                transport.close();
             });
-            return;
+
+            console.log(currentMcpServer);
+
+            await currentMcpServer?.connect(transport);
+            await transport.handleRequest(req, res, req.body);
+        } catch (error) {
+            console.error('[debugger-mcp] Error handling MCP request:', error);
+            if (!res.headersSent) {
+                res.status(500).json({
+                    jsonrpc: '2.0',
+                    error: {
+                        code: -32603,
+                        message: 'Internal server error'
+                    },
+                    id: null
+                });
+            }
         }
-        await transport.handleRequest(req, res, req.body);
     });
 
-    app.get('/mcp', async (req: any, res: any) => {
+    // GET/DELETE: server → client (参考 Lagrange.onebot transport.ts)
+    const handleSessionRequest = async (req: Request, res: Response) => {
         const sessionId = req.headers['mcp-session-id'] as string | undefined;
         if (!sessionId || !transports[sessionId]) {
             res.status(400).send('Invalid or missing session ID');
             return;
         }
-        await transports[sessionId].handleRequest(req, res);
-    });
+        const transport = transports[sessionId];
+        await transport.handleRequest(req, res);
+    };
 
-    app.delete('/mcp', async (req: any, res: any) => {
-        const sessionId = req.headers['mcp-session-id'] as string | undefined;
-        if (!sessionId || !transports[sessionId]) {
-            res.status(400).send('Invalid or missing session ID');
-            return;
-        }
-        await transports[sessionId].handleRequest(req, res);
+    app.get('/mcp', handleSessionRequest);
+    app.get('/', (_req, res) => {
+        res.send('OpenMCP Debugger MCP');
     });
+    app.delete('/mcp', handleSessionRequest);
 
     await new Promise<void>((resolve, reject) => {
-        const server = app.listen(port, '127.0.0.1', () => resolve()) as any;
+        const server = app.listen(port, '127.0.0.1', () => resolve()) as HttpServer;
         httpServer = server;
         server.on('error', reject);
     });
@@ -393,18 +410,19 @@ export async function startDebuggerMcpServer(config: DebuggerMcpConfig): Promise
 export function stopDebuggerMcpServer(): void {
     if (httpServer) {
         logDebuggerMcp('关闭服务');
-        (httpServer as any).close();
+        httpServer.close();
         httpServer = null;
         currentPort = null;
+        Object.keys(transports).forEach(k => delete transports[k]);
     }
-    for (const k of Object.keys(transports)) delete transports[k];
-    currentConfig = null;
+    currentMcpServer = null;
 }
 
 export function getDebuggerMcpConnectionInfo(): { port: number; url: string; connectionJson: string } | null {
     const config = loadDebuggerMcpConfig();
     if (!config.enabled || !httpServer) return null;
-    const port = currentPort ?? (httpServer as any)?.address?.()?.port ?? config.port;
+    const addr = httpServer?.address();
+    const port = currentPort ?? (typeof addr === 'object' && addr !== null && 'port' in addr ? addr.port : config.port);
     const url = `http://127.0.0.1:${port}/mcp`;
     const connectionJson = JSON.stringify({
         mcpServers: {

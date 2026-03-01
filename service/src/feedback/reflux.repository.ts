@@ -1,22 +1,23 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
-import { JsonArchiveStore } from '../common/json-archive-store.js';
+import { UnifiedChunkStore } from '../common/unified-chunk-store.js';
 import { REFLUX_HOME, VSCODE_WORKSPACE } from '../hook/setting.js';
-import { ChatStorage, TokenConsumption } from './reflux.dto.js';
+import { ChatStorage, TokenConsumption, type EnableToolItem } from './reflux.dto.js';
 
 interface ChatStorageRow {
     id: string;
     messages: string;
     modelIndex: number | null;
     systemPrompt: string;
-    enableToolsHash: string;
+    enableTools: EnableToolItem[];
     temperature: number;
     enableWebSearch: number;
     contextLength: number;
     parallelToolCalls: number;
     enableXmlWrapper: number;
     traceHash: string;
+    trace: string;
     tokenTotal: number;
     tokenInput: number;
     tokenOutput: number;
@@ -25,9 +26,7 @@ interface ChatStorageRow {
 }
 
 export class RefluxDB {
-    private chatStore: JsonArchiveStore;
-    private enableToolsStore: JsonArchiveStore;
-    private traceStore: JsonArchiveStore;
+    private store: UnifiedChunkStore;
     private baseDir: string;
 
     constructor(tableName: string = 'storage') {
@@ -36,49 +35,39 @@ export class RefluxDB {
             fs.mkdirSync(dbDir, { recursive: true });
         }
         this.baseDir = path.join(dbDir, `reflux-${tableName}`);
-        this.chatStore = new JsonArchiveStore(this.baseDir, 'chat', { maxSize: '5m', maxFiles: 14 });
-        this.enableToolsStore = new JsonArchiveStore(this.baseDir, 'enable_tools', { maxSize: '2m', maxFiles: 14 });
-        this.traceStore = new JsonArchiveStore(this.baseDir, 'trace', { maxSize: '2m', maxFiles: 14 });
+        this.store = new UnifiedChunkStore(this.baseDir, { maxSize: '5m', maxFiles: 14 });
     }
 
     async insert(id: string, record: ChatStorage, trace: string, tokenConsumption: TokenConsumption): Promise<void> {
-        const timestamp = Date.now();
         const settings = record.settings;
-        const enableToolsString = JSON.stringify(settings.enableTools);
-        const enableToolsHash = crypto.createHash('md5').update(enableToolsString).digest('hex');
         const traceHash = crypto.createHash('md5').update(trace).digest('hex');
-
-        await this.enableToolsStore.write(enableToolsHash, enableToolsString);
-        await this.traceStore.write(traceHash, trace);
 
         const row: ChatStorageRow = {
             id,
             messages: JSON.stringify(record.messages),
             modelIndex: settings.modelIndex !== undefined ? settings.modelIndex : null,
             systemPrompt: settings.systemPrompt || '',
-            enableToolsHash,
+            enableTools: (settings.enableTools || []) as EnableToolItem[],
             temperature: settings.temperature,
             enableWebSearch: settings.enableWebSearch ? 1 : 0,
             contextLength: settings.contextLength,
             parallelToolCalls: settings.parallelToolCalls ? 1 : 0,
             enableXmlWrapper: settings.enableXmlWrapper ? 1 : 0,
             traceHash,
+            trace,
             tokenTotal: tokenConsumption.total,
             tokenInput: tokenConsumption.input,
             tokenOutput: tokenConsumption.output,
             tokenCacheRatio: tokenConsumption.cacheRatio,
-            timestamp
+            timestamp: Date.now()
         };
-        await this.chatStore.write(id, row);
+        await this.store.write(id, row);
     }
 
     async findById(id: string): Promise<ChatStorage | undefined> {
-        const rowRec = await this.chatStore.read(id);
+        const rowRec = await this.store.read(id);
         if (!rowRec) return undefined;
         const row = rowRec.data as ChatStorageRow;
-
-        const enableToolsRec = await this.enableToolsStore.read(row.enableToolsHash);
-        const traceRec = await this.traceStore.read(row.traceHash);
 
         return {
             id,
@@ -86,7 +75,7 @@ export class RefluxDB {
             settings: {
                 modelIndex: row.modelIndex ?? undefined,
                 systemPrompt: row.systemPrompt,
-                enableTools: enableToolsRec ? (JSON.parse((enableToolsRec.data as string) || '[]')) : [],
+                enableTools: (Array.isArray(row.enableTools) ? row.enableTools : []) as EnableToolItem[],
                 temperature: row.temperature,
                 enableWebSearch: row.enableWebSearch === 1,
                 contextLength: row.contextLength,
@@ -100,43 +89,45 @@ export class RefluxDB {
     }
 
     async count(): Promise<number> {
-        return this.chatStore.count();
+        return this.store.count();
     }
 
     async findAll(page: number = 1, pageSize: number = 15) {
-        const all = await this.chatStore.readAll(10000);
+        const all = await this.store.readAll(10000);
         const offset = (page - 1) * pageSize;
         const rows = all.slice(offset, offset + pageSize);
 
-        const data = await Promise.all(
-            rows.map(async (rowRec) => {
-                const row = rowRec.data as ChatStorageRow;
-                const enableToolsRec = await this.enableToolsStore.read(row.enableToolsHash);
-                return {
+        const data = rows.map((rowRec) => {
+            const row = rowRec.data as ChatStorageRow;
+            return {
+                id: row.id,
+                data: {
                     id: row.id,
-                    data: {
-                        id: row.id,
-                        messages: JSON.parse(row.messages),
-                        settings: {
-                            modelIndex: row.modelIndex ?? undefined,
-                            systemPrompt: row.systemPrompt,
-                            enableTools: enableToolsRec ? JSON.parse((enableToolsRec.data as string) || '[]') : [],
-                            temperature: row.temperature,
-                            enableWebSearch: row.enableWebSearch === 1,
-                            contextLength: row.contextLength,
-                            parallelToolCalls: row.parallelToolCalls === 1,
-                            enableXmlWrapper: row.enableXmlWrapper === 1
-                        },
-                        parallelMode: undefined,
-                        parallelChats: undefined,
-                        selectedModels: undefined
+                    messages: JSON.parse(row.messages),
+                    settings: {
+                        modelIndex: row.modelIndex ?? undefined,
+                        systemPrompt: row.systemPrompt,
+                        enableTools: (Array.isArray(row.enableTools) ? row.enableTools : []) as EnableToolItem[],
+                        temperature: row.temperature,
+                        enableWebSearch: row.enableWebSearch === 1,
+                        contextLength: row.contextLength,
+                        parallelToolCalls: row.parallelToolCalls === 1,
+                        enableXmlWrapper: row.enableXmlWrapper === 1
                     },
-                    timestamp: row.timestamp
-                };
-            })
-        );
+                    parallelMode: undefined,
+                    parallelChats: undefined,
+                    selectedModels: undefined
+                },
+                timestamp: row.timestamp
+            };
+        });
 
         return { data, page, pageSize };
+    }
+
+    /** 获取第 N 条记录所在的文件信息（N 从 0 开始，按写入顺序） */
+    getFileForRecordIndex(recordIndex: number) {
+        return this.store.getFileForRecordIndex(recordIndex);
     }
 
     async delete(id: string): Promise<void> {
@@ -145,15 +136,20 @@ export class RefluxDB {
     }
 
     async findEnableToolsByHash(hash: string): Promise<any[] | undefined> {
-        const rec = await this.enableToolsStore.read(hash);
-        if (!rec) return undefined;
-        return JSON.parse((rec.data as string) || '[]');
+        const all = await this.store.readAll(10000);
+        for (const r of all) {
+            const row = r.data as ChatStorageRow;
+            const tools = Array.isArray(row.enableTools) ? row.enableTools : [];
+            const h = crypto.createHash('md5').update(JSON.stringify(tools)).digest('hex');
+            if (h === hash) return tools;
+        }
+        return undefined;
     }
 
     async findTraceByHash(hash: string): Promise<string | undefined> {
-        const rec = await this.traceStore.read(hash);
-        if (!rec) return undefined;
-        return rec.data as string;
+        const all = await this.store.readAll(10000);
+        const row = all.find((r) => (r.data as ChatStorageRow).traceHash === hash);
+        return row ? (row.data as ChatStorageRow).trace : undefined;
     }
 
     async update(id: string, record: Partial<ChatStorage>, trace: string, tokenConsumption: TokenConsumption): Promise<void> {
@@ -171,9 +167,7 @@ export class RefluxDB {
     }
 
     async close(): Promise<void> {
-        this.chatStore.close();
-        this.enableToolsStore.close();
-        this.traceStore.close();
+        await this.store.close();
     }
 
     getDbPath(): string {

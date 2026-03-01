@@ -9,6 +9,8 @@ export interface BatchValidationTestCase {
     /** 提词卡片等富文本结构，用于刷新后恢复卡片展示 */
     inputRichContent?: RichTextItem[];
     criteria: string[];
+    /** 评估模式：通过/失败 或 分数，每个用例单独设置 */
+    evaluationMode?: 'pass-fail' | 'score';
     /** 该用例最近一次验证结果，切换用例时显示对应的结果 */
     lastResultGroup?: BatchValidationResultGroup;
 }
@@ -67,8 +69,6 @@ export interface BatchValidationStorage {
     currentPresetId?: string;
     /** 运行批量验证时使用的交互测试标签页索引（取该 tab 的配置） */
     sourceTabIndex: number;
-    /** 评估模式：通过/失败 或 分数 */
-    evaluationMode: 'pass-fail' | 'score';
     /** 批量验证日志结果（用于日志面板持久化恢复） */
     resultGroups: BatchValidationResultGroup[];
     /** @deprecated 仅用于从旧数据迁移，迁移后不再使用 */
@@ -83,7 +83,6 @@ const DEFAULT_STORAGE: BatchValidationStorage = {
     comprehensiveSelectedIndices: [],
     comprehensivePresets: [],
     sourceTabIndex: 0,
-    evaluationMode: 'pass-fail',
     resultGroups: []
 };
 
@@ -114,9 +113,6 @@ export function ensureBatchValidationStorage(storage: Record<string, any>): stor
     }
     if (typeof storage.sourceTabIndex !== 'number') {
         storage.sourceTabIndex = DEFAULT_STORAGE.sourceTabIndex;
-    }
-    if (storage.evaluationMode !== 'pass-fail' && storage.evaluationMode !== 'score') {
-        storage.evaluationMode = DEFAULT_STORAGE.evaluationMode;
     }
     if (!Array.isArray(storage.resultGroups)) {
         storage.resultGroups = [];

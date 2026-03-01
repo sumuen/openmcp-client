@@ -25,8 +25,8 @@ const DEFAULT_MAX_FILES = 14;
 /**
  * 从目录中读取所有 JSONL 文件并合并为 Map（新记录覆盖旧记录）
  */
-function loadFromDir(dirPath: string, baseName: string): Map<string, { data: string; timestamp: number }> {
-    const result = new Map<string, { data: string; timestamp: number }>();
+function loadFromDir(dirPath: string, baseName: string): Map<string, { data: unknown; timestamp: number }> {
+    const result = new Map<string, { data: unknown; timestamp: number }>();
     if (!fs.existsSync(dirPath)) return result;
 
     const files = fs.readdirSync(dirPath)
@@ -40,7 +40,7 @@ function loadFromDir(dirPath: string, baseName: string): Map<string, { data: str
             const lines = raw.split('\n').filter((s) => s.trim());
             for (const line of lines) {
                 try {
-                    const obj = JSON.parse(line) as { id: string; data: string; timestamp: number };
+                    const obj = JSON.parse(line) as { id: string; data: unknown; timestamp: number };
                     if (obj.id != null) {
                         const existing = result.get(obj.id);
                         if (!existing || obj.timestamp >= existing.timestamp) {
@@ -62,7 +62,7 @@ export class JsonArchiveStore {
     private dirPath: string;
     private baseName: string;
     private stream: ReturnType<typeof createStream> | null = null;
-    private cache = new Map<string, { data: string; timestamp: number }>();
+    private cache = new Map<string, { data: unknown; timestamp: number }>();
     private maxSize: string | number;
     private maxFiles: number;
 
@@ -86,7 +86,9 @@ export class JsonArchiveStore {
 
     private ensureStream(): void {
         if (this.stream) return;
-        const sizeStr = typeof this.maxSize === 'string' ? this.maxSize : `${Math.floor(this.maxSize / 1024 / 1024)}M`;
+        let sizeStr = typeof this.maxSize === 'string' ? this.maxSize : `${Math.floor(this.maxSize / 1024 / 1024)}M`;
+        // rotating-file-stream 只支持大写单位 K/M/G，将小写转为大写
+        sizeStr = sizeStr.replace(/([0-9]+)([kmg])/i, (_, n, u) => `${n}${u.toUpperCase()}`);
         this.stream = createStream(
             (time: Date | number | null, index?: number) => {
                 if (!time) return `${this.baseName}.json`;
@@ -112,28 +114,36 @@ export class JsonArchiveStore {
 
     /**
      * 写入记录（插入或更新，按 id）
+     * data 以对象形式写入 JSONL，便于直接解析
      */
     async write(id: string, data: unknown): Promise<void> {
         const timestamp = Date.now();
-        const dataStr = typeof data === 'string' ? data : JSON.stringify(data);
-        this.cache.set(id, { data: dataStr, timestamp });
-        this.writeLine(JSON.stringify({ id, data: dataStr, timestamp }));
+        let dataObj: unknown;
+        if (typeof data === 'string') {
+            try {
+                dataObj = JSON.parse(data) as unknown;
+            } catch {
+                dataObj = { _raw: data };
+            }
+        } else {
+            dataObj = data;
+        }
+        this.cache.set(id, { data: dataObj, timestamp });
+        this.writeLine(JSON.stringify({ id, data: dataObj, timestamp }));
     }
 
     /**
      * 按 id 读取单条记录
+     * data 为对象类型，兼容旧格式（data 为字符串时尝试解析）
      */
     async read(id: string): Promise<JsonArchiveRecord | undefined> {
         const entry = this.cache.get(id);
         if (!entry) return undefined;
-        try {
-            const data = entry.data.startsWith('{') || entry.data.startsWith('[')
-                ? JSON.parse(entry.data)
-                : entry.data;
-            return { id, data, timestamp: entry.timestamp };
-        } catch {
-            return { id, data: entry.data, timestamp: entry.timestamp };
+        let data = entry.data;
+        if (typeof data === 'string' && (data.startsWith('{') || data.startsWith('['))) {
+            try { data = JSON.parse(data); } catch { /* keep string */ }
         }
+        return { id, data, timestamp: entry.timestamp };
     }
 
     /**
@@ -142,14 +152,11 @@ export class JsonArchiveStore {
     async readAll(limit: number = 100): Promise<JsonArchiveRecord[]> {
         const entries = Array.from(this.cache.entries())
             .map(([id, e]) => {
-                try {
-                    const data = e.data.startsWith('{') || e.data.startsWith('[')
-                        ? JSON.parse(e.data)
-                        : e.data;
-                    return { id, data, timestamp: e.timestamp };
-                } catch {
-                    return { id, data: e.data, timestamp: e.timestamp };
+                let data = e.data;
+                if (typeof data === 'string' && (data.startsWith('{') || data.startsWith('['))) {
+                    try { data = JSON.parse(data); } catch { /* keep string */ }
                 }
+                return { id, data, timestamp: e.timestamp };
             })
             .sort((a, b) => b.timestamp - a.timestamp)
             .slice(0, limit);
