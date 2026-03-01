@@ -33,7 +33,7 @@ export class McpClient {
                     prompts: {},
                     resources: {},
                     tools: {}
-                }
+                } as Record<string, unknown>
             }
         );
 

@@ -72,7 +72,10 @@ async function runSimpleAgent(
     }));
 
     const openai = new OpenAI({ baseURL: llmConfig.baseURL, apiKey: llmConfig.apiKey });
-    type MsgItem = { role: 'user' | 'assistant' | 'system' | 'tool'; content: string; tool_call_id?: string };
+    type MsgItem =
+        | { role: 'user' | 'system'; content: string }
+        | { role: 'assistant'; content: string; tool_calls?: OpenAI.Chat.ChatCompletionMessageToolCall[] }
+        | { role: 'tool'; content: string; tool_call_id: string };
     const messages: MsgItem[] = [
         { role: 'user', content: userInput }
     ];
@@ -80,7 +83,15 @@ async function runSimpleAgent(
     for (let i = 0; i < maxIterations; i++) {
         const response = await openai.chat.completions.create({
             model: llmConfig.model,
-            messages: messages.map(m => (m.role === 'tool' ? { role: m.role, content: m.content, tool_call_id: m.tool_call_id! } : { role: m.role, content: m.content })),
+            messages: messages.map(m => {
+                if (m.role === 'tool') {
+                    return { role: m.role, content: m.content, tool_call_id: m.tool_call_id };
+                }
+                if (m.role === 'assistant' && 'tool_calls' in m && m.tool_calls) {
+                    return { role: m.role, content: m.content, tool_calls: m.tool_calls };
+                }
+                return { role: m.role, content: m.content };
+            }),
             tools: toolsSchema,
             tool_choice: 'auto',
             temperature: 0,
@@ -88,9 +99,11 @@ async function runSimpleAgent(
         });
         const message = response.choices?.[0]?.message;
         const toolCalls = message?.tool_calls;
+        const assistantContent = typeof message?.content === 'string' ? message.content : (message?.content ?? '') || '';
         messages.push({
             role: 'assistant',
-            content: typeof message?.content === 'string' ? message.content : (message?.content ?? '') || ''
+            content: assistantContent,
+            ...(toolCalls && toolCalls.length > 0 ? { tool_calls: toolCalls } : {})
         });
 
         if (!toolCalls || toolCalls.length === 0) {
@@ -132,7 +145,8 @@ async function createMcpServerInstance(config: DebuggerMcpConfig) {
 
     const server = new McpServer({
         name: 'openmcp-debugger',
-        version: '0.1.0'
+        version: '0.1.0',
+        icons: [{ src: 'https://openmcp.kirigaya.cn/images/openmcp.png', mimeType: 'image/png' }]
     });
 
     if (enabledSet.has(TOOL_NAMES.list_all_tools)) {

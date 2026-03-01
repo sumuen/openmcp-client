@@ -56,6 +56,7 @@ import { type ChatStorage, type EnableToolItem, getToolSchema } from '../chat';
 import { markdownToHtml } from '@/components/main-panel/chat/markdown/markdown';
 import { llmManager, llms } from '@/views/setting/llm';
 import { mcpClientAdapter } from '@/views/connect/core';
+import { mcpSetting } from '@/hook/mcp';
 import { ElMessage } from 'element-plus';
 import { useMessageBridge } from '@/api/message-bridge';
 import { gotoWebsite } from '@/hook/util';
@@ -120,7 +121,8 @@ const generateExportData = computed(() => {
             baseURL: currentLLM.baseUrl,
             apiToken: currentLLM.userToken,
             model: currentLLM.userModel
-        }
+        },
+        skillPath: mcpSetting.skillPath?.trim() ?? ''
     };
 
     return JSON.stringify(mcpconfig, null, 2);

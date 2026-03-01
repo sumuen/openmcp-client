@@ -99,8 +99,7 @@ export function loadSetting(): IConfig {
 
 export function saveSetting(config: Partial<IConfig>): void {
     const configPath = getConfigurationPath();
-    console.log('save to ' + configPath);
-    
+
     try {
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
     } catch (error) {

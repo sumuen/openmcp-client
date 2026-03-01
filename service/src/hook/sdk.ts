@@ -121,7 +121,7 @@ interface HttpMCPConfig {
 }
 
 export interface OmAgentConfiguration {
-    version: string;
+    version?: string;
     mcpServers: {
         [key: string]: StdioMCPConfig | HttpMCPConfig;
     };
@@ -227,8 +227,11 @@ export class OmAgent {
      */
     public loadMcpConfig(configPath: string, params?: LoadMcpConfigParam) {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as OmAgentConfiguration;
-        const { mcpServers, defaultLLM, skillPath } = config;
+        this.loadMcp(config);
+    }
 
+    public loadMcp(config: OmAgentConfiguration) {
+        const { mcpServers, defaultLLM, skillPath } = config;
         // set default llm
         this.setDefaultLLM(defaultLLM);
 
